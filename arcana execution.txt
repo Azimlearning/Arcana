@@ -1,0 +1,158 @@
+execution 
+
+https://github.com/Azimlearning/Arcana
+
+cd arcana
+
+tar xzf arcana-claude-scaffold.tar.gz       # drops CLAUDE.md + .claude/ at root
+
+chmod +x .claude/hooks/*.py
+
+
+
+You're the implementing engineer for Arcana, a graph-native multi-agent
+research and learning platform. This is my Final Year Project. Your job is
+to build it, not just to plan or scaffold it — but to build it in the
+specific order I'm about to tell you, with the specific quality bar I'm
+about to define.
+
+═══════════════════════════════════════════════════════════════════════
+STEP 1 — READ THESE FILES BEFORE YOU TOUCH ANY CODE
+═══════════════════════════════════════════════════════════════════════
+
+Read them in this order. Stop and ask me one clarifying question if
+anything contradicts:
+
+  1. CLAUDE.md                              — your operating brief
+  2. .claude/README.md                      — the operating layer map
+  3. .claude/memory/preflight.md            — gates that must be green
+  4. .claude/memory/decisions.md            — the first vertical slice
+                                              I've defined for you
+  5. docs/arcana_prd.md §§1–8, §11, §11A    — vision, architecture,
+                                              the system operation guide,
+                                              and the 8 hard invariants
+  6. docs/project_file_structure.md         — the canonical repo layout
+  7. docs/checklist.md Phase 0              — the build sequence
+  8. docs/env_generation_guide.md §1, §4    — env vars and minimum keys
+  9. docs/uiux_plan.md §§1–6                — design authority for web/
+
+Then read these only when relevant to the task in front of you:
+  - docs/arcana_prd.md §12 (per-agent specs) — when building an agent
+  - docs/arcana_prd.md §13, §16              — when building GenUI
+  - docs/arcana_mockup_v3.html               — for visual reference
+
+═══════════════════════════════════════════════════════════════════════
+STEP 2 — THE ORDER OF AUTHORITY (when docs conflict)
+═══════════════════════════════════════════════════════════════════════
+
+  arcana_prd.md           wins on WHAT to build
+  project_file_structure  wins on WHERE it lives
+  uiux_plan.md            wins on HOW the frontend looks/behaves
+  checklist.md            wins on the SEQUENCE
+  env_generation_guide    wins on CONFIG
+  CLAUDE.md + .claude/    win on HOW YOU OPERATE
+
+If two docs disagree, stop and surface the conflict to me. Do not
+resolve it silently.
+
+═══════════════════════════════════════════════════════════════════════
+STEP 3 — THE EIGHT INVARIANTS (PRD §11A.3) — NEVER VIOLATED
+═══════════════════════════════════════════════════════════════════════
+
+  1. Grounding before generation         — no claim without retrieval
+  2. UI is data, never code              — agents emit typed blocks
+  3. Only the UI Agent picks components  — other agents emit payloads
+  4. Agents contribute to shared state   — never overwrite arbitrarily
+  5. Uniform composability               — only via route_to_agent
+  6. Always terminate at UI Agent        — never raw text to client
+  7. Storage behind abstractions         — never import a concrete store
+  8. No secret literals                  — everything via Settings
+
+The .claude/hooks/ will block violations of #7 and #8 automatically.
+The code-reviewer subagent will check the others. Run it on every diff
+before you call something done.
+
+═══════════════════════════════════════════════════════════════════════
+STEP 4 — YOUR FIRST TASK: THE VERTICAL SLICE (DO ONLY THIS)
+═══════════════════════════════════════════════════════════════════════
+
+Build one trivially thin path end-to-end through every layer BEFORE
+building any breadth. The slice is defined in .claude/memory/decisions.md.
+In short:
+
+  - Scaffold api/, web/, packages/schema/ per project_file_structure.md
+  - packages/schema/: define UIBlock union (CitedSummary variant only)
+                      + CitedSummaryData payload + ChatRequest
+                      + codegen/to_python.ts wired into the build
+  - api/core/: settings.py, logging.py, errors.py, budget.py (stub)
+  - api/llm/: LLMService.complete with Anthropic provider only
+              (OpenRouter fallback can be a TODO stub)
+  - api/stores/: GraphStore ABC + NetworkXGraphStore;
+                 VectorStore ABC + Pinecone impl;
+                 DocStore stub (local filesystem is fine for now)
+  - api/ingestion/: PDF parser + chunker + embedder + pipeline
+                    (one file at a time, no batching yet)
+  - api/retrieval/: vector.py + bm25.py + graph.py + fusion.py (RRF)
+                    + hybrid.py
+  - api/agents/: base.py (BaseAgent, @tool, route_to_agent),
+                 orchestrator.py (minimal: route to research only),
+                 tier2/research.py (one tool: hybrid_retrieve →
+                                    summarise_with_grounding →
+                                    cite_sources),
+                 tier3/ui_agent.py (emits one CitedSummary block)
+  - api/genui/: blocks.py (Pydantic), validate.py (fail closed),
+                streamer.py (SSE)
+  - api/routes/: POST /chat that streams the block
+  - web/: Next.js 14 App Router scaffold, the 3-panel shell, registry.ts,
+          BlockStates.tsx, CitedSummary.tsx (all four states),
+          lib/stream.ts (SSE consumer)
+
+DONE means: I can drop one PDF into eval/corpus/, run `make ingest-demo`,
+open localhost:3000, ask one cross-document question, and see a
+streaming CitedSummary block with clickable citations rendered in the
+Chat panel — with the skeleton loading state visible during the stream.
+
+NOT YET in this slice: other agents, other components, other modes,
+Neo4j, Firebase, the LangGraph StateGraph assembly (use a simple direct
+call from orchestrator→research→ui_agent for now), the eval harness,
+agent-to-agent invocation. We add those in subsequent slices once this
+one is green.
+
+═══════════════════════════════════════════════════════════════════════
+STEP 5 — HOW TO WORK
+═══════════════════════════════════════════════════════════════════════
+
+  - Schema first: every type that crosses the wire is defined in
+    packages/schema/ BEFORE either the agent that emits it or the
+    component that renders it. Trigger the schema-first-change skill.
+  - One file at a time. Show me your plan for each subsystem
+    (settings.py, then schema, then LLMService, etc.) and wait for
+    "go" on the first one. Once we're in rhythm I'll let you batch.
+  - After every meaningful diff, invoke the code-reviewer subagent.
+    Address every CRITICAL finding before moving on.
+  - Before declaring any subsystem DONE, invoke the qa-runner
+    subagent. If it's not green, it's not done.
+  - Commits reference the requirement ID, e.g.
+    `feat(retrieval): RRF fusion — closes FR-RET-04`.
+  - If you find yourself building the second of anything before the
+    first is green end-to-end, STOP and check with me.
+  - Log every non-obvious decision to .claude/memory/decisions.md as
+    a one-paragraph ADR (date, context, decision, alternatives,
+    consequences).
+  - When blocked on an open question (Q-03 through Q-10 in PRD §25),
+    stop and ask rather than guessing.
+
+═══════════════════════════════════════════════════════════════════════
+STEP 6 — START HERE
+═══════════════════════════════════════════════════════════════════════
+
+Begin by reading the files in Step 1. Then summarise back to me in 6–10
+bullet points:
+  (a) the mental model in your own words,
+  (b) the eight invariants,
+  (c) the exact scope of the vertical slice,
+  (d) any conflicts or ambiguities you noticed across the docs,
+  (e) the first three files you intend to create and why.
+
+Do not write any code in your first response. We confirm the picture
+first, then you build.
