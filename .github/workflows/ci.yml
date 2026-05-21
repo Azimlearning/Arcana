@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Test-time env keys never call the real APIs (we always mock httpx via
+# respx). These are short placeholder strings that satisfy Settings's
+# required-key validation without tripping check_secrets.py.
+env:
+  ANTHROPIC_API_KEY: test-anthropic
+  OPENAI_API_KEY: test-openai
+  PINECONE_API_KEY: test-pinecone
+
+jobs:
+  backend:
+    name: backend (ruff + pyright + pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv==0.11.15
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+
+      - name: Install Python deps
+        run: uv sync --dev
+
+      - name: Ruff
+        run: uv run ruff check api/ eval/
+
+      - name: Pyright
+        run: uv run --with pyright pyright api/
+
+      - name: Pytest
+        run: uv run pytest -q api/
+
+  schema-and-frontend:
+    name: schema drift + frontend (typecheck + test + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable corepack + activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.12.0 --activate
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Build schema
+        run: pnpm --filter @arcana/schema build
+
+      - name: Codegen drift check
+        run: pnpm --filter @arcana/schema codegen:check
+
+      - name: Web typecheck
+        run: pnpm --filter @arcana/web typecheck
+
+      - name: Web tests (Vitest)
+        run: pnpm --filter @arcana/web test
+
+      - name: Web build (Next)
+        run: pnpm --filter @arcana/web build

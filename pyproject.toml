@@ -1,0 +1,80 @@
+# Arcana — Python project.
+#
+# Lives at the repo root rather than api/pyproject.toml so that the
+# top-level package `api` is resolvable (the dependency-direction hook
+# matches `api.<layer>.*` imports). See decisions.md (2026-05-21).
+#
+# uv is the package manager — `uv sync --dev` installs runtime + dev deps,
+# `uv run pytest -q` runs the suite.
+
+[project]
+name = "arcana"
+version = "0.0.0"
+description = "Arcana — graph-native multi-agent research and learning platform (FYP)."
+requires-python = ">=3.11,<3.13"
+license = { text = "Proprietary" }
+authors = [{ name = "Fakhrul Azim Bin Ahmed Mardzukie" }]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.5",
+    "httpx>=0.27",
+    "python-multipart>=0.0.12",
+    "python-dotenv>=1.0",
+    "structlog>=24.4",
+    "tenacity>=9.0",
+    "networkx>=3.3",
+    "numpy>=2.0",     # required by networkx.pagerank
+    "scipy>=1.14",    # required by networkx.community.louvain on larger graphs
+    "pymupdf>=1.24",  # PDF parsing (api/ingestion/parsers/pdf.py)
+    "rank-bm25>=0.2.2",  # BM25 keyword retriever (api/retrieval/bm25.py)
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+    "ruff>=0.7",
+    "pyright>=1.1.385",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*", "eval*"]
+exclude = ["packages*", "web*", "docs*", "infra*", "RefDocs*", "node_modules*", ".claude*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".claude", "packages", "web", "infra", "node_modules", "docs", "RefDocs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP", "RUF", "ASYNC"]
+ignore = ["E501"]   # line length is handled by the formatter
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyright]
+pythonVersion = "3.11"
+include = ["api", "eval"]
+exclude = ["**/__pycache__", "**/node_modules", ".claude", "eval/corpus"]
+typeCheckingMode = "basic"
+useLibraryCodeForTypes = true
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["api"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers"
+# `eval` shadows a Python builtin; exclude its rootdir scan to avoid
+# pytest's collection confusing it with the function. Tests for the
+# eval harness (P1) will live under api/ or get their own testpath.
+norecursedirs = ["eval"]

@@ -26,7 +26,24 @@ import sys
 from pathlib import Path
 
 # Layer order, low index = upper layer (depends on layers below).
-LAYERS = ["routes", "agents", "retrieval", "stores", "llm", "core"]
+# `embeddings/` is a peer of `llm/` (both are external model-API gateways),
+# but the hook models a strict chain — placing embeddings below llm just
+# happens to be the side that doesn't block any real-world import today.
+# `ingestion/` sits below agents (the IngestionAgent wraps it) and above
+# stores/llm/embeddings (it writes through them). `genui/` is near the
+# bottom because it's mostly Pydantic types + validators (the wire schema)
+# that everything else imports from.
+LAYERS = [
+    "routes",
+    "agents",
+    "ingestion",
+    "retrieval",
+    "stores",
+    "llm",
+    "embeddings",
+    "genui",
+    "core",
+]
 LAYER_INDEX = {name: i for i, name in enumerate(LAYERS)}
 
 # Concrete store modules that agents must NOT import directly.

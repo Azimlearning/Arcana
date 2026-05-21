@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens — docs/uiux_plan.md §2.
+   These are CSS custom properties (not Tailwind variables) so they
+   work in inline styles, third-party widgets, and dev-tools previews. */
+:root {
+  --paper: #faf8f4;
+  --card: #ffffff;
+  --ink: #23211c;
+  --ink-soft: #6b6657;
+  --ink-softer: #9c9686;
+  --line: #e2ddd2;
+  --accent: #2f5fa8;
+
+  --green: #3d7a52;
+  --green-bg: #eaf3ec;
+  --amber: #9a6b18;
+  --amber-bg: #f7efdc;
+  --red: #a8423a;
+  --red-bg: #f7e8e6;
+  --violet: #6a4ea8;
+  --violet-bg: #f0ecf7;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Skeleton shimmer used by BlockStates.Loading. Disabled under
+   prefers-reduced-motion so the panel snaps to its final state. */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--line);
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .shimmer::after { display: none; }
+}

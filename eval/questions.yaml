@@ -1,0 +1,27 @@
+# Pre-registered benchmark questions — R-02 / Q-03 / docs/checklist.md §1.12.
+#
+# The FYP 2 benchmark (hybrid vs flat-RAG) MUST pre-register questions so
+# the comparison is methodologically sound. Slice ships 3 placeholder
+# entries; the real ~20-question set is selected during the P1 corpus
+# selection step and committed BEFORE benchmark runs.
+
+questions:
+  - id: q-placeholder-01
+    question: What does the corpus collectively say about hybrid retrieval?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: |
+      Placeholder. Replace with a real cross-document question once the
+      benchmark corpus is selected.
+
+  - id: q-placeholder-02
+    question: Where do the sources disagree about retrieval methods?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Placeholder.
+
+  - id: q-placeholder-03
+    question: What gaps exist in the corpus's treatment of evaluation?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Placeholder.

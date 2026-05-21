@@ -1,0 +1,55 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.venv/
+venv/
+*.egg-info/
+
+# ─── Node / Next ──────────────────────────────────────────
+node_modules/
+.next/
+.turbo/
+dist/
+*.tsbuildinfo
+
+# Reject competing lockfiles — repo is pnpm-only (packageManager pinned).
+package-lock.json
+yarn.lock
+
+# ─── Env / secrets — NEVER commit  (NFR-SEC-03) ───────────
+.env
+.env.local
+.env.*.local
+api/.env
+web/.env.local
+service-account*.json
+google-credentials*.json
+firebase-adminsdk-*.json
+
+# ─── Local storage (filesystem DocStore stub) ─────────────
+infra/local_storage/
+
+# ─── LLM dev cache (Completion.model_dump_json on disk) ───
+.llm_cache/
+
+# ─── IDE / OS ─────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ─── Per-developer Claude Code overrides (never commit) ───
+.claude/settings.local.json
+
+# ─── Logs ─────────────────────────────────────────────────
+*.log
+logs/
+
+# NOTE: api/genui/_generated.py is COMMITTED — codegen:check
+# diffs the file in CI to catch schema drift (NFR-MNT-02, R-10).
