@@ -29,6 +29,7 @@ dependencies = [
     "scipy>=1.14",    # required by networkx.community.louvain on larger graphs
     "pymupdf>=1.24",  # PDF parsing (api/ingestion/parsers/pdf.py)
     "rank-bm25>=0.2.2",  # BM25 keyword retriever (api/retrieval/bm25.py)
+    "langgraph>=0.2.50,<0.3",  # StateGraph (slice 1 agent maturity) - PRD Listing 11.1
 ]
 
 [dependency-groups]

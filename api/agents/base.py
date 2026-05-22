@@ -23,7 +23,8 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal, TypeVar, get_args, get_origin
+from operator import add
+from typing import Annotated, Any, Literal, TypeVar, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,6 +37,15 @@ from api.retrieval.types import RetrievedChunk
 logger = get_logger(__name__)
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _merge_agent_results(
+    left: dict[str, AgentResult], right: dict[str, AgentResult]
+) -> dict[str, AgentResult]:
+    """LangGraph reducer for `agent_results`: right wins on key conflict
+    (e.g. Fact Checker can overwrite Research's entry with a verified
+    revision)."""
+    return {**left, **right}
 
 
 # ─── Result envelope ──────────────────────────────────────────────
@@ -56,8 +66,15 @@ class AgentResult(BaseModel):
 class AgentState(BaseModel):
     """Shared per-turn ledger. PRD §11.1 Listing 11.1.
 
-    The slice subset: enough for orchestrator → research → ui_agent to
-    cooperate without LangGraph wiring."""
+    `Annotated[..., reducer]` on accumulating fields tells LangGraph how to
+    merge each node's partial update into the running state. Reducers fire
+    only when a node returns a value for that key; nodes that don't touch
+    a field omit it from their return dict.
+
+    `budget` has no reducer — it's a stdlib dataclass shared by reference
+    across all nodes within one turn, so mutations to `budget.tokens_used`
+    persist via Python aliasing (langgraph's model_copy does shallow copy).
+    """
 
     # TokenBudget is a stdlib @dataclass; Pydantic needs the allow-list.
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -67,10 +84,13 @@ class AgentState(BaseModel):
     active_mode: Literal[
         "research", "study", "writing", "socratic", "exploration"
     ] = "research"
-    messages: list[Message] = Field(default_factory=list)
-    retrieved_ctx: list[RetrievedChunk] = Field(default_factory=list)
-    agent_results: dict[str, AgentResult] = Field(default_factory=dict)
-    ui_blocks: list[CitedSummary] = Field(default_factory=list)
+    intent: str = ""   # set by Orchestrator; consumed by conditional routing
+    messages: Annotated[list[Message], add] = Field(default_factory=list)
+    retrieved_ctx: Annotated[list[RetrievedChunk], add] = Field(default_factory=list)
+    agent_results: Annotated[
+        dict[str, AgentResult], _merge_agent_results
+    ] = Field(default_factory=dict)
+    ui_blocks: Annotated[list[CitedSummary], add] = Field(default_factory=list)
     budget: TokenBudget = Field(default_factory=TokenBudget)
 
 

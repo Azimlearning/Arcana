@@ -49,6 +49,11 @@ class GraphStore(ABC):
         """Insert or update a directed typed edge. Returns a stable edge id."""
 
     @abstractmethod
+    async def get_node(self, node_id: str) -> GraphNode | None:
+        """Fetch a node by id, or None if missing. Used by the ingestion
+        pipeline to merge multi-chunk entity mentions into one node."""
+
+    @abstractmethod
     async def expand(self, node_id: str, hops: int = 1) -> list[GraphNode]:
         """N-hop neighborhood around `node_id`. Empty list if node missing."""
 

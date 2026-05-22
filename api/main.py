@@ -35,6 +35,8 @@ def build_orchestrator():
     from api.agents.orchestrator import Orchestrator
     from api.agents.tier2.research import ResearchAgent
     from api.agents.tier3.ui_agent import UIAgent
+    from api.agents.tier4.fact_checker import FactChecker
+    from api.agents.tier4.memory import MemoryAgent
     from api.core.settings import get_settings
     from api.embeddings.service import EmbeddingService
     from api.llm.service import LLMService
@@ -42,6 +44,7 @@ def build_orchestrator():
     from api.retrieval.graph import GraphRetriever
     from api.retrieval.vector import VectorRetriever
     from api.stores.filesystem_doc_store import FilesystemDocStore
+    from api.stores.in_memory_store import InMemoryMemoryStore
     from api.stores.jsonl_chunk_store import JsonlChunkStore
     from api.stores.networkx_store import NetworkXGraphStore
     from api.stores.pinecone_store import PineconeVectorStore
@@ -63,7 +66,11 @@ def build_orchestrator():
 
     vector_retriever = VectorRetriever(vector_store=vector_store, embedder=embedder)
     bm25_retriever = BM25Retriever(chunk_store=chunk_store)
-    graph_retriever = GraphRetriever(graph_store=graph_store)
+    graph_retriever = GraphRetriever(
+        graph_store=graph_store,
+        chunk_store=chunk_store,
+        llm=llm,
+    )
 
     research = ResearchAgent(
         llm_service=llm,
@@ -73,7 +80,16 @@ def build_orchestrator():
         graph_retriever=graph_retriever,
         doc_store=doc_store,
     )
-    return Orchestrator(research=research, ui_agent=UIAgent())
+    memory_store = InMemoryMemoryStore()
+    memory_agent = MemoryAgent(store=memory_store)
+
+    return Orchestrator(
+        research=research,
+        ui_agent=UIAgent(),
+        fact_checker=FactChecker(llm=llm),
+        memory_agent=memory_agent,
+        memory_store=memory_store,
+    )
 
 
 @asynccontextmanager

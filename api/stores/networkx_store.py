@@ -43,6 +43,11 @@ class NetworkXGraphStore(GraphStore):
         self._g.add_edge(edge.src, edge.dst, key=edge.type, type=edge.type, **edge.properties)
         return f"{edge.src}-[{edge.type}]->{edge.dst}"
 
+    async def get_node(self, node_id: str) -> GraphNode | None:
+        if node_id not in self._g:
+            return None
+        return self._to_graphnode(node_id)
+
     # ── Reads / analytics ──────────────────────────────────────────
     async def expand(self, node_id: str, hops: int = 1) -> list[GraphNode]:
         if node_id not in self._g:

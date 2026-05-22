@@ -1,20 +1,27 @@
-"""Orchestrator — Tier 1, slice-shape.
+"""Orchestrator - the graph runner (PRD §11.2).
 
-Real Orchestrator (PRD §11.2) does intent + mode detection, plans a set
-of specialist agents, and routes via a LangGraph StateGraph. The slice
-defers all of that per the slice ADR — orchestrator → research →
-ui_agent runs as a direct async call.
+The orchestrator's NODE logic (intent + mode detection) lives as a free
+function in `api/agents/graph.py:_orchestrator_node`. This class wraps
+the compiled graph and exposes the same `run(query, state) -> AgentResult`
+contract the chat route + tests rely on from subsystem 7.
 
-Even at slice scope, this terminates at UI Agent on every path so
-invariant #6 (always terminate at UI Agent) is satisfied today.
-"""
+Why split: when the orchestrator runs as a graph node, the node wrapper
+would call `agent.run()` - which would recursively try to compile and
+invoke the graph again. Keeping the node as a free function and the
+class as the runner cleanly separates the two roles."""
 
 from __future__ import annotations
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from typing import Any
+
+from api.agents.base import AgentResult, AgentState, BaseAgent, registry
 from api.agents.tier2.research import ResearchAgent
 from api.agents.tier3.ui_agent import UIAgent
+from api.agents.tier4.fact_checker import FactChecker
+from api.agents.tier4.memory import MemoryAgent
 from api.core.logging import get_logger
+from api.llm.types import Message
+from api.stores.memory_store import MemoryStore
 
 logger = get_logger(__name__)
 
@@ -23,33 +30,103 @@ class Orchestrator(BaseAgent):
     name = "orchestrator"
     tier = 1
 
-    def __init__(self, *, research: ResearchAgent, ui_agent: UIAgent) -> None:
+    def __init__(
+        self,
+        *,
+        research: ResearchAgent,
+        ui_agent: UIAgent,
+        fact_checker: FactChecker | None = None,
+        memory_agent: MemoryAgent | None = None,
+        memory_store: MemoryStore | None = None,
+    ) -> None:
         self._research = research
         self._ui = ui_agent
+        self._fact_checker = fact_checker
+        self._memory_agent = memory_agent
+        # Holding the store separately from the agent lets the
+        # orchestrator write back at end-of-turn (the agent itself only
+        # reads at start-of-turn).
+        self._memory_store = memory_store
+        # Register agents that `make_node` will look up. We do NOT
+        # register `self`: nothing routes to the orchestrator (it's the
+        # entry), and registering would make `route_to_agent("orchestrator",
+        # ...)` recurse into the graph.
+        registry.register_agent(research)
+        registry.register_agent(ui_agent)
+        if fact_checker is not None:
+            registry.register_agent(fact_checker)
+        if memory_agent is not None:
+            registry.register_agent(memory_agent)
+        # Late import to avoid base.py <-> graph.py cycle at module load.
+        from api.agents.graph import build_graph
+
+        self._graph = build_graph()
 
     async def run(self, query: str, state: AgentState) -> AgentResult:
-        logger.info("orchestrator.start", query_len=len(query), mode=state.active_mode)
+        """Compile-and-invoke the StateGraph end-to-end.
 
-        # Step 1: Research. Writes its result into state.agent_results.
-        # We don't react to a failure here — UIAgent will pick up whatever
-        # state.agent_results["research"] contains (including a failed
-        # status) and emit an appropriate error block (invariant #6).
-        await self._research.run(query=query, state=state)
+        After completion the accumulated fields are copied back into the
+        caller's `state` instance so consumers (chat route reads
+        `state.ui_blocks`) keep working unchanged from subsystem 7."""
+        state.query = query
+        logger.info("orchestrator.invoke_graph", query_len=len(query))
+        try:
+            final: Any = await self._graph.ainvoke(state)
+        except Exception:
+            logger.exception("orchestrator.graph_failed")
+            raise
 
-        # Step 2: UI assembly. Always runs.
-        ui_result = await self._ui.run(query=query, state=state)
+        # langgraph returns either a Pydantic instance or a dict-like
+        # AddableValuesDict depending on version. Handle both.
+        if isinstance(final, AgentState):
+            for field_name in AgentState.model_fields:
+                setattr(state, field_name, getattr(final, field_name))
+        elif isinstance(final, dict):
+            for k, v in final.items():
+                if k in AgentState.model_fields:
+                    setattr(state, k, v)
+
+        # Memory writeback: persist the user query + assistant summary
+        # so the NEXT turn's Memory Agent can load this exchange. Kept
+        # outside the LangGraph state because it touches an external
+        # store and shouldn't go through the reducer model.
+        await self._persist_turn_to_memory(query=query, state=state)
 
         logger.info(
             "orchestrator.done",
             ui_blocks=len(state.ui_blocks),
-            research_status=(
-                state.agent_results["research"].status
-                if "research" in state.agent_results
-                else "absent"
-            ),
+            agents_run=list(state.agent_results.keys()),
         )
         return AgentResult(
             agent_name=self.name,
-            payload=ui_result.payload,
+            payload={
+                "blocks_emitted": len(state.ui_blocks),
+                "agents_run": list(state.agent_results.keys()),
+            },
             status="ok",
         )
+
+    async def _persist_turn_to_memory(self, *, query: str, state: AgentState) -> None:
+        """Append (user_query, assistant_summary) to the memory store
+        for this notebook. Silent no-op when no store is wired.
+
+        Error-block apologies are NOT persisted: next-turn context is
+        better served by "user asked X" alone than by "user asked X,
+        the system apologized" - the latter biases the model toward
+        further apologies."""
+        if self._memory_store is None:
+            return
+        notebook_id = state.notebook_id or "default"
+        msgs: list[Message] = [Message(role="user", content=query)]
+        if state.ui_blocks:
+            block = state.ui_blocks[-1]
+            if block.meta.status != "error":
+                assistant_text = getattr(block.data, "summary", "") or ""
+                if assistant_text:
+                    msgs.append(Message(role="assistant", content=assistant_text))
+        try:
+            await self._memory_store.append_messages(notebook_id, msgs)
+        except Exception:
+            # Memory persistence must NOT fail the turn that already
+            # produced a valid block. Log and move on.
+            logger.exception("orchestrator.memory_writeback_failed")

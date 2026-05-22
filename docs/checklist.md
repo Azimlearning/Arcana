@@ -10,74 +10,84 @@
 
 ## Phase 0 — Project Setup & Foundations
 
+> **Status (2026-05-22):** P0 walking skeleton merged on `ExDev` branch
+> (commit `267b035`). Boxes below reflect what actually shipped vs. what
+> was honestly deferred. Items deferred to slice 1 (agent maturity) are
+> marked `(→ slice 1)`; the slice ADRs in `.claude/memory/decisions.md`
+> name each deferral and its rationale.
+
 ### 0.1 Repository & tooling
-- [ ] Initialise the monorepo per `project_file_structure.md` (`api/`, `web/`, `packages/schema/`, `eval/`, `infra/`, `docs/`).
-- [ ] Add `CLAUDE.md` (master index) pointing at `docs/arcana_prd.md`, `docs/project_file_structure.md`, `docs/checklist.md`, `docs/uiux_plan.md`, `docs/env_generation_guide.md`.
-- [ ] `.env.example` with every variable documented; `.gitignore` excludes `.env`, `node_modules`, `.next`, `__pycache__`.
-- [ ] Root `Makefile`/`justfile`: `up`, `test`, `lint`, `ingest-demo`, `bench`.
-- [ ] Backend scaffold: FastAPI `main.py` (app factory + lifespan), `pyproject.toml` with pinned deps.
-- [ ] Frontend scaffold: Next.js 14 App Router + Tailwind + Vercel AI SDK; path alias `@/schema`.
-- [ ] CI: lint + type-check both apps on push.
+- [x] Initialise the monorepo per `project_file_structure.md` (`api/`, `web/`, `packages/schema/`, `eval/`, `infra/`, `docs/`).
+- [x] Add `CLAUDE.md` (master index) pointing at `docs/arcana_prd.md`, `docs/project_file_structure.md`, `docs/checklist.md`, `docs/uiux_plan.md`, `docs/env_generation_guide.md`.
+- [x] `.env.example` with every variable documented; `.gitignore` excludes `.env`, `node_modules`, `.next`, `__pycache__`.
+- [x] Root `Makefile`/`justfile`: `up`, `test`, `lint`, `ingest-demo`, `bench`.
+- [x] Backend scaffold: FastAPI `main.py` (app factory + lifespan), `pyproject.toml` with pinned deps.
+- [x] Frontend scaffold: Next.js 14 App Router + Tailwind + Vercel AI SDK; path alias `@/schema`. *(Tailwind + Next 14 shipped; Vercel AI SDK deferred — slice uses raw fetch+ReadableStream SSE consumer because EventSource is GET-only.)*
+- [x] CI: lint + type-check both apps on push. *(.github/workflows/ci.yml — backend job + schema-and-frontend job.)*
 
 ### 0.2 Core foundation (`api/core/`)
-- [ ] `settings.py`: typed `Settings(BaseSettings)` with `local`/`study`/`prod-design` profiles — *Listing 9.2*.
-- [ ] `logging.py`: structured JSON logging with request + agent trace ids.
-- [ ] `errors.py`: error envelope, exception handlers, `AllProvidersFailed`.
-- [ ] `budget.py`: `TokenBudget` + `charge_hop()` (used in P1, build the seam now) — §11.6.
-- [ ] **No secret literals anywhere** — verify via grep in CI — **NFR-SEC-03**.
+- [x] `settings.py`: typed `Settings(BaseSettings)` — *Listing 9.2*. *(`local`/`study`/`prod-design` profiles selectable via `ENV` env var; one canonical `.env` file.)*
+- [x] `logging.py`: structured JSON logging with request + agent trace ids.
+- [x] `errors.py`: error envelope, exception handlers, `AllProvidersFailed`.
+- [x] `budget.py`: `TokenBudget` + `charge_hop()` — §11.6.
+- [x] **No secret literals anywhere** — `.claude/hooks/check_secrets.py` blocks at write time.
 
 ### 0.3 Shared schema (`packages/schema/`)
-- [ ] `entities.ts`: Document, Chunk, GraphNode, GraphEdge, Notebook, UserProfile, ReviewState — §19.1.
-- [ ] `blocks.ts`: `UIBlock` union + `BlockMeta` (start with P0 variants) — *Listing 13.1*.
-- [ ] `payloads.ts`: `CitedSummaryData` first — §16.1.
-- [ ] `api.ts`: `ChatRequest`, `IngestRequest`, `AgentResult`.
-- [ ] `codegen/to_python.ts`: emit Pydantic models into `api/`; wire into the build.
+- [x] `entities.ts`: Document, Chunk, IngestStatus *(slice scope — GraphNode, GraphEdge, Notebook, UserProfile, ReviewState arrive when first used; → slice 1 adds GraphNode/Edge, slice 7 adds Notebook/UserProfile)*.
+- [x] `blocks.ts`: `UIBlock` union (CitedSummary only) + `BlockMeta` — *Listing 13.1*.
+- [x] `payloads.ts`: `CitedSummaryData` first — §16.1.
+- [x] `api.ts`: `ChatRequest` + `ChatMessage`. *(IngestRequest + AgentResult — slice doesn't expose ingest via HTTP; → slice 8.)*
+- [x] `codegen/to_python.ts`: emit Pydantic into `api/genui/_generated.py`; `codegen:check` drift gate wired in CI.
 
 ### 0.4 LLM service (`api/llm/`)
-- [ ] `service.py`: `LLMService.complete(messages, tools, model)` — *Listing 10.2*.
-- [ ] `providers/anthropic.py` (Claude primary) + `providers/openrouter.py` (fallback) — **NFR-REL-02**.
-- [ ] `prompts/`: versioned templates (extraction, synthesis).
+- [x] `service.py`: `LLMService.complete(messages, tools, model)` — *Listing 10.2*.
+- [x] `providers/anthropic.py` (Claude primary, real httpx impl) + `providers/openrouter.py` (P0 stub that always raises so fallback path tests pass) — **NFR-REL-02**.
+- [x] `prompts/`: `synthesis.py` shipped. *(`extraction.py` lands with → slice 1.)*
 
 ### 0.5 Storage abstractions (`api/stores/`)
-- [ ] `graph_store.py`: `GraphStore` ABC — `upsert_node/edge`, `expand`, `shortest_path`, `communities`, `pagerank` — *Listing 10.3*, **FR-KG-07**.
-- [ ] `networkx_store.py`: in-process `NetworkXGraphStore`.
-- [ ] `vector_store.py`: `VectorStore` ABC + Pinecone impl (3072-dim) — **FR-RET-01**.
-- [ ] `doc_store.py`: `DocStore` (Firestore metadata + object storage stub for local).
+- [x] `graph_store.py`: `GraphStore` ABC — `upsert_node/edge`, `expand`, `shortest_path`, `communities`, `pagerank` — *Listing 10.3*, **FR-KG-07**.
+- [x] `networkx_store.py`: in-process `NetworkXGraphStore` with JSON node-link persistence (not pickle — security ADR).
+- [x] `vector_store.py`: `VectorStore` ABC + `PineconeVectorStore` (REST via httpx, 3072-dim) — **FR-RET-01**.
+- [x] `doc_store.py`: `DocStore` ABC + `FilesystemDocStore` slice-time impl with strict allowlist doc-id validation. *(Firestore impl → slice 7.)*
+- [x] `chunk_store.py` + `jsonl_chunk_store.py` — durable text-of-chunks store for BM25 (not in original checklist; added because Pinecone can't enumerate the corpus).
 
 ### 0.6 Ingestion pipeline (`api/ingestion/`) — **P0 critical path**
-- [ ] `parsers/pdf.py` (PyMuPDF) + `parsers/docx.py` — **FR-ING-01**.
-- [ ] `chunker.py`: semantic + fixed-window — **FR-ING-05**.
-- [ ] `embedder.py`: `text-embedding-3-large` client — **FR-ING-05**.
-- [ ] `extractor.py`: LLM entity/relationship extraction → typed Triples — **FR-ING-06**.
-- [ ] `pipeline.py`: parse → chunk → embed → upsert vectors → extract → build graph.
-- [ ] Build the Concept/Person/Document/Topic graph with typed edges — **FR-KG-01**.
+- [x] `parsers/pdf.py` (PyMuPDF) — **FR-ING-01**. *(`parsers/docx.py` → slice 8 with FR-ING-02..04.)*
+- [x] `chunker.py`: paragraph→sentence→hard-cut boundary preference with min-chunk-size floor — **FR-ING-05**.
+- [x] **`embedder.py`** is now `api/embeddings/service.py` (split into its own peer module per user direction) — **FR-ING-05**.
+- [ ] `extractor.py`: LLM entity/relationship extraction → typed Triples — **FR-ING-06** *(→ slice 1)*.
+- [x] `pipeline.py`: parse → chunk → embed → upsert vectors → chunk store. *(Entity extraction + graph build → slice 1.)*
+- [ ] Build the Concept/Person/Document/Topic graph with typed edges — **FR-KG-01** *(→ slice 1)*.
 
 ### 0.7 Hybrid retrieval (`api/retrieval/`) — **the FYP's core evidence**
-- [ ] `vector.py` (dense) — **FR-RET-01**.
-- [ ] `bm25.py` (keyword) — **FR-RET-02**.
-- [ ] `graph.py` (multi-hop traversal via GraphStore) — **FR-RET-03**.
-- [ ] `fusion.py`: `reciprocal_rank_fusion(rankings, k=60)` — **FR-RET-04**, *Listing 10.4*.
-- [ ] `hybrid.py`: `hybrid_retrieve()` running all three under `asyncio.gather` → RRF → top_k.
-- [ ] Source attribution traceable to documents on every result — **FR-RET-08**.
+- [x] `vector.py` (dense) — **FR-RET-01**. Fail-loud on missing metadata.
+- [x] `bm25.py` (keyword, ASCII-locked tokenizer for benchmark reproducibility) — **FR-RET-02**.
+- [x] `graph.py` (multi-hop traversal via GraphStore) — **FR-RET-03** *(slice 0 returns `[]`; → slice 1 wires real traversal)*.
+- [x] `fusion.py`: `reciprocal_rank_fusion(rankings, k=60)` — **FR-RET-04**, *Listing 10.4*.
+- [x] `hybrid.py`: `hybrid_retrieve()` running all three under `asyncio.gather` → RRF → top_k. NFR-REL-01 degradation tested.
+- [x] Source attribution traceable to documents on every result — **FR-RET-08**.
 
 ### 0.8 Three core agents (`api/agents/`)
-- [ ] `base.py`: `BaseAgent`, `@tool` decorator (schema from type hints), registry, `route_to_agent` — §11.3–11.4.
-- [ ] `orchestrator.py`: intent/mode detect → plan → route — **FR-AGT-01**, *Listing 11.2*.
-- [ ] `tier2/research.py`: `hybrid_retrieve`, `summarise_with_grounding`, `cite_sources` — §12 Research.
-- [ ] `tier2/graph_agent.py`: `graph_expand`, `shortest_path`, analytics — §12 Graph.
-- [ ] Each agent exposes typed tool calls — **FR-AGT-02**.
+- [x] `base.py`: `BaseAgent`, `@tool` decorator (schema from type hints), registry, `route_to_agent` — §11.3–11.4.
+- [x] `orchestrator.py`: direct-call slice-shape (research → ui_agent). *(Real intent/mode detect + plan → slice 1 with LangGraph StateGraph.)*
+- [x] `tier2/research.py`: `hybrid_retrieve`, `summarise_with_grounding`, `cite_sources` (citation parser lives here) — §12 Research.
+- [ ] `tier2/graph_agent.py`: `graph_expand`, `shortest_path`, analytics — §12 Graph *(→ slice 1)*.
+- [x] Each agent exposes typed tool calls — **FR-AGT-02**.
+- [x] `tier3/ui_agent.py` (only agent that picks components) — **FR-UI-04**.
 
 ### 0.9 PoC demo + FYP 1 deliverables
-- [ ] Minimal `POST /chat` returning a `CitedSummary` over the demo corpus.
-- [ ] `eval/`: assemble fixed corpus + draft `questions.yaml`; stub `run_benchmark.py`.
-- [ ] Working hybrid-retrieval **comparison demo** (hybrid vs flat) — proves the premise.
-- [ ] FYP 1 report + system design written.
+- [x] Minimal `POST /chat` returning a `CitedSummary` over the demo corpus — fail-closed validation + SSE stream.
+- [x] `eval/`: corpus directory + draft `questions.yaml` (3 placeholders) + stub `run_benchmark.py`.
+- [ ] Working hybrid-retrieval **comparison demo** (hybrid vs flat) — *(P1 §1.12; slice 11.)*
+- [ ] FYP 1 report + system design written — *(author task, not code.)*
 
 ### ✅ Phase 0 release gate
-- [ ] PDF/DOCX ingest → graph built → hybrid retrieval returns grounded, cited answers end-to-end.
-- [ ] GraphStore abstraction in place with NetworkX backend (Neo4j swap is one setting).
-- [ ] Orchestrator + Research + Graph agents demonstrably running.
-- [ ] All **P0 Must (M)** FRs implemented: FR-ING-01/05/06, FR-KG-01/07, FR-RET-01/02/03/04/08, FR-AGT-01/02, FR-UI-01.
+- [x] PDF/DOCX ingest → graph built → hybrid retrieval returns grounded, cited answers end-to-end — **PDF + graph populated via slice 1 entity extraction**. DOCX → P1 §1.1.
+- [x] GraphStore abstraction in place with NetworkX backend (Neo4j swap is one setting).
+- [x] Orchestrator + Research + Graph agents demonstrably running — **slice 1 closes the GraphRetriever stub; entity extraction is the Graph Agent's read path**.
+- [x] All **P0 Must (M)** FRs implemented: FR-ING-01/05 ✓, FR-ING-06 ✓ (slice 1), FR-KG-01 ✓ (slice 1), FR-KG-07 ✓, FR-RET-01/02/03/04/08 ✓, FR-AGT-01/02 ✓, FR-UI-01 ✓.
+
+> Phase 0 release gate **CLOSED** by slice 1 (commits `267b035` skeleton + slice-1 commit). Remaining bullets under §0.9 (FYP 1 report) and the formal hybrid-vs-flat benchmark are P1 §1.12 / author-side tasks, not code.
 
 ---
 

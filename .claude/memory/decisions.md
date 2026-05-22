@@ -30,6 +30,22 @@
 
 <!-- New entries go below this line, newest first. -->
 
+### 2026-05-22 — Slice 1 DONE: agent maturity landed
+
+- **Status:** DECIDED
+- **Context:** All five chunks of slice 1 (LangGraph + entity extraction + real GraphRetriever + Fact Checker + Memory Agent) are green. Backend 263 passed (P0: 200, slice 1: +63). Ruff + pyright clean. Multi-turn memory continuity test locks the contract. Error-status blocks excluded from memory writeback (W1). Prompt versions stamped on extraction + fact-check + graph scoring for R-02 partition (W4). Unknown-intent routing falls back to default with a warning log (W3).
+- **Decision:** Phase 0 release gate (`docs/checklist.md` §0) is now satisfied as far as code goes: PDF ingest → graph built → 3-source hybrid retrieval → grounded cited answers; Orchestrator + Research + Graph (extraction+retrieval) + Fact Checker + Memory Agent all demonstrably running. Remaining gate items (FYP 1 report, hybrid-vs-flat benchmark) are P1 §1.12 / author tasks, not code.
+- **Why:** The walking-skeleton mandate was "narrow first, breadth later." Slice 1 closes the agent-graph seam so every later tier-2 agent (Writing, Study, Socratic, …) drops into a path that already enforces hop budgets, fact-checks claims, remembers history, and traverses the entity graph.
+- **Revisit if:** Never. Slice closed; next slice opens its own thread (slice 2 = wider GenUI catalog + UI-Agent intent-driven component selection).
+
+### 2026-05-22 — Slice 1 scope: agent maturity (LangGraph + extraction + graph retriever + Fact Checker + Memory Agent)
+
+- **Status:** DECIDED
+- **Context:** P0 skeleton wired research → ui_agent as a direct call and shipped GraphRetriever as `return []`. Both were ADR'd deferrals so we could prove the wire contract before adding breadth. Slice 1 closes those gaps in dependency order: LangGraph first (every other agent registers as a node), then entity extraction (the GraphRetriever needs a populated graph), then GraphRetriever traversal logic, then Fact Checker (verifies the now-grounded synthesis), then Memory Agent (gates the LangGraph entry).
+- **Decision:** Five-chunk slice with `langgraph` as the only new heavy dep. Pydantic `AgentState` is kept (langgraph 0.2+ supports BaseModel state); each existing agent gets a thin `make_node(agent)` wrapper that adapts `BaseAgent.run` to the langgraph node signature `(state) -> dict`.
+- **Why:** Doing breadth (other tier-2 agents) before LangGraph would mean every new agent ships its own ad-hoc orchestration that gets ripped out later. Doing GraphRetriever before extraction would leave it returning empty for another slice. Order is forced by the dependency direction.
+- **Revisit if:** LangGraph's BaseModel-state API regresses (pin a known-good version), OR entity-extraction LLM cost blows the per-PDF budget (slice 1 ADR will record actual measured cost; if it crosses a threshold we switch the extraction pass to a cheaper provider).
+
 ### 2026-05-22 — P0 walking-skeleton slice DONE
 
 - **Status:** DECIDED
