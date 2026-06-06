@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from api.core.budget import TokenBudget
 from api.core.logging import get_logger
-from api.genui._generated import CitedSummary
+from api.genui._generated import UIBlock
 from api.llm.types import Message
 from api.retrieval.types import RetrievedChunk
 
@@ -90,7 +90,7 @@ class AgentState(BaseModel):
     agent_results: Annotated[
         dict[str, AgentResult], _merge_agent_results
     ] = Field(default_factory=dict)
-    ui_blocks: Annotated[list[CitedSummary], add] = Field(default_factory=list)
+    ui_blocks: Annotated[list[UIBlock], add] = Field(default_factory=list)
     budget: TokenBudget = Field(default_factory=TokenBudget)
 
 

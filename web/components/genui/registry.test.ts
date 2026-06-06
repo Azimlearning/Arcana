@@ -10,8 +10,16 @@ import { _registeredTypes } from './registry';
 
 describe('GenUI registry', () => {
   it('registers exactly the slice-supported variants', () => {
-    // Slice scope = CitedSummary only. When the union grows, this
-    // assertion expands alongside the variants.
-    expect(new Set(_registeredTypes())).toEqual(new Set(['CitedSummary']));
+    // Slice 2 scope: CitedSummary + 5 new catalog variants.
+    expect(new Set(_registeredTypes())).toEqual(
+      new Set([
+        'CitedSummary',
+        'LiteratureMatrix',
+        'ContradictionAlert',
+        'GapAnalysis',
+        'InsightCard',
+        'KnowledgeGraphView',
+      ])
+    );
   });
 });

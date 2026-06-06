@@ -7,7 +7,14 @@
 //   3. Add web/components/genui/<Name>.tsx + one registry.ts line.
 // The codegen mirrors steps 1-2 into api/genui/_generated.py automatically.
 
-import type { CitedSummaryData } from './payloads.js';
+import type {
+  CitedSummaryData,
+  ContradictionAlertData,
+  GapAnalysisData,
+  InsightCardData,
+  KnowledgeGraphViewData,
+  LiteratureMatrixData,
+} from './payloads.js';
 
 export type Panel = 'sources' | 'chat' | 'studio';
 export type BlockStatus = 'loading' | 'partial' | 'ready' | 'error';
@@ -25,8 +32,47 @@ export interface CitedSummary {
   data: CitedSummaryData;
 }
 
-// Single-arm "union" today; codegen emits `UIBlock = CitedSummary`.
-// Adding a second variant flips this to `CitedSummary | FlashcardDeck | …`,
-// and the codegen automatically emits the discriminated `Field(discriminator='type')` form.
-// See .claude/skills/schema-first-change/SKILL.md for the full step list.
-export type UIBlock = CitedSummary;
+export interface LiteratureMatrix {
+  type: 'LiteratureMatrix';
+  id: string;
+  meta: BlockMeta;
+  data: LiteratureMatrixData;
+}
+
+export interface ContradictionAlert {
+  type: 'ContradictionAlert';
+  id: string;
+  meta: BlockMeta;
+  data: ContradictionAlertData;
+}
+
+export interface GapAnalysis {
+  type: 'GapAnalysis';
+  id: string;
+  meta: BlockMeta;
+  data: GapAnalysisData;
+}
+
+export interface InsightCard {
+  type: 'InsightCard';
+  id: string;
+  meta: BlockMeta;
+  data: InsightCardData;
+}
+
+export interface KnowledgeGraphView {
+  type: 'KnowledgeGraphView';
+  id: string;
+  meta: BlockMeta;
+  data: KnowledgeGraphViewData;
+}
+
+// Discriminated union: the `type` field is the discriminator.
+// Codegen emits Annotated[Union[...], Field(discriminator='type')] in Python.
+export type UIBlock =
+  | CitedSummary
+  | LiteratureMatrix
+  | ContradictionAlert
+  | GapAnalysis
+  | InsightCard
+  | KnowledgeGraphView;

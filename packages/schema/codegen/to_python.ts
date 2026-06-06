@@ -193,8 +193,8 @@ function emitAlias(alias: TypeAliasDeclaration): string {
     // All references to declared interfaces?
     const allRefs = parts.every((p) => /^[A-Z][A-Za-z0-9_]*$/.test(p.getText()));
     if (allRefs && parts.length > 1) {
-      const refs = parts.map((p) => p.getText()).join(', ');
-      return `${name} = Annotated[Union[${refs}], Field(discriminator='type')]`;
+      const pipedRefs = parts.map((p) => p.getText()).join(' | ');
+      return `${name} = Annotated[${pipedRefs}, Field(discriminator='type')]`;
     }
     // Otherwise fall through to plain union mapping (handles literal unions)
     return `${name} = ${mapUnionTypeNode(union, ctx)}`;

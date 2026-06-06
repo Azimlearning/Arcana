@@ -15,6 +15,29 @@
 ## Template
 
 ```markdown
+
+### 2026-06-06 — Slice 2 complete: GenUI catalog breadth + UI Agent routing + DiscoveryAgent
+
+- **Status:** DECIDED
+- **Context:** Slice 2 goal was to (a) add 5 new UIBlock variants to the catalog, (b) teach the UI Agent to route by intent, (c) ship a DiscoveryAgent that produces GapAnalysis payloads.
+- **Decision:**
+  - Chunk 1 (Schema): 5 new UIBlock variants (LiteratureMatrix, ContradictionAlert, GapAnalysis, InsightCard, KnowledgeGraphView) added to packages/schema/ + codegen + TypeAdapter validator. UP007 fixed by emitting X|Y|Z syntax in codegen.
+  - Chunk 2 (React): 5 new GenUI components with all four states (Empty/Loading/Partial/Error) + 5 registry rows.
+  - Chunk 3 (UI Agent routing): UIAgent._route_to_block dispatches to GapAnalysis from discovery agent result; CitedSummary is fallback.
+  - Chunk 4 (DiscoveryAgent): Tier-2 agent, hybrid_retrieve → LLM gap analysis → GapAnalysisData payload. Wired as "discovery" intent in graph.py.
+  - InsightCard routing in UIAgent deferred (DiscoveryAgent produces only GapAnalysis in Slice 2).
+  - Orchestrator direct-import refactor deferred (see separate ADR).
+- **Why:** All chunks kept gates green throughout. Code-reviewer found 3 CRITICALs (Empty state, InsightCard dead code, Orchestrator imports) — all addressed before commit.
+- **Revisit if:** Slice 3 needs InsightCard from a dedicated agent; that's the trigger to implement the InsightCard branch properly.
+
+### 2026-06-06 — Orchestrator direct agent imports — deferred refactor
+
+- **Status:** DECIDED (deferred)
+- **Context:** `api/agents/orchestrator.py` imports `ResearchAgent`, `UIAgent`, `FactChecker`, `MemoryAgent` by class. This violates dependency direction (lateral agent→agent imports) and invariant #5. Slice 2 code-reviewer flagged this as CRITICAL-3.
+- **Decision:** Defer until Slice 3. Slice 2 correctly wired `DiscoveryAgent` via `graph.py` registry without touching the Orchestrator constructor. The four existing direct imports remain as-is.
+- **Why:** The refactor is non-trivial (changes `Orchestrator.__init__` signature + all test call sites). No new direct imports were added in Slice 2.
+- **Revisit if:** Any new agent needs to be wired into the Orchestrator constructor. Target: Slice 3 preflight.
+
 ### YYYY-MM-DD — <short title>
 
 - **Status:** ASSUMED | DECIDED | REVISITED
@@ -29,6 +52,23 @@
 ## Entries
 
 <!-- New entries go below this line, newest first. -->
+### 2026-06-06 — Slice 2 scope: GenUI catalog breadth + UI Agent intent routing
+
+- **Status:** DECIDED
+- **Context:** Slice 1 closed the agent-maturity seam (LangGraph + entity extraction + GraphRetriever + Fact Checker + Memory Agent). The remaining P1 work requires more GenUI components before any new tier-2 agents can emit useful output. FR-UI-02 (24-component catalog), FR-UI-04 (UI Agent selects by intent/mode/history), and FR-AGT-06 (15+ agents) are all P1 Must.
+- **Decision:** Five-chunk slice: (1) Schema — 5 new UIBlock variants (LiteratureMatrix, ContradictionAlert, GapAnalysis, InsightCard, KnowledgeGraphView); (2) React components — 5 TSX files with all four states + registry rows; (3) UI Agent intent→component routing to replace the always-CitedSummary hard-code (FR-UI-04); (4) DiscoveryAgent (tier-2) — produces GapAnalysis and InsightCard payloads; (5) Design tokens already wired in tailwind.config.ts (no new work needed).
+- **Why:** Components before agents — an agent that emits a GapAnalysis payload needs its renderer to exist or the pipeline will never produce a visible result. Schema-first ordering is the wire-contract invariant (#2). Routing the UI Agent before adding DiscoveryAgent ensures the first non-CitedSummary block type is immediately rendered correctly.
+- **Revisit if:** The interactive D3 KnowledgeGraphView is added (out of scope for this slice; the payload shape is locked so the agent side won't change).
+
+### 2026-06-06 — `number` stays mapped to `int` in codegen; float fields avoided in Slice 2
+
+- **Status:** DECIDED
+- **Context:** The codegen comment says "Track when adding the first non-int field." Slice 2 payload design could use `number` for confidence/weight scores but those would be mis-typed as `int` in Pydantic.
+- **Decision:** Design all Slice 2 payloads to avoid float fields. The `number → int` mapping is unchanged. Update the codegen to `float` when the first genuinely-fractional field is needed.
+- **Why:** Changing `number → float` globally is a safe but unnecessary change right now. Deferring keeps the diff minimal.
+- **Revisit if:** A payload field semantically requires a float.
+
+
 
 ### 2026-05-22 — Slice 1 DONE: agent maturity landed
 

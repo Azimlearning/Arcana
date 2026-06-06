@@ -60,6 +60,7 @@ async def test_emits_error_block_when_research_failed():
 
     block = state.ui_blocks[0]
     assert block.meta.status == "error"
+    assert isinstance(block, CitedSummary)
     assert "something exploded" in block.data.summary
 
 
@@ -100,5 +101,88 @@ async def test_invalid_payload_falls_through_to_error_block():
     )
     agent = UIAgent()
     await agent.run("x", state=state)
-    assert state.ui_blocks[0].meta.status == "error"
-    assert "schema validation" in state.ui_blocks[0].data.summary.lower()
+    block = state.ui_blocks[0]
+    assert block.meta.status == "error"
+    assert isinstance(block, CitedSummary)
+    assert "schema validation" in block.data.summary.lower()
+
+
+# ── Chunk 3: intent/mode routing (FR-UI-04) ────────────────────────────────
+
+
+def _gap_analysis_payload() -> dict:
+    return {
+        "block_type": "GapAnalysis",
+        "data": {
+            "summary": "Several gaps were found.",
+            "gaps": [
+                {"label": "Gap A", "description": "Missing X.", "severity": "high"}
+            ],
+            "coveredTopics": ["Topic 1"],
+        },
+    }
+
+
+
+async def test_routes_to_gap_analysis_from_discovery():
+    """When discovery agent returns block_type=GapAnalysis, UI Agent emits one."""
+    from api.genui._generated import GapAnalysis
+
+    state = AgentState(query="x")
+    state.agent_results["discovery"] = AgentResult(
+        agent_name="discovery",
+        payload=_gap_analysis_payload(),
+        status="ok",
+    )
+
+    agent = UIAgent()
+    result = await agent.run("x", state=state)
+
+    assert result.status == "ok"
+    assert len(state.ui_blocks) == 1
+    block = state.ui_blocks[0]
+    assert isinstance(block, GapAnalysis)
+    assert block.type == "GapAnalysis"
+    assert block.meta.status == "ready"
+    assert block.meta.panel == "studio"
+    assert block.data.summary == "Several gaps were found."
+    assert block.data.gaps[0].severity == "high"
+
+
+
+async def test_falls_back_to_cited_summary_when_discovery_absent():
+    """Without a discovery result, UI Agent falls through to CitedSummary."""
+    state = AgentState(query="x")
+    state.agent_results["research"] = AgentResult(
+        agent_name="research",
+        payload=_research_payload(),
+        status="ok",
+    )
+
+    agent = UIAgent()
+    await agent.run("x", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, CitedSummary)
+    assert block.type == "CitedSummary"
+
+
+async def test_discovery_invalid_payload_falls_through_to_cited_summary():
+    """When discovery payload is malformed, UI Agent silently falls through."""
+    state = AgentState(query="x")
+    state.agent_results["discovery"] = AgentResult(
+        agent_name="discovery",
+        payload={"block_type": "GapAnalysis", "data": {"bad": "field"}},
+        status="ok",
+    )
+    state.agent_results["research"] = AgentResult(
+        agent_name="research",
+        payload=_research_payload(),
+        status="ok",
+    )
+
+    agent = UIAgent()
+    await agent.run("x", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, CitedSummary), "should fall through to CitedSummary"

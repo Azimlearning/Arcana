@@ -7,9 +7,9 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BlockMeta(BaseModel):
@@ -57,11 +57,117 @@ class CitedSummaryData(BaseModel):
     citations: list[Citation]
 
 
+class ContradictingClaim(BaseModel):
+    docId: str
+    docTitle: str
+    stance: str
+    quote: str
+
+
+class ContradictionAlert(BaseModel):
+    type: Literal['ContradictionAlert']
+    id: str
+    meta: BlockMeta
+    data: ContradictionAlertData
+
+
+class ContradictionAlertData(BaseModel):
+    concept: str
+    summary: str
+    claims: list[ContradictingClaim]
+
+
 class Document(BaseModel):
     id: str
     title: str
     sourceUri: str
     ingestStatus: IngestStatus
+
+
+class GapAnalysis(BaseModel):
+    type: Literal['GapAnalysis']
+    id: str
+    meta: BlockMeta
+    data: GapAnalysisData
+
+
+class GapAnalysisData(BaseModel):
+    summary: str
+    gaps: list[KnowledgeGap]
+    coveredTopics: list[str]
+
+
+class GraphEdge(BaseModel):
+    source: str
+    target: str
+    relation: str
+
+
+class GraphNode(BaseModel):
+    id: str
+    label: str
+    nodeType: str
+
+
+class InsightCard(BaseModel):
+    type: Literal['InsightCard']
+    id: str
+    meta: BlockMeta
+    data: InsightCardData
+
+
+class InsightCardData(BaseModel):
+    insight: str
+    connection: str
+    docAId: str
+    docATitle: str
+    docBId: str
+    docBTitle: str
+    citations: list[Citation]
+
+
+class KnowledgeGap(BaseModel):
+    label: str
+    description: str
+    severity: GapSeverity
+
+
+class KnowledgeGraphView(BaseModel):
+    type: Literal['KnowledgeGraphView']
+    id: str
+    meta: BlockMeta
+    data: KnowledgeGraphViewData
+
+
+class KnowledgeGraphViewData(BaseModel):
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+    focusNodeId: str | None = None
+
+
+class LiteratureMatrix(BaseModel):
+    type: Literal['LiteratureMatrix']
+    id: str
+    meta: BlockMeta
+    data: LiteratureMatrixData
+
+
+class LiteratureMatrixData(BaseModel):
+    query: str
+    dimensions: list[str]
+    rows: list[MatrixRow]
+    citations: list[Citation]
+
+
+class MatrixCell(BaseModel):
+    text: str
+    citationId: str | None
+
+
+class MatrixRow(BaseModel):
+    docId: str
+    docTitle: str
+    cells: list[MatrixCell]
 
 
 class SummarySegment(BaseModel):
@@ -73,8 +179,10 @@ BlockStatus = Literal['loading', 'partial', 'ready', 'error']
 
 ChatRole = Literal['user', 'assistant']
 
+GapSeverity = Literal['high', 'medium', 'low']
+
 IngestStatus = Literal['pending', 'parsing', 'embedding', 'ready', 'failed']
 
 Panel = Literal['sources', 'chat', 'studio']
 
-UIBlock = CitedSummary
+UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView, Field(discriminator='type')]

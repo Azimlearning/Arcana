@@ -135,7 +135,7 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
 #   1. Add the agent + register it
 #   2. Add a node in `build_graph`
 #   3. Add the label here AND in the conditional-edges dict in `build_graph`
-_WIRED_INTENTS = frozenset({"research"})
+_WIRED_INTENTS = frozenset({"research", "discovery"})
 
 
 def _route_after_orchestrator(state: AgentState) -> str:
@@ -169,6 +169,7 @@ def build_graph() -> Any:
 
     has_memory = registry.get_agent("memory") is not None
     has_fact_checker = registry.get_agent("fact_checker") is not None
+    has_discovery = registry.get_agent("discovery") is not None
 
     if has_memory:
         graph.add_node("memory", make_node("memory"))
@@ -183,10 +184,15 @@ def build_graph() -> Any:
     else:
         graph.add_edge(START, "orchestrator")
 
+    # Conditional edges: research (default) or discovery when registered.
+    conditional_map: dict[str, str] = {"research": "research"}
+    if has_discovery:
+        graph.add_node("discovery", make_node("discovery"))
+        conditional_map["discovery"] = "discovery"
     graph.add_conditional_edges(
         "orchestrator",
         _route_after_orchestrator,
-        {"research": "research"},
+        conditional_map,  # type: ignore[arg-type]
     )
 
     # research -> [fact_checker if present] -> ui_agent
@@ -196,6 +202,11 @@ def build_graph() -> Any:
         graph.add_edge("fact_checker", "ui_agent")
     else:
         graph.add_edge("research", "ui_agent")
+
+    # discovery -> ui_agent (no fact_checker for discovery in Slice 2)
+    if has_discovery:
+        graph.add_edge("discovery", "ui_agent")
+
     graph.add_edge("ui_agent", END)
 
     return graph.compile()

@@ -15,6 +15,11 @@ import type { ComponentType } from 'react';
 import type { UIBlock } from '@arcana/schema';
 
 import { CitedSummary } from '@/components/genui/CitedSummary';
+import { LiteratureMatrix } from '@/components/genui/LiteratureMatrix';
+import { ContradictionAlert } from '@/components/genui/ContradictionAlert';
+import { GapAnalysis } from '@/components/genui/GapAnalysis';
+import { InsightCard } from '@/components/genui/InsightCard';
+import { KnowledgeGraphView } from '@/components/genui/KnowledgeGraphView';
 import { ErrorState } from '@/components/genui/BlockStates';
 
 type BlockType = UIBlock['type'];
@@ -25,6 +30,11 @@ type RendererMap = {
 
 const registry: RendererMap = {
   CitedSummary,
+  LiteratureMatrix,
+  ContradictionAlert,
+  GapAnalysis,
+  InsightCard,
+  KnowledgeGraphView,
 };
 
 /** Render a UIBlock by looking up its component via the discriminator.
