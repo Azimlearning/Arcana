@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from api.agents.base import AgentResult, AgentState
 from api.agents.tier3.ui_agent import UIAgent
-from api.genui._generated import CitedSummary, FlashcardDeck, QuizCard, SocraticDialog
+from api.genui._generated import (
+    CitedSummary,
+    DraftEditor,
+    FeynmanExplainer,
+    FlashcardDeck,
+    QuizCard,
+    SocraticDialog,
+)
 
 
 def _research_payload(*, summary: str = "Answer [c1].") -> dict:
@@ -216,6 +223,18 @@ def _quiz_payload() -> dict:
     }
 
 
+def _feynman_payload() -> dict:
+    return {
+        "block_type": "FeynmanExplainer",
+        "data": {
+            "concept": "attention mechanism",
+            "explanation": "Like a spotlight on important words.",
+            "gaps": ["Omits multi-head attention."],
+            "source": _source(),
+        },
+    }
+
+
 async def test_routes_flashcard_deck_from_learning():
     state = AgentState(query="make flashcards for neural networks")
     state.agent_results["learning"] = AgentResult(
@@ -247,6 +266,22 @@ async def test_routes_quiz_card_from_learning():
     assert isinstance(block, QuizCard)
     assert block.type == "QuizCard"
     assert block.data.correctIndex == 0
+
+
+async def test_routes_feynman_explainer_from_learning():
+    state = AgentState(query="feynman explain attention")
+    state.agent_results["learning"] = AgentResult(
+        agent_name="learning", payload=_feynman_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("feynman explain attention", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, FeynmanExplainer)
+    assert block.type == "FeynmanExplainer"
+    assert block.data.concept == "attention mechanism"
+    assert len(block.data.gaps) == 1
 
 
 async def test_learning_invalid_payload_falls_through_to_research():
@@ -313,3 +348,81 @@ async def test_socratic_invalid_payload_falls_through_to_research():
 
     block = state.ui_blocks[0]
     assert isinstance(block, CitedSummary), "malformed SocraticDialog should fall through"
+
+
+# ── Writing routing (Slice 4) ───────────────────────────────────────────────
+
+def _draft_payload() -> dict:
+    return {
+        "block_type": "DraftEditor",
+        "data": {
+            "title": "Attention in Transformers",
+            "sections": [
+                {
+                    "heading": "Introduction",
+                    "body": "Transformers use self-attention [c1].",
+                    "citationIds": ["c1"],
+                }
+            ],
+            "citations": [_source()],
+            "wordCount": 8,
+        },
+    }
+
+
+async def test_routes_draft_editor_from_writing_agent():
+    state = AgentState(query="draft a section on attention")
+    state.agent_results["writing"] = AgentResult(
+        agent_name="writing", payload=_draft_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("draft a section on attention", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, DraftEditor)
+    assert block.type == "DraftEditor"
+    assert block.meta.status == "ready"
+    assert block.meta.panel == "chat"
+    assert block.data.title == "Attention in Transformers"
+    assert len(block.data.sections) == 1
+    assert block.data.wordCount == 8
+
+
+async def test_writing_llm_error_emits_error_status_block():
+    """_error_draft_payload sets _error; UIAgent must emit meta.status='error'."""
+    state = AgentState(query="draft something")
+    state.agent_results["writing"] = AgentResult(
+        agent_name="writing",
+        payload={
+            "block_type": "DraftEditor",
+            "data": {"title": "draft something", "sections": [], "citations": [], "wordCount": 0},
+            "_error": "LLM provider down",
+        },
+        status="ok",
+    )
+
+    agent = UIAgent()
+    await agent.run("draft something", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, DraftEditor)
+    assert block.meta.status == "error", "LLM error payload must render ErrorState"
+
+
+async def test_writing_invalid_payload_falls_through_to_research():
+    state = AgentState(query="x")
+    state.agent_results["writing"] = AgentResult(
+        agent_name="writing",
+        payload={"block_type": "DraftEditor", "data": {"bad": "field"}},
+        status="ok",
+    )
+    state.agent_results["research"] = AgentResult(
+        agent_name="research", payload=_research_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("x", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, CitedSummary), "malformed DraftEditor should fall through"

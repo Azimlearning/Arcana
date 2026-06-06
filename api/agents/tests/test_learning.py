@@ -1,4 +1,4 @@
-"""LearningAgent — flashcard/quiz generation, defensive parsing."""
+"""LearningAgent — flashcard/quiz/feynman generation, defensive parsing."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import pytest
 from api.agents.base import AgentState
 from api.agents.tier2.learning import (
     LearningAgent,
+    _parse_feynman_response,
     _parse_flashcard_response,
     _parse_quiz_response,
     _strip_fences,
@@ -131,6 +132,31 @@ def test_parse_quiz_broken_json_returns_fallback():
     assert "Maths" in result["data"]["question"]
 
 
+# ── Unit: _parse_feynman_response ─────────────────────────────────────────
+
+def test_parse_feynman_happy_path():
+    raw = """{
+        "concept": "backpropagation",
+        "explanation": "Imagine the network is a student correcting mistakes.",
+        "gaps": ["Ignores learning rate", "No mention of vanishing gradients"],
+        "source": {"id": "c1", "docId": "d1", "docTitle": "DL Book", "page": 4, "quote": "..."}
+    }"""
+    result = _parse_feynman_response(raw, topic="backpropagation")
+    assert result["block_type"] == "FeynmanExplainer"
+    data = result["data"]
+    assert data["concept"] == "backpropagation"
+    assert "student" in data["explanation"]
+    assert len(data["gaps"]) == 2
+    assert data["source"]["docTitle"] == "DL Book"
+
+
+def test_parse_feynman_broken_json_returns_empty():
+    result = _parse_feynman_response("not json", topic="quantum")
+    assert result["block_type"] == "FeynmanExplainer"
+    assert result["data"]["concept"] == "quantum"
+    assert result["data"]["gaps"] == []
+
+
 # ── Integration: agent.run ────────────────────────────────────────────────
 
 @pytest.mark.asyncio
@@ -157,9 +183,20 @@ async def test_run_returns_quiz_for_quiz_query():
 
 
 @pytest.mark.asyncio
+async def test_run_returns_feynman_for_feynman_query():
+    llm_json = '{"concept": "attention", "explanation": "Like a spotlight.", "gaps": ["Omits multi-head"], "source": {"id":"c1","docId":"d1","docTitle":"T","page":1,"quote":"q"}}'
+    agent, _ = _make_agent(llm_json)
+    state = AgentState(query="feynman explain attention mechanism")
+    result = await agent.run("feynman explain attention mechanism", state=state)
+
+    assert result.status == "ok"
+    assert result.payload["block_type"] == "FeynmanExplainer"
+    assert result.payload["data"]["concept"] == "attention"
+
+
+@pytest.mark.asyncio
 async def test_run_fails_gracefully_when_no_chunks():
     agent, _ = _make_agent()
-    # Override retrievers to return nothing.
     agent._vector.retrieve = AsyncMock(return_value=[])
     agent._bm25.retrieve = AsyncMock(return_value=[])
     agent._graph.retrieve = AsyncMock(return_value=[])
@@ -180,6 +217,5 @@ async def test_run_fails_gracefully_when_llm_raises():
     result = await agent.run("explain ml", state=state)
 
     assert result.status == "ok"  # returns error payload, not failed status
-    # The error path returns a FlashcardDeck with 0 cards
     assert result.payload["block_type"] == "FlashcardDeck"
     assert result.payload["data"]["totalCards"] == 0

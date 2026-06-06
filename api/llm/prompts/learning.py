@@ -1,5 +1,5 @@
-"""Learning prompts — flashcard and quiz generation.
-Used by LearningAgent (PRD §12 Learning Agent, FR-LRN-01/03).
+"""Learning prompts — flashcard, quiz, and Feynman generation.
+Used by LearningAgent (PRD §12 Learning Agent, FR-LRN-01/03/04).
 """
 
 from __future__ import annotations
@@ -22,6 +22,14 @@ Rules:
 - Questions must trace to a provided passage — no invented facts.
 - For MCQ: exactly 4 options (A-D), one correct answer.
 - Bloom level mapping: recall=remember, comprehension=understand, application=apply, analysis=analyse.
+- Return ONLY valid JSON with no preamble, no markdown fences."""
+
+FEYNMAN_SYSTEM = """You are a Feynman-technique teacher. Explain the concept in the simplest possible terms, as if teaching a curious 12-year-old. Then identify gaps — aspects the explanation glossed over or oversimplified.
+
+Rules:
+- The explanation must be grounded in the provided excerpts — no invented content.
+- Gaps must identify real oversimplifications or missing nuances from the source material.
+- Keep the explanation under 150 words and conversational.
 - Return ONLY valid JSON with no preamble, no markdown fences."""
 
 
@@ -77,6 +85,33 @@ Respond ONLY with JSON:
   "correctIndex": 0,
   "explanation": "Why the answer is correct, citing the source.",
   "difficulty": "{difficulty}",
+  "source": {{
+    "id": "c1",
+    "docId": "doc_id_here",
+    "docTitle": "Document title",
+    "page": 1,
+    "quote": "short supporting quote"
+  }}
+}}"""
+
+
+def build_feynman_prompt(concept: str, context: str) -> str:
+    """Build the user turn for Feynman-technique explanation."""
+    return f"""Concept: {concept}
+
+Context:
+{context}
+
+Explain this concept simply and identify gaps in a Feynman-style explanation.
+
+Respond ONLY with JSON:
+{{
+  "concept": "{concept}",
+  "explanation": "Simple explanation as if teaching a 12-year-old...",
+  "gaps": [
+    "Oversimplification or missing nuance 1",
+    "Oversimplification or missing nuance 2"
+  ],
   "source": {{
     "id": "c1",
     "docId": "doc_id_here",

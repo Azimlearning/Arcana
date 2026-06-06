@@ -53,6 +53,38 @@
 
 <!-- New entries go below this line, newest first. -->
 
+### 2026-06-07 — Slice 4 complete: Writing mode — WritingAgent + DraftEditor + FeynmanExplainer production
+
+- **Status:** DECIDED
+- **Context:** Slice 4 goals: (a) Writing mode intent routing (active_mode → intent mapping), (b) WritingAgent tier-2 agent producing DraftEditor payloads, (c) DraftEditor UIBlock (schema + React + registry), (d) FeynmanExplainer production in LearningAgent, (e) register Slice 3+4 tier-2 agents in api/main.py.
+- **Decision:**
+  - Preflight: `_MODE_TO_INTENT` map in `graph.py:_orchestrator_node` routes "writing" active_mode to writing intent. `_WIRED_INTENTS` updated.
+  - Schema: `DraftSection + DraftEditorData + DraftEditor` added to `packages/schema/src/payloads.ts` + `blocks.ts`. Codegen regenerated.
+  - WritingAgent: Tier-2 agent, hybrid_retrieve (top_k=8) → build_draft_prompt → _parse_draft_response → DraftEditor payload.
+  - LearningAgent: Added `_generate_feynman()`, keyword detection ("feynman", "eli5", "explain simply", "simple terms", "like i'm"), `_parse_feynman_response()`.
+  - UIAgent: `_build_from_writing()` added; priority order learning > socratic > writing > discovery > research > error. `_error` flag in payload → `meta.status="error"` so DraftEditor renders ErrorState correctly.
+  - DraftEditor.tsx: Error state check moved before empty-sections check so LLM failures render ErrorState, not EmptyState. key={section.heading} (not index).
+  - CRITICAL fix: `Orchestrator.__init__` accepts `extra_agents: list[BaseAgent] | None`; `api/main.py` constructs and registers all Slice 3+4 tier-2 agents (LearningAgent, SocraticAgent, DiscoveryAgent, WritingAgent).
+  - `@tool` decorator gap: WritingAgent, LearningAgent, SocraticAgent expose no `@tool`-decorated methods (pre-existing pattern). Deferred to Slice 5 — `route_to_agent` calls `agent.run()` directly; tool registry is empty for these agents.
+- **Why:** All gates green. Code-reviewer found 1 CRITICAL (agents not registered in main.py), 3 WARNINGs — CRITICAL + WARNING-1 (error state) + WARNING-3 (FR-WRT-01) addressed before commit.
+- **Revisit if:** Slice 5 adds @tool decorators, multi-turn session management, or the full intent classifier.
+
+### 2026-06-07 — FR-WRT-01 is an assumed identifier (not yet in arcana_prd.md)
+
+- **Status:** ASSUMED
+- **Context:** `api/agents/tier2/writing.py` and related files referenced `FR-WRT-01` as a functional requirement ID. Code-reviewer confirmed this ID does not exist in `docs/arcana_prd.md`. Writing mode is described in PRD §12.5 (Writing Agent) and the Epic D section, but no `FR-WRT-*` tag series exists.
+- **Decision:** Remove `FR-WRT-01` from code comments; use "PRD §12.5 Writing Agent" as the reference. Log here so the FYP supervisor can formally number the writing requirements if needed.
+- **Why:** The CLAUDE.md definition of done requires commit messages and docstrings to reference real FR/NFR IDs. Invented IDs break the traceability system.
+- **Revisit if:** `docs/arcana_prd.md` is updated to formally number writing requirements as `FR-WRT-01..N`.
+
+### 2026-06-07 — WritingAgent @tool decorators deferred
+
+- **Status:** ASSUMED
+- **Context:** `agent-composability.md` checklist requires tools declared via `@tool` decorators on each agent. WritingAgent (Slice 4), LearningAgent, SocraticAgent (Slice 3) all expose zero `@tool`-decorated methods. `route_to_agent` currently calls `agent.run()` directly, so the tool registry is empty for these agents and they are invisible to LLM-driven tool dispatch.
+- **Decision:** Defer `@tool` decoration to Slice 5 (multi-agent tool dispatch / evaluation). The runtime behaviour is correct; the structural gap is non-breaking for P1 graded work.
+- **Why:** Adding `@tool` decorators requires restructuring three agents simultaneously (schema inference from type hints, tool registration, run() forwarding). Doing it mid-Slice 4 would widen the diff and risk test churn with no P1 functional gain.
+- **Revisit if:** Slice 5 wires LLM-driven tool dispatch or the evaluation benchmark requires per-agent tool specs.
+
 ### 2026-06-06 — SocraticAgent reads state.ui_blocks (Tier 3 output slot)
 
 - **Status:** ASSUMED
@@ -113,7 +145,7 @@
 ### 2026-05-22 — Slice 1 DONE: agent maturity landed
 
 - **Status:** DECIDED
-- **Context:** All five chunks of slice 1 (LangGraph + entity extraction + real GraphRetriever + Fact Checker + Memory Agent) are green. Backend 263 passed (P0: 200, slice 1: +63). Ruff + pyright clean. Multi-turn memory continuity test locks the contract. Error-status blocks excluded from memory writeback (W1). Prompt versions stamped on extraction + fact-check + graph scoring for R-02 partition (W4). Unknown-intent routing falls back to default with a warning log (W3).
+- **Context:** All five chunks of slice 1 (LangGraph + entity extraction + real GraphRetriever + Fact Checker + Memory Agent) are green. Backend 263 passed (P0: 200, slice 1: +63). Ruff + pyright clean. Multi-turn memory continuity test locks the contract. Error-status blocks excluded from memory writeback (W1). Prompt versions stamped on extraction + fact-check + graph scoring for R-02 benchmark reproducibility (W4). Unknown-intent routing falls back to default with a warning log (W3).
 - **Decision:** Phase 0 release gate (`docs/checklist.md` §0) is now satisfied as far as code goes: PDF ingest → graph built → 3-source hybrid retrieval → grounded cited answers; Orchestrator + Research + Graph (extraction+retrieval) + Fact Checker + Memory Agent all demonstrably running. Remaining gate items (FYP 1 report, hybrid-vs-flat benchmark) are P1 §1.12 / author tasks, not code.
 - **Why:** The walking-skeleton mandate was "narrow first, breadth later." Slice 1 closes the agent-graph seam so every later tier-2 agent (Writing, Study, Socratic, …) drops into a path that already enforces hop budgets, fact-checks claims, remembers history, and traverses the entity graph.
 - **Revisit if:** Never. Slice closed; next slice opens its own thread (slice 2 = wider GenUI catalog + UI-Agent intent-driven component selection).

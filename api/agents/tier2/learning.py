@@ -1,12 +1,13 @@
 """LearningAgent - Tier 2. Generates grounded study artifacts.
 
-Produces FlashcardDeck and QuizCard payloads (Slice 3, FR-LRN-01/03).
+Produces FlashcardDeck, QuizCard, and FeynmanExplainer payloads
+(Slice 3: FR-LRN-01/03, Slice 4: FR-LRN-04).
 
 Pipeline:
   1. hybrid_retrieve(query) - grounds all material (invariant #1).
-  2. build_flashcard_prompt / build_quiz_prompt - LLM generates cards.
-  3. _parse_flashcard_response / _parse_quiz_response - defensive parsers.
-  4. Returns payload with block_type="FlashcardDeck" or "QuizCard".
+  2. build_*_prompt() - LLM generates the artifact.
+  3. _parse_*_response() - defensive parsers.
+  4. Returns payload with block_type matching the artifact type.
 """
 
 from __future__ import annotations
@@ -17,9 +18,11 @@ from typing import Any
 from api.agents.base import AgentResult, AgentState, BaseAgent
 from api.core.logging import get_logger
 from api.llm.prompts.learning import (
+    FEYNMAN_SYSTEM,
     FLASHCARD_SYSTEM,
     LEARNING_PROMPT_VERSION,
     QUIZ_SYSTEM,
+    build_feynman_prompt,
     build_flashcard_prompt,
     build_quiz_prompt,
 )
@@ -78,10 +81,17 @@ class LearningAgent(BaseAgent):
         )
 
         # Infer artifact type from query keywords; default to flashcard deck.
+        # Temp heuristic — full intent detection replaces this in §1.3.
         want_quiz = any(kw in query.lower() for kw in ("quiz", "question", "test me", "mcq"))
+        want_feynman = any(
+            kw in query.lower()
+            for kw in ("feynman", "eli5", "explain simply", "simple terms", "like im", "like i'm")
+        )
 
         if want_quiz:
             payload = await self._generate_quiz(query, ctx_text)
+        elif want_feynman:
+            payload = await self._generate_feynman(query, ctx_text)
         else:
             payload = await self._generate_flashcards(query, ctx_text)
 
@@ -101,7 +111,6 @@ class LearningAgent(BaseAgent):
         return _parse_flashcard_response(raw, topic=topic)
 
     async def _generate_quiz(self, topic: str, ctx_text: str) -> dict[str, Any]:
-        # Extract difficulty hint from query; default to comprehension.
         difficulty = _DEFAULT_DIFFICULTY
         for diff in _VALID_DIFFICULTIES:
             if diff in topic.lower():
@@ -119,6 +128,19 @@ class LearningAgent(BaseAgent):
             return _error_quiz_payload(topic, str(exc))
 
         return _parse_quiz_response(raw, topic=topic, difficulty=difficulty)
+
+    async def _generate_feynman(self, topic: str, ctx_text: str) -> dict[str, Any]:
+        messages = [Message(role="user", content=build_feynman_prompt(topic, ctx_text))]
+        try:
+            completion = await self._llm.complete(
+                messages, system=FEYNMAN_SYSTEM, max_tokens=600
+            )
+            raw = completion.text
+        except Exception as exc:
+            logger.exception("learning.llm_failed_feynman")
+            return _error_feynman_payload(topic, str(exc))
+
+        return _parse_feynman_response(raw, topic=topic)
 
 
 # ── Response parsing ──────────────────────────────────────────────────────
@@ -227,6 +249,19 @@ def _parse_quiz_response(raw: str, *, topic: str, difficulty: str) -> dict[str, 
     }
 
 
+def _parse_feynman_response(raw: str, *, topic: str) -> dict[str, Any]:
+    parsed = _extract_json(raw)
+    return {
+        "block_type": "FeynmanExplainer",
+        "data": {
+            "concept": str(parsed.get("concept") or topic[:100]),
+            "explanation": str(parsed.get("explanation") or ""),
+            "gaps": [str(g) for g in (parsed.get("gaps") or []) if g],
+            "source": _safe_source(parsed.get("source")),
+        },
+    }
+
+
 def _error_flashcard_payload(topic: str, error: str) -> dict[str, Any]:
     return {
         "block_type": "FlashcardDeck",
@@ -245,6 +280,18 @@ def _error_quiz_payload(topic: str, error: str) -> dict[str, Any]:
             "correctIndex": None,
             "explanation": error,
             "difficulty": _DEFAULT_DIFFICULTY,
+            "source": {"id": "err", "docId": "", "docTitle": "", "page": None, "quote": ""},
+        },
+    }
+
+
+def _error_feynman_payload(topic: str, error: str) -> dict[str, Any]:
+    return {
+        "block_type": "FeynmanExplainer",
+        "data": {
+            "concept": topic[:100],
+            "explanation": f"Error generating explanation: {error}",
+            "gaps": [],
             "source": {"id": "err", "docId": "", "docTitle": "", "page": None, "quote": ""},
         },
     }

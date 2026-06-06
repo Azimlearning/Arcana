@@ -34,6 +34,7 @@ class Orchestrator(BaseAgent):
         fact_checker: BaseAgent | None = None,
         memory_agent: BaseAgent | None = None,
         memory_store: MemoryStore | None = None,
+        extra_agents: list[BaseAgent] | None = None,
     ) -> None:
         self._memory_store = memory_store
         # Register agents that `make_node` will look up. We do NOT
@@ -46,6 +47,8 @@ class Orchestrator(BaseAgent):
             registry.register_agent(fact_checker)
         if memory_agent is not None:
             registry.register_agent(memory_agent)
+        for agent in (extra_agents or []):
+            registry.register_agent(agent)
         # Late import to avoid base.py <-> graph.py cycle at module load.
         from api.agents.graph import build_graph
 

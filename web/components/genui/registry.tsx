@@ -17,13 +17,14 @@ import type { UIBlock } from '@arcana/schema';
 import { CitedSummary } from '@/components/genui/CitedSummary';
 import { LiteratureMatrix } from '@/components/genui/LiteratureMatrix';
 import { ContradictionAlert } from '@/components/genui/ContradictionAlert';
+import { DraftEditor } from '@/components/genui/DraftEditor';
+import { FeynmanExplainer } from '@/components/genui/FeynmanExplainer';
+import { FlashcardDeck } from '@/components/genui/FlashcardDeck';
 import { GapAnalysis } from '@/components/genui/GapAnalysis';
 import { InsightCard } from '@/components/genui/InsightCard';
 import { KnowledgeGraphView } from '@/components/genui/KnowledgeGraphView';
-import { FlashcardDeck } from '@/components/genui/FlashcardDeck';
 import { QuizCard } from '@/components/genui/QuizCard';
 import { SocraticDialog } from '@/components/genui/SocraticDialog';
-import { FeynmanExplainer } from '@/components/genui/FeynmanExplainer';
 import { ErrorState } from '@/components/genui/BlockStates';
 
 type BlockType = UIBlock['type'];
@@ -36,13 +37,14 @@ const registry: RendererMap = {
   CitedSummary,
   LiteratureMatrix,
   ContradictionAlert,
+  DraftEditor,
+  FeynmanExplainer,
+  FlashcardDeck,
   GapAnalysis,
   InsightCard,
   KnowledgeGraphView,
-  FlashcardDeck,
   QuizCard,
   SocraticDialog,
-  FeynmanExplainer,
 };
 
 /** Render a UIBlock by looking up its component via the discriminator.

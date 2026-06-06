@@ -12,6 +12,7 @@ into the graph as new nodes + edges; the chat route doesn't change.
 
 Slice 2 addition: discovery intent node.
 Slice 3 addition: learning and socratic intent nodes.
+Slice 4 addition: writing intent node; active_mode → intent mapping.
 
 How state flows:
   - Each node receives the live `AgentState` snapshot for that step.
@@ -38,6 +39,15 @@ from api.core.logging import get_logger
 # value before the conditional edge runs. Kept as a constant so the
 # routing branch names below can reference the same string source-of-truth.
 _DEFAULT_INTENT = "research"
+
+# Maps active_mode strings to intent labels. A mode takes priority over
+# a blank state.intent; an explicit state.intent (set by a future full
+# intent-detection pass) beats both.
+_MODE_TO_INTENT: dict[str, str] = {
+    "study": "study",
+    "socratic": "socratic",
+    "writing": "writing",
+}
 
 logger = get_logger(__name__)
 
@@ -111,8 +121,18 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
     """Orchestrator runs as a free function, NOT via `make_node`, so
     calling the Orchestrator agent class from within the graph can't
     recurse into `invoke_graph`. PRD §11.2 keeps the orchestrator as the
-    plan-producing entry; slice 1 ships a one-intent default."""
-    intent = state.intent or _DEFAULT_INTENT
+    plan-producing entry.
+
+    Intent derivation priority (Slice 4):
+      1. Explicit state.intent (set by a future full intent-classifier).
+      2. active_mode → intent heuristic (_MODE_TO_INTENT).
+      3. _DEFAULT_INTENT ("research") as the safe fallback.
+    """
+    intent = (
+        state.intent
+        or _MODE_TO_INTENT.get(state.active_mode or "", "")
+        or _DEFAULT_INTENT
+    )
     logger.info(
         "orchestrator.plan",
         intent=intent,
@@ -136,7 +156,7 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
 #   1. Add the agent + register it
 #   2. Add a node in `build_graph`
 #   3. Add the label here AND in the conditional-edges dict in `build_graph`
-_WIRED_INTENTS = frozenset({"research", "discovery", "study", "socratic"})
+_WIRED_INTENTS = frozenset({"research", "discovery", "study", "socratic", "writing"})
 
 
 def _route_after_orchestrator(state: AgentState) -> str:
@@ -173,6 +193,7 @@ def build_graph() -> Any:
     has_discovery = registry.get_agent("discovery") is not None
     has_learning = registry.get_agent("learning") is not None
     has_socratic = registry.get_agent("socratic") is not None
+    has_writing = registry.get_agent("writing") is not None
 
     if has_memory:
         graph.add_node("memory", make_node("memory"))
@@ -198,6 +219,9 @@ def build_graph() -> Any:
     if has_socratic:
         graph.add_node("socratic", make_node("socratic"))
         conditional_map["socratic"] = "socratic"
+    if has_writing:
+        graph.add_node("writing", make_node("writing"))
+        conditional_map["writing"] = "writing"
 
     graph.add_conditional_edges(
         "orchestrator",
@@ -213,13 +237,15 @@ def build_graph() -> Any:
     else:
         graph.add_edge("research", "ui_agent")
 
-    # Tier-2 specialist agents -> ui_agent (no fact_checker for these in Slice 3)
+    # Tier-2 specialist agents -> ui_agent
     if has_discovery:
         graph.add_edge("discovery", "ui_agent")
     if has_learning:
         graph.add_edge("learning", "ui_agent")
     if has_socratic:
         graph.add_edge("socratic", "ui_agent")
+    if has_writing:
+        graph.add_edge("writing", "ui_agent")
 
     graph.add_edge("ui_agent", END)
 

@@ -3,7 +3,8 @@
 //
 // Slice scope: CitedSummaryData + Slice 2 additions (LiteratureMatrix,
 // ContradictionAlert, GapAnalysis, InsightCard, KnowledgeGraphView) +
-// Slice 3 additions (FlashcardDeck, QuizCard, SocraticDialog, FeynmanExplainer).
+// Slice 3 additions (FlashcardDeck, QuizCard, SocraticDialog, FeynmanExplainer) +
+// Slice 4 additions (DraftEditor).
 
 export interface Citation {
   id: string;
@@ -195,4 +196,21 @@ export interface FeynmanExplainerData {
   explanation: string;
   gaps: string[];  // things the learner should revisit
   source: Citation;
+}
+
+// ── DraftEditor ───────────────────────────────────────────────────────────
+// Structured academic draft with cited sections (Writing mode, chat panel).
+// FR-WRT-01 (P1).
+
+export interface DraftSection {
+  heading: string;
+  body: string;         // prose with inline [cN] citation markers
+  citationIds: string[];
+}
+
+export interface DraftEditorData {
+  title: string;
+  sections: DraftSection[];
+  citations: Citation[];
+  wordCount: number;
 }

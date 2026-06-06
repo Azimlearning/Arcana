@@ -33,7 +33,11 @@ def build_orchestrator():
     Imports are local to keep `from api.main import create_app` cheap
     in test code that builds a minimal app without real providers."""
     from api.agents.orchestrator import Orchestrator
+    from api.agents.tier2.discovery import DiscoveryAgent
+    from api.agents.tier2.learning import LearningAgent
     from api.agents.tier2.research import ResearchAgent
+    from api.agents.tier2.socratic import SocraticAgent
+    from api.agents.tier2.writing import WritingAgent
     from api.agents.tier3.ui_agent import UIAgent
     from api.agents.tier4.fact_checker import FactChecker
     from api.agents.tier4.memory import MemoryAgent
@@ -72,16 +76,27 @@ def build_orchestrator():
         llm=llm,
     )
 
-    research = ResearchAgent(
-        llm_service=llm,
-        embedder=embedder,
+    _retriever_kwargs = dict(
         vector_retriever=vector_retriever,
         bm25_retriever=bm25_retriever,
         graph_retriever=graph_retriever,
+    )
+
+    research = ResearchAgent(
+        llm_service=llm,
+        embedder=embedder,
         doc_store=doc_store,
+        **_retriever_kwargs,
     )
     memory_store = InMemoryMemoryStore()
     memory_agent = MemoryAgent(store=memory_store)
+
+    tier2_agents = [
+        LearningAgent(llm_service=llm, **_retriever_kwargs),
+        SocraticAgent(llm_service=llm, **_retriever_kwargs),
+        DiscoveryAgent(llm_service=llm, **_retriever_kwargs),
+        WritingAgent(llm_service=llm, **_retriever_kwargs),
+    ]
 
     return Orchestrator(
         research=research,
@@ -89,6 +104,7 @@ def build_orchestrator():
         fact_checker=FactChecker(llm=llm),
         memory_agent=memory_agent,
         memory_store=memory_store,
+        extra_agents=tier2_agents,
     )
 
 

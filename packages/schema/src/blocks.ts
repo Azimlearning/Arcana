@@ -10,6 +10,7 @@
 import type {
   CitedSummaryData,
   ContradictionAlertData,
+  DraftEditorData,
   FeynmanExplainerData,
   FlashcardDeckData,
   GapAnalysisData,
@@ -99,6 +100,13 @@ export interface FeynmanExplainer {
   data: FeynmanExplainerData;
 }
 
+export interface DraftEditor {
+  type: 'DraftEditor';
+  id: string;
+  meta: BlockMeta;
+  data: DraftEditorData;
+}
+
 // Discriminated union: the `type` field is the discriminator.
 // Codegen emits Annotated[X | Y | Z, Field(discriminator='type')] in Python.
 export type UIBlock =
@@ -111,4 +119,5 @@ export type UIBlock =
   | FlashcardDeck
   | QuizCard
   | SocraticDialog
-  | FeynmanExplainer;
+  | FeynmanExplainer
+  | DraftEditor;

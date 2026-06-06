@@ -2,11 +2,12 @@
 
 Routes intent/mode to the most appropriate UIBlock variant (FR-UI-04).
 Priority order (since the graph routes ONE intent per turn):
-  1. Learning agent result  → FlashcardDeck | QuizCard
+  1. Learning agent result  → FlashcardDeck | QuizCard | FeynmanExplainer
   2. Socratic agent result  → SocraticDialog
-  3. Discovery agent result → GapAnalysis | InsightCard
-  4. Research agent result  → CitedSummary (with Fact Check filter)
-  5. Error block            (invariant #6: always terminate with a block)
+  3. Writing agent result   → DraftEditor
+  4. Discovery agent result → GapAnalysis | InsightCard
+  5. Research agent result  → CitedSummary (with Fact Check filter)
+  6. Error block            (invariant #6: always terminate with a block)
 
 Slice 1 additions (still in effect):
   - Reads fact_checker result and filters unsupported citations (FR-AGT-09).
@@ -26,6 +27,10 @@ from api.genui._generated import (
     BlockMeta,
     CitedSummary,
     CitedSummaryData,
+    DraftEditor,
+    DraftEditorData,
+    FeynmanExplainer,
+    FeynmanExplainerData,
     FlashcardDeck,
     FlashcardDeckData,
     GapAnalysis,
@@ -59,16 +64,10 @@ class UIAgent(BaseAgent):
     # -- Routing ---------------------------------------------------------
 
     def _route_to_block(self, state: AgentState) -> UIBlock:
-        """Pick the best UIBlock variant given available agent results.
-
-        The graph routes to ONE intent agent per turn, so typically only
-        one of (learning, socratic, discovery, research) will be present.
-        The priority order is the fallback when multiple somehow coexist.
-        """
+        """Pick the best UIBlock variant given available agent results."""
         order = len(state.ui_blocks)
 
-        # 1. Learning (FlashcardDeck | QuizCard)
-        # FeynmanExplainer routing deferred to Slice 4 — see decisions.md.
+        # 1. Learning (FlashcardDeck | QuizCard | FeynmanExplainer)
         learning = state.agent_results.get("learning")
         if learning is not None and learning.status == "ok":
             block = self._build_from_learning(learning, order=order)
@@ -82,14 +81,21 @@ class UIAgent(BaseAgent):
             if block is not None:
                 return block
 
-        # 3. Discovery (GapAnalysis | InsightCard)
+        # 3. Writing (DraftEditor)
+        writing = state.agent_results.get("writing")
+        if writing is not None and writing.status == "ok":
+            block = self._build_from_writing(writing, order=order)
+            if block is not None:
+                return block
+
+        # 4. Discovery (GapAnalysis | InsightCard)
         discovery = state.agent_results.get("discovery")
         if discovery is not None and discovery.status == "ok":
             block = self._build_from_discovery(discovery, order=order)
             if block is not None:
                 return block
 
-        # 4. Research (CitedSummary, with Fact Check filter)
+        # 5. Research (CitedSummary, with Fact Check filter)
         research = state.agent_results.get("research")
         fact_check = state.agent_results.get("fact_checker")
 
@@ -144,6 +150,19 @@ class UIAgent(BaseAgent):
                 logger.warning("ui_agent.learning_quiz_invalid", error=str(e))
                 return None
 
+        if block_type == "FeynmanExplainer":
+            try:
+                data = FeynmanExplainerData.model_validate(data_dict)
+                return FeynmanExplainer(
+                    type="FeynmanExplainer",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.learning_feynman_invalid", error=str(e))
+                return None
+
         return None
 
     def _build_from_socratic(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
@@ -165,6 +184,27 @@ class UIAgent(BaseAgent):
 
         return None
 
+    def _build_from_writing(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+        is_llm_error = bool(result.payload.get("_error"))
+
+        if block_type == "DraftEditor":
+            try:
+                data = DraftEditorData.model_validate(data_dict)
+                status = "error" if is_llm_error else "ready"
+                return DraftEditor(
+                    type="DraftEditor",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status=status),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.writing_draft_invalid", error=str(e))
+                return None
+
+        return None
+
     def _build_from_discovery(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
         block_type = result.payload.get("block_type")
         data_dict = result.payload.get("data", {}) or {}
@@ -182,7 +222,7 @@ class UIAgent(BaseAgent):
                 logger.warning("ui_agent.discovery_gap_invalid", error=str(e))
                 return None
 
-        # InsightCard routing deferred (DiscoveryAgent to produce it in Slice 4
+        # InsightCard routing deferred (DiscoveryAgent to produce it in Slice 4+
         # with grounded cross-doc connection extraction — see decisions.md).
         return None
 

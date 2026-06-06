@@ -392,3 +392,41 @@ def test_quiz_card_short_answer_validates():
     assert isinstance(out, QuizCard)
     assert out.data.correctIndex is None
     assert out.data.questionType == "short_answer"
+
+
+# ── New block variants (Slice 4) ──────────────────────────────────────────
+
+def test_draft_editor_validates():
+    payload = {
+        "type": "DraftEditor",
+        "id": "block_de",
+        "meta": {"panel": "chat", "order": 12, "status": "ready"},
+        "data": {
+            "title": "Attention Mechanisms in NLP",
+            "sections": [
+                {"heading": "Introduction", "body": "Transformers rely on self-attention [c1].", "citationIds": ["c1"]},
+                {"heading": "Key Mechanism", "body": "Queries and keys are projected linearly [c1].", "citationIds": ["c1"]},
+            ],
+            "citations": [_source()],
+            "wordCount": 14,
+        },
+    }
+    from api.genui._generated import DraftEditor
+    out = validate_block(payload)
+    assert isinstance(out, DraftEditor)
+    assert out.data.title == "Attention Mechanisms in NLP"
+    assert len(out.data.sections) == 2
+    assert out.data.wordCount == 14
+
+
+def test_draft_editor_empty_sections_validates():
+    payload = {
+        "type": "DraftEditor",
+        "id": "block_de2",
+        "meta": {"panel": "chat", "order": 13, "status": "error"},
+        "data": {"title": "Draft failed", "sections": [], "citations": [], "wordCount": 0},
+    }
+    from api.genui._generated import DraftEditor
+    out = validate_block(payload)
+    assert isinstance(out, DraftEditor)
+    assert out.data.wordCount == 0

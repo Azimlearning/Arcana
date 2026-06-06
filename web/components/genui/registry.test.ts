@@ -1,29 +1,30 @@
-// Registry test - confirms every UIBlock variant has a renderer.
-// If a future schema change adds a variant without registering it,
-// the `RendererMap` type fails to compile - this test backstops the
-// type-check by also asserting at runtime that the registered set
-// matches the slice's known set.
-
 import { describe, expect, it } from 'vitest';
 
 import { _registeredTypes } from './registry';
 
 describe('GenUI registry', () => {
-  it('registers exactly the slice-supported variants', () => {
-    // Slice 3 scope: 6 (Slice 2) + 4 new learning/socratic catalog variants.
-    expect(new Set(_registeredTypes())).toEqual(
-      new Set([
-        'CitedSummary',
-        'LiteratureMatrix',
-        'ContradictionAlert',
-        'GapAnalysis',
-        'InsightCard',
-        'KnowledgeGraphView',
-        'FlashcardDeck',
-        'QuizCard',
-        'SocraticDialog',
-        'FeynmanExplainer',
-      ])
-    );
+  it('covers all 11 UIBlock variants', () => {
+    const types = new Set(_registeredTypes());
+    expect(types.size).toBe(11);
+  });
+
+  it('includes every expected block type', () => {
+    const types = new Set(_registeredTypes());
+    const expected = [
+      'CitedSummary',
+      'LiteratureMatrix',
+      'ContradictionAlert',
+      'GapAnalysis',
+      'InsightCard',
+      'KnowledgeGraphView',
+      'FlashcardDeck',
+      'QuizCard',
+      'SocraticDialog',
+      'FeynmanExplainer',
+      'DraftEditor',
+    ] as const;
+    for (const t of expected) {
+      expect(types.has(t), `missing: ${t}`).toBe(true);
+    }
   });
 });

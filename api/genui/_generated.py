@@ -84,6 +84,26 @@ class Document(BaseModel):
     ingestStatus: IngestStatus
 
 
+class DraftEditor(BaseModel):
+    type: Literal['DraftEditor']
+    id: str
+    meta: BlockMeta
+    data: DraftEditorData
+
+
+class DraftEditorData(BaseModel):
+    title: str
+    sections: list[DraftSection]
+    citations: list[Citation]
+    wordCount: float
+
+
+class DraftSection(BaseModel):
+    heading: str
+    body: str
+    citationIds: list[str]
+
+
 class FeynmanExplainer(BaseModel):
     type: Literal['FeynmanExplainer']
     id: str
@@ -276,4 +296,4 @@ QuizType = Literal['mcq', 'short_answer']
 
 SocraticRole = Literal['tutor', 'learner']
 
-UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer | DraftEditor, Field(discriminator='type')]
