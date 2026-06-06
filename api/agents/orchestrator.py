@@ -15,10 +15,6 @@ from __future__ import annotations
 from typing import Any
 
 from api.agents.base import AgentResult, AgentState, BaseAgent, registry
-from api.agents.tier2.research import ResearchAgent
-from api.agents.tier3.ui_agent import UIAgent
-from api.agents.tier4.fact_checker import FactChecker
-from api.agents.tier4.memory import MemoryAgent
 from api.core.logging import get_logger
 from api.llm.types import Message
 from api.stores.memory_store import MemoryStore
@@ -33,19 +29,12 @@ class Orchestrator(BaseAgent):
     def __init__(
         self,
         *,
-        research: ResearchAgent,
-        ui_agent: UIAgent,
-        fact_checker: FactChecker | None = None,
-        memory_agent: MemoryAgent | None = None,
+        research: BaseAgent,
+        ui_agent: BaseAgent,
+        fact_checker: BaseAgent | None = None,
+        memory_agent: BaseAgent | None = None,
         memory_store: MemoryStore | None = None,
     ) -> None:
-        self._research = research
-        self._ui = ui_agent
-        self._fact_checker = fact_checker
-        self._memory_agent = memory_agent
-        # Holding the store separately from the agent lets the
-        # orchestrator write back at end-of-turn (the agent itself only
-        # reads at start-of-turn).
         self._memory_store = memory_store
         # Register agents that `make_node` will look up. We do NOT
         # register `self`: nothing routes to the orchestrator (it's the

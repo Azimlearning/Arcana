@@ -55,9 +55,9 @@
 - [x] `parsers/pdf.py` (PyMuPDF) — **FR-ING-01**. *(`parsers/docx.py` → slice 8 with FR-ING-02..04.)*
 - [x] `chunker.py`: paragraph→sentence→hard-cut boundary preference with min-chunk-size floor — **FR-ING-05**.
 - [x] **`embedder.py`** is now `api/embeddings/service.py` (split into its own peer module per user direction) — **FR-ING-05**.
-- [ ] `extractor.py`: LLM entity/relationship extraction → typed Triples — **FR-ING-06** *(→ slice 1)*.
+- [x] `extractor.py`: LLM entity/relationship extraction → typed Triples — **FR-ING-06** *(→ slice 1)*.
 - [x] `pipeline.py`: parse → chunk → embed → upsert vectors → chunk store. *(Entity extraction + graph build → slice 1.)*
-- [ ] Build the Concept/Person/Document/Topic graph with typed edges — **FR-KG-01** *(→ slice 1)*.
+- [x] Build the Concept/Person/Document/Topic graph with typed edges — **FR-KG-01** *(→ slice 1)*.
 
 ### 0.7 Hybrid retrieval (`api/retrieval/`) — **the FYP's core evidence**
 - [x] `vector.py` (dense) — **FR-RET-01**. Fail-loud on missing metadata.
@@ -71,7 +71,7 @@
 - [x] `base.py`: `BaseAgent`, `@tool` decorator (schema from type hints), registry, `route_to_agent` — §11.3–11.4.
 - [x] `orchestrator.py`: direct-call slice-shape (research → ui_agent). *(Real intent/mode detect + plan → slice 1 with LangGraph StateGraph.)*
 - [x] `tier2/research.py`: `hybrid_retrieve`, `summarise_with_grounding`, `cite_sources` (citation parser lives here) — §12 Research.
-- [ ] `tier2/graph_agent.py`: `graph_expand`, `shortest_path`, analytics — §12 Graph *(→ slice 1)*.
+- [x] `tier2/graph_agent.py`: `graph_expand`, `shortest_path`, analytics — §12 Graph *(→ slice 1)*.
 - [x] Each agent exposes typed tool calls — **FR-AGT-02**.
 - [x] `tier3/ui_agent.py` (only agent that picks components) — **FR-UI-04**.
 
@@ -114,12 +114,12 @@
 - [ ] Local/global/hybrid mode select or auto — **FR-RET-07 (C)**.
 
 ### 1.4 Agentic pipeline (composability) — **the defining claim**
-- [ ] LangGraph `StateGraph` assembly: `AgentState`, nodes, conditional routing — `agents/graph.py`, **FR-AGT-04 (M)**, *Listing 11.1*.
-- [ ] Agent-to-agent invocation working end-to-end — **FR-AGT-03 (M)**, *Listing 11.4*.
+- [x] LangGraph `StateGraph` assembly: `AgentState`, nodes, conditional routing — `agents/graph.py`, **FR-AGT-04 (M)**, *Listing 11.1*.
+- [x] Agent-to-agent invocation working end-to-end — **FR-AGT-03 (M)**, *Listing 11.4*.
 - [ ] Intent-scoped tool injection (`max_tools_per_prompt`) — **FR-AGT-05 (S)**, §11.5.
 - [ ] Partial-result streaming for long tasks — **FR-AGT-07 (S)**.
-- [ ] Graceful degradation on tool/agent failure — **FR-AGT-08 (M)**.
-- [ ] Hop-budget recursion guard + terminal join — **FR-AGT-10 (M)**, §11.6.
+- [x] Graceful degradation on tool/agent failure — **FR-AGT-08 (M)**.
+- [x] Hop-budget recursion guard + terminal join — **FR-AGT-10 (M)**, §11.6.
 - [ ] Reach **15+ agents across four tiers** (full vision 25) — **FR-AGT-06 (M)**.
 - [ ] **Verify the worked example** ("compare three papers" with 2 A2A hops + 3 streamed blocks) — *Listing 12.1*.
 
@@ -127,20 +127,20 @@
 - [ ] Tier 2: `learning.py`, `writing.py`, `socratic.py`, `discovery.py`.
 - [ ] Tier 3: `ui_agent.py`, `citation.py`, `visual.py`, `document.py`.
 - [ ] Tier 4: `fact_checker.py`, `annotation.py`, `memory.py`, `ingestion_agent.py`, `web_search.py`, `study_planner.py`, `analytics.py`.
-- [ ] Fact Checker verifies claims before output is finalised — **FR-AGT-09 (S)**.
+- [x] Fact Checker verifies claims before output is finalised — **FR-AGT-09 (S)**.
 - [ ] Web Search Agent limited to academic discovery (Semantic Scholar / arXiv) — §12, scope non-goal respected.
 
 ### 1.6 Generative UI (`web/` + `api/genui/`)
 > Build to `uiux_plan.md` (the design authority): exact tokens, full catalog (panel + phase per component), modes, the four states, flows, and the agent trace.
-- [ ] Wire design tokens into `web/tailwind.config.ts` + `globals.css` (colour, type, space, radius, motion) — `uiux_plan.md` §2.
-- [ ] `api/genui/blocks.py` (import shapes from `packages/schema`) + `validate.py` (fail closed) — **NFR-SEC-04**, **R-10**.
-- [ ] `api/genui/streamer.py` SSE; `POST /chat` streams typed blocks — *Listing 10.1*.
-- [ ] `web/lib/stream.ts`: SSE → `UIBlock[]` consumer — §13.2.
-- [ ] `web/components/genui/registry.ts` + `renderBlock()` — *Listing 14.2*, **NFR-MNT-02**.
-- [ ] Agents emit declarative typed components, never raw HTML/text — **FR-UI-03 (M)**.
+- [x] Wire design tokens into `web/tailwind.config.ts` + `globals.css` (colour, type, space, radius, motion) — `uiux_plan.md` §2.
+- [x] `api/genui/blocks.py` (import shapes from `packages/schema`) + `validate.py` (fail closed) — **NFR-SEC-04**, **R-10**.
+- [x] `api/genui/streamer.py` SSE; `POST /chat` streams typed blocks — *Listing 10.1*.
+- [x] `web/lib/stream.ts`: SSE → `UIBlock[]` consumer — §13.2.
+- [x] `web/components/genui/registry.ts` + `renderBlock()` — *Listing 14.2*, **NFR-MNT-02**.
+- [x] Agents emit declarative typed components, never raw HTML/text — **FR-UI-03 (M)**.
 - [ ] Build the **24-component catalog** (one file each) — **FR-UI-02 (M)**, §13.3, `uiux_plan.md` §5.
 - [ ] Every component implements Empty/Loading/Partial/Error via `BlockStates.tsx` — **NFR-USE-02**, **FR-UI-09 (S)**, `uiux_plan.md` §6.
-- [ ] `ui_agent.py` selects components from intent/mode/history — **FR-UI-04 (M)**, *Listing 13.2*.
+- [x] `ui_agent.py` selects components from intent/mode/history — **FR-UI-04 (M)**, *Listing 13.2*.
 - [ ] 3-panel adaptive shell; panel widths + visibility adapt — **FR-UI-01/05 (M)**.
 - [ ] Ship **≥ 3 modes** (Research, Writing, Study); demonstrate 5 — **FR-UI-06 (M)**, §13.5, `uiux_plan.md` §4.
 - [ ] Manual layout/mode override recorded in `uiStore` and respected — **FR-UI-07 (S)**.

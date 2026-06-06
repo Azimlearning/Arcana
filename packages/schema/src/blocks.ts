@@ -10,10 +10,14 @@
 import type {
   CitedSummaryData,
   ContradictionAlertData,
+  FeynmanExplainerData,
+  FlashcardDeckData,
   GapAnalysisData,
   InsightCardData,
   KnowledgeGraphViewData,
   LiteratureMatrixData,
+  QuizCardData,
+  SocraticDialogData,
 } from './payloads.js';
 
 export type Panel = 'sources' | 'chat' | 'studio';
@@ -67,12 +71,44 @@ export interface KnowledgeGraphView {
   data: KnowledgeGraphViewData;
 }
 
+export interface FlashcardDeck {
+  type: 'FlashcardDeck';
+  id: string;
+  meta: BlockMeta;
+  data: FlashcardDeckData;
+}
+
+export interface QuizCard {
+  type: 'QuizCard';
+  id: string;
+  meta: BlockMeta;
+  data: QuizCardData;
+}
+
+export interface SocraticDialog {
+  type: 'SocraticDialog';
+  id: string;
+  meta: BlockMeta;
+  data: SocraticDialogData;
+}
+
+export interface FeynmanExplainer {
+  type: 'FeynmanExplainer';
+  id: string;
+  meta: BlockMeta;
+  data: FeynmanExplainerData;
+}
+
 // Discriminated union: the `type` field is the discriminator.
-// Codegen emits Annotated[Union[...], Field(discriminator='type')] in Python.
+// Codegen emits Annotated[X | Y | Z, Field(discriminator='type')] in Python.
 export type UIBlock =
   | CitedSummary
   | LiteratureMatrix
   | ContradictionAlert
   | GapAnalysis
   | InsightCard
-  | KnowledgeGraphView;
+  | KnowledgeGraphView
+  | FlashcardDeck
+  | QuizCard
+  | SocraticDialog
+  | FeynmanExplainer;

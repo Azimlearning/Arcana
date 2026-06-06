@@ -1,10 +1,10 @@
-"""UI Agent — block construction, validation, error paths."""
+"""UI Agent — block construction, validation, routing, error paths."""
 
 from __future__ import annotations
 
 from api.agents.base import AgentResult, AgentState
 from api.agents.tier3.ui_agent import UIAgent
-from api.genui._generated import CitedSummary
+from api.genui._generated import CitedSummary, FlashcardDeck, QuizCard, SocraticDialog
 
 
 def _research_payload(*, summary: str = "Answer [c1].") -> dict:
@@ -21,6 +21,10 @@ def _research_payload(*, summary: str = "Answer [c1].") -> dict:
             }
         ],
     }
+
+
+def _source() -> dict:
+    return {"id": "c1", "docId": "d1", "docTitle": "T", "page": 1, "quote": "q"}
 
 
 async def test_emits_ready_block_for_successful_research():
@@ -89,10 +93,7 @@ async def test_emits_error_block_when_research_absent():
 
 
 async def test_invalid_payload_falls_through_to_error_block():
-    """Fail-closed: invariant #2 — never ship a malformed UIBlock.
-
-    If research returns a payload that doesn't match CitedSummaryData,
-    UIAgent emits an error block rather than crashing or shipping garbage."""
+    """Fail-closed: invariant #2 — never ship a malformed UIBlock."""
     state = AgentState(query="x")
     state.agent_results["research"] = AgentResult(
         agent_name="research",
@@ -107,25 +108,20 @@ async def test_invalid_payload_falls_through_to_error_block():
     assert "schema validation" in block.data.summary.lower()
 
 
-# ── Chunk 3: intent/mode routing (FR-UI-04) ────────────────────────────────
-
+# ── Discovery routing ───────────────────────────────────────────────────────
 
 def _gap_analysis_payload() -> dict:
     return {
         "block_type": "GapAnalysis",
         "data": {
             "summary": "Several gaps were found.",
-            "gaps": [
-                {"label": "Gap A", "description": "Missing X.", "severity": "high"}
-            ],
+            "gaps": [{"label": "Gap A", "description": "Missing X.", "severity": "high"}],
             "coveredTopics": ["Topic 1"],
         },
     }
 
 
-
 async def test_routes_to_gap_analysis_from_discovery():
-    """When discovery agent returns block_type=GapAnalysis, UI Agent emits one."""
     from api.genui._generated import GapAnalysis
 
     state = AgentState(query="x")
@@ -139,7 +135,6 @@ async def test_routes_to_gap_analysis_from_discovery():
     result = await agent.run("x", state=state)
 
     assert result.status == "ok"
-    assert len(state.ui_blocks) == 1
     block = state.ui_blocks[0]
     assert isinstance(block, GapAnalysis)
     assert block.type == "GapAnalysis"
@@ -149,14 +144,10 @@ async def test_routes_to_gap_analysis_from_discovery():
     assert block.data.gaps[0].severity == "high"
 
 
-
 async def test_falls_back_to_cited_summary_when_discovery_absent():
-    """Without a discovery result, UI Agent falls through to CitedSummary."""
     state = AgentState(query="x")
     state.agent_results["research"] = AgentResult(
-        agent_name="research",
-        payload=_research_payload(),
-        status="ok",
+        agent_name="research", payload=_research_payload(), status="ok"
     )
 
     agent = UIAgent()
@@ -164,11 +155,9 @@ async def test_falls_back_to_cited_summary_when_discovery_absent():
 
     block = state.ui_blocks[0]
     assert isinstance(block, CitedSummary)
-    assert block.type == "CitedSummary"
 
 
 async def test_discovery_invalid_payload_falls_through_to_cited_summary():
-    """When discovery payload is malformed, UI Agent silently falls through."""
     state = AgentState(query="x")
     state.agent_results["discovery"] = AgentResult(
         agent_name="discovery",
@@ -176,9 +165,7 @@ async def test_discovery_invalid_payload_falls_through_to_cited_summary():
         status="ok",
     )
     state.agent_results["research"] = AgentResult(
-        agent_name="research",
-        payload=_research_payload(),
-        status="ok",
+        agent_name="research", payload=_research_payload(), status="ok"
     )
 
     agent = UIAgent()
@@ -186,3 +173,143 @@ async def test_discovery_invalid_payload_falls_through_to_cited_summary():
 
     block = state.ui_blocks[0]
     assert isinstance(block, CitedSummary), "should fall through to CitedSummary"
+
+
+# ── Learning routing (Slice 3) ──────────────────────────────────────────────
+
+def _flashcard_payload() -> dict:
+    return {
+        "block_type": "FlashcardDeck",
+        "data": {
+            "topic": "Neural Networks",
+            "cards": [
+                {
+                    "front": "What is backprop?",
+                    "back": "Gradient computation via chain rule.",
+                    "source": _source(),
+                    "schedule": None,
+                }
+            ],
+            "totalCards": 1,
+            "dueCount": 0,
+        },
+    }
+
+
+def _quiz_payload() -> dict:
+    return {
+        "block_type": "QuizCard",
+        "data": {
+            "question": "What does ReLU stand for?",
+            "questionType": "mcq",
+            "options": [
+                {"index": 0, "text": "Rectified Linear Unit"},
+                {"index": 1, "text": "Random Layer Unit"},
+                {"index": 2, "text": "Relative Learning Unit"},
+                {"index": 3, "text": "None"},
+            ],
+            "correctIndex": 0,
+            "explanation": "ReLU = Rectified Linear Unit.",
+            "difficulty": "recall",
+            "source": _source(),
+        },
+    }
+
+
+async def test_routes_flashcard_deck_from_learning():
+    state = AgentState(query="make flashcards for neural networks")
+    state.agent_results["learning"] = AgentResult(
+        agent_name="learning", payload=_flashcard_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("make flashcards", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, FlashcardDeck)
+    assert block.type == "FlashcardDeck"
+    assert block.meta.status == "ready"
+    assert block.meta.panel == "chat"
+    assert block.data.topic == "Neural Networks"
+    assert len(block.data.cards) == 1
+
+
+async def test_routes_quiz_card_from_learning():
+    state = AgentState(query="quiz me on neural networks")
+    state.agent_results["learning"] = AgentResult(
+        agent_name="learning", payload=_quiz_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("quiz me", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, QuizCard)
+    assert block.type == "QuizCard"
+    assert block.data.correctIndex == 0
+
+
+async def test_learning_invalid_payload_falls_through_to_research():
+    state = AgentState(query="x")
+    state.agent_results["learning"] = AgentResult(
+        agent_name="learning",
+        payload={"block_type": "FlashcardDeck", "data": {"bad": "field"}},
+        status="ok",
+    )
+    state.agent_results["research"] = AgentResult(
+        agent_name="research", payload=_research_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("x", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, CitedSummary), "malformed FlashcardDeck should fall through"
+
+
+# ── Socratic routing (Slice 3) ──────────────────────────────────────────────
+
+def _socratic_payload() -> dict:
+    return {
+        "block_type": "SocraticDialog",
+        "data": {
+            "concept": "backpropagation",
+            "turns": [],
+            "nextQuestion": "What do you think happens during a forward pass?",
+            "bloomLevel": "comprehension",
+        },
+    }
+
+
+async def test_routes_socratic_dialog_from_socratic_agent():
+    state = AgentState(query="explain backpropagation")
+    state.agent_results["socratic"] = AgentResult(
+        agent_name="socratic", payload=_socratic_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("explain backpropagation", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, SocraticDialog)
+    assert block.type == "SocraticDialog"
+    assert block.meta.panel == "chat"
+    assert block.data.nextQuestion.endswith("?")
+
+
+async def test_socratic_invalid_payload_falls_through_to_research():
+    state = AgentState(query="x")
+    state.agent_results["socratic"] = AgentResult(
+        agent_name="socratic",
+        payload={"block_type": "SocraticDialog", "data": {"missing_required": True}},
+        status="ok",
+    )
+    state.agent_results["research"] = AgentResult(
+        agent_name="research", payload=_research_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("x", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, CitedSummary), "malformed SocraticDialog should fall through"

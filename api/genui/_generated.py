@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 class BlockMeta(BaseModel):
     panel: Panel
-    order: int
+    order: float
     status: BlockStatus
 
 
@@ -33,14 +33,14 @@ class Chunk(BaseModel):
     id: str
     docId: str
     text: str
-    page: int | None
+    page: float | None
 
 
 class Citation(BaseModel):
     id: str
     docId: str
     docTitle: str
-    page: int | None
+    page: float | None
     quote: str
 
 
@@ -82,6 +82,41 @@ class Document(BaseModel):
     title: str
     sourceUri: str
     ingestStatus: IngestStatus
+
+
+class FeynmanExplainer(BaseModel):
+    type: Literal['FeynmanExplainer']
+    id: str
+    meta: BlockMeta
+    data: FeynmanExplainerData
+
+
+class FeynmanExplainerData(BaseModel):
+    concept: str
+    explanation: str
+    gaps: list[str]
+    source: Citation
+
+
+class Flashcard(BaseModel):
+    front: str
+    back: str
+    source: Citation
+    schedule: ScheduleState | None
+
+
+class FlashcardDeck(BaseModel):
+    type: Literal['FlashcardDeck']
+    id: str
+    meta: BlockMeta
+    data: FlashcardDeckData
+
+
+class FlashcardDeckData(BaseModel):
+    topic: str
+    cards: list[Flashcard]
+    totalCards: float
+    dueCount: float
 
 
 class GapAnalysis(BaseModel):
@@ -170,12 +205,62 @@ class MatrixRow(BaseModel):
     cells: list[MatrixCell]
 
 
+class QuizCard(BaseModel):
+    type: Literal['QuizCard']
+    id: str
+    meta: BlockMeta
+    data: QuizCardData
+
+
+class QuizCardData(BaseModel):
+    question: str
+    questionType: QuizType
+    options: list[QuizOption]
+    correctIndex: float | None
+    explanation: str
+    difficulty: QuizDifficulty
+    source: Citation
+
+
+class QuizOption(BaseModel):
+    index: float
+    text: str
+
+
+class ScheduleState(BaseModel):
+    dueAt: str
+    interval: float
+    easeFactor: float
+    repetitions: float
+
+
+class SocraticDialog(BaseModel):
+    type: Literal['SocraticDialog']
+    id: str
+    meta: BlockMeta
+    data: SocraticDialogData
+
+
+class SocraticDialogData(BaseModel):
+    concept: str
+    turns: list[SocraticTurn]
+    nextQuestion: str
+    bloomLevel: BloomLevel
+
+
+class SocraticTurn(BaseModel):
+    role: SocraticRole
+    text: str
+
+
 class SummarySegment(BaseModel):
     text: str
     citationIds: list[str]
 
 
 BlockStatus = Literal['loading', 'partial', 'ready', 'error']
+
+BloomLevel = Literal['recall', 'comprehension', 'application', 'analysis', 'synthesis', 'evaluation']
 
 ChatRole = Literal['user', 'assistant']
 
@@ -185,4 +270,10 @@ IngestStatus = Literal['pending', 'parsing', 'embedding', 'ready', 'failed']
 
 Panel = Literal['sources', 'chat', 'studio']
 
-UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView, Field(discriminator='type')]
+QuizDifficulty = Literal['recall', 'comprehension', 'application', 'analysis']
+
+QuizType = Literal['mcq', 'short_answer']
+
+SocraticRole = Literal['tutor', 'learner']
+
+UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer, Field(discriminator='type')]

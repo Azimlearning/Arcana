@@ -11,7 +11,7 @@
 //   - export type X = 'a' | 'b' | 'c'               → X = Literal['a', 'b', 'c']
 //   - export type X = Y                             → X = Y
 //   - export type X = A | B | ...   (all class refs with `type:` lit)
-//                                                   → Annotated[Union[A, B], Field(discriminator='type')]
+//                                                   → Annotated[A | B, Field(discriminator='type')]
 //   - Field types: string | number | boolean | null | T[] | Array<T>
 //                  | 'literal' | T | A | B | A | null | Foo
 //
@@ -85,12 +85,10 @@ function normalizeStringLiteral(t: string): string {
 function mapPrimitive(text: string, ctx: string): string {
   switch (text) {
     case 'string':  return 'str';
-    // 'number' maps to 'int' — fine for the slice (page numbers, order).
-    // When a non-integer field appears (score, confidence, temperature, etc.)
-    // either bump this to 'float' globally or split the mapping by field-name
-    // hint. Drift detection won't catch the mistype on its own — caller types
-    // will. Track when adding the first non-int field.
-    case 'number':  return 'int';
+    // number maps to float (superset of int; Pydantic accepts ints for float fields).
+    // Python's float accepts all integer values without precision loss for the ranges
+    // used here (page numbers, order indices, ease factors, counts).
+    case 'number':  return 'float';
     case 'boolean': return 'bool';
     case 'null':    return 'None';
   }
@@ -150,10 +148,10 @@ function mapUnionTypeNode(union: UnionTypeNode, ctx: string): string {
     return hasNull ? `${py} | None` : py;
   }
 
-  // General union of refs / primitives
+  // General union: emit X | Y (PEP 604 / Python 3.11+ syntax, avoids UP007)
   const mapped = nonNull.map((p) => mapTypeNode(p, ctx));
   if (mapped.length === 0) fail(ctx, `empty union`);
-  const py = mapped.length === 1 ? mapped[0]! : `Union[${mapped.join(', ')}]`;
+  const py = mapped.join(' | ');
   return hasNull ? `${py} | None` : py;
 }
 
@@ -237,7 +235,6 @@ const bodyJoined = body.join('\n');
 const typingNames: string[] = [];
 if (bodyJoined.includes('Annotated[')) typingNames.push('Annotated');
 if (bodyJoined.includes('Literal['))   typingNames.push('Literal');
-if (bodyJoined.includes('Union['))     typingNames.push('Union');
 
 const pydanticNames: string[] = ['BaseModel'];
 if (bodyJoined.includes('Field('))     pydanticNames.push('Field');

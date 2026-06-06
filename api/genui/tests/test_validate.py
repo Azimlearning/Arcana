@@ -35,6 +35,10 @@ def _ok_payload() -> dict:
     }
 
 
+def _source() -> dict:
+    return {"id": "c1", "docId": "d1", "docTitle": "T", "page": 1, "quote": "q"}
+
+
 def test_valid_dict_passes_through():
     out = validate_block(_ok_payload())
     assert isinstance(out, CitedSummary)
@@ -68,7 +72,7 @@ def test_missing_required_field_raises_validation_failed():
 
 def test_wrong_discriminator_raises():
     bad = _ok_payload()
-    bad["type"] = "FlashcardDeck"   # not in the current union
+    bad["type"] = "UnknownBlock"   # not in the current union
     with pytest.raises(ValidationFailed):
         validate_block(bad)
 
@@ -265,3 +269,126 @@ def test_gap_severity_invalid_raises():
     }
     with pytest.raises(ValidationFailed):
         validate_block(payload)
+
+
+# ── New block variants (Slice 3) ──────────────────────────────────────────
+
+def test_flashcard_deck_validates():
+    payload = {
+        "type": "FlashcardDeck",
+        "id": "block_fd",
+        "meta": {"panel": "chat", "order": 7, "status": "ready"},
+        "data": {
+            "topic": "Neural Networks",
+            "cards": [
+                {
+                    "front": "What is backpropagation?",
+                    "back": "Gradient computation via chain rule.",
+                    "source": _source(),
+                    "schedule": None,
+                }
+            ],
+            "totalCards": 1,
+            "dueCount": 0,
+        },
+    }
+    from api.genui._generated import FlashcardDeck
+    out = validate_block(payload)
+    assert isinstance(out, FlashcardDeck)
+    assert out.data.topic == "Neural Networks"
+    assert len(out.data.cards) == 1
+    assert out.data.cards[0].schedule is None
+
+
+def test_quiz_card_validates():
+    payload = {
+        "type": "QuizCard",
+        "id": "block_qc",
+        "meta": {"panel": "chat", "order": 8, "status": "ready"},
+        "data": {
+            "question": "What does ReLU stand for?",
+            "questionType": "mcq",
+            "options": [
+                {"index": 0, "text": "Rectified Linear Unit"},
+                {"index": 1, "text": "Random Layer Unit"},
+                {"index": 2, "text": "Relative Learning Unit"},
+                {"index": 3, "text": "None"},
+            ],
+            "correctIndex": 0,
+            "explanation": "ReLU = Rectified Linear Unit.",
+            "difficulty": "recall",
+            "source": _source(),
+        },
+    }
+    from api.genui._generated import QuizCard
+    out = validate_block(payload)
+    assert isinstance(out, QuizCard)
+    assert out.data.question.startswith("What does")
+    assert out.data.correctIndex == 0
+    assert len(out.data.options) == 4
+
+
+def test_socratic_dialog_validates():
+    payload = {
+        "type": "SocraticDialog",
+        "id": "block_sd",
+        "meta": {"panel": "chat", "order": 9, "status": "ready"},
+        "data": {
+            "concept": "backpropagation",
+            "turns": [
+                {"role": "tutor", "text": "What do you think a forward pass does?"},
+                {"role": "learner", "text": "It calculates the output?"},
+            ],
+            "nextQuestion": "And what happens to the error after the output is computed?",
+            "bloomLevel": "comprehension",
+        },
+    }
+    from api.genui._generated import SocraticDialog
+    out = validate_block(payload)
+    assert isinstance(out, SocraticDialog)
+    assert out.data.concept == "backpropagation"
+    assert len(out.data.turns) == 2
+    assert out.data.nextQuestion.endswith("?")
+    assert out.data.bloomLevel == "comprehension"
+
+
+def test_feynman_explainer_validates():
+    payload = {
+        "type": "FeynmanExplainer",
+        "id": "block_fe",
+        "meta": {"panel": "chat", "order": 10, "status": "ready"},
+        "data": {
+            "concept": "attention mechanism",
+            "explanation": "Imagine each word voting on which other words matter most.",
+            "gaps": ["Does not explain multi-head attention.", "Omits positional encoding."],
+            "source": _source(),
+        },
+    }
+    from api.genui._generated import FeynmanExplainer
+    out = validate_block(payload)
+    assert isinstance(out, FeynmanExplainer)
+    assert out.data.concept == "attention mechanism"
+    assert len(out.data.gaps) == 2
+
+
+def test_quiz_card_short_answer_validates():
+    """QuizCard with short_answer type: options empty, correctIndex None."""
+    payload = {
+        "type": "QuizCard",
+        "id": "block_sa",
+        "meta": {"panel": "chat", "order": 11, "status": "ready"},
+        "data": {
+            "question": "Define gradient descent in one sentence.",
+            "questionType": "short_answer",
+            "options": [],
+            "correctIndex": None,
+            "explanation": "An iterative optimisation algorithm.",
+            "difficulty": "comprehension",
+            "source": _source(),
+        },
+    }
+    from api.genui._generated import QuizCard
+    out = validate_block(payload)
+    assert isinstance(out, QuizCard)
+    assert out.data.correctIndex is None
+    assert out.data.questionType == "short_answer"

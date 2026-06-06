@@ -10,6 +10,9 @@ Slice 1 scope: nodes for orchestrator, research, ui_agent. Memory Agent
 (chunk 5) and Fact Checker (chunk 4) land in this same slice and insert
 into the graph as new nodes + edges; the chat route doesn't change.
 
+Slice 2 addition: discovery intent node.
+Slice 3 addition: learning and socratic intent nodes.
+
 How state flows:
   - Each node receives the live `AgentState` snapshot for that step.
   - Agents may freely mutate the snapshot during their `run()` call
@@ -65,8 +68,6 @@ def make_node(agent_name: str) -> NodeFn:
             }
 
         # Snapshot lengths BEFORE the agent runs so we can compute deltas.
-        # The reducers on AgentState are append-style (`operator.add` for
-        # lists), so we must emit only the new items.
         ctx_before = len(state.retrieved_ctx)
         ui_before = len(state.ui_blocks)
         msgs_before = len(state.messages)
@@ -135,7 +136,7 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
 #   1. Add the agent + register it
 #   2. Add a node in `build_graph`
 #   3. Add the label here AND in the conditional-edges dict in `build_graph`
-_WIRED_INTENTS = frozenset({"research", "discovery"})
+_WIRED_INTENTS = frozenset({"research", "discovery", "study", "socratic"})
 
 
 def _route_after_orchestrator(state: AgentState) -> str:
@@ -170,6 +171,8 @@ def build_graph() -> Any:
     has_memory = registry.get_agent("memory") is not None
     has_fact_checker = registry.get_agent("fact_checker") is not None
     has_discovery = registry.get_agent("discovery") is not None
+    has_learning = registry.get_agent("learning") is not None
+    has_socratic = registry.get_agent("socratic") is not None
 
     if has_memory:
         graph.add_node("memory", make_node("memory"))
@@ -184,11 +187,18 @@ def build_graph() -> Any:
     else:
         graph.add_edge(START, "orchestrator")
 
-    # Conditional edges: research (default) or discovery when registered.
+    # Build the conditional routing map: intent label → node name.
     conditional_map: dict[str, str] = {"research": "research"}
     if has_discovery:
         graph.add_node("discovery", make_node("discovery"))
         conditional_map["discovery"] = "discovery"
+    if has_learning:
+        graph.add_node("learning", make_node("learning"))
+        conditional_map["study"] = "learning"
+    if has_socratic:
+        graph.add_node("socratic", make_node("socratic"))
+        conditional_map["socratic"] = "socratic"
+
     graph.add_conditional_edges(
         "orchestrator",
         _route_after_orchestrator,
@@ -203,9 +213,13 @@ def build_graph() -> Any:
     else:
         graph.add_edge("research", "ui_agent")
 
-    # discovery -> ui_agent (no fact_checker for discovery in Slice 2)
+    # Tier-2 specialist agents -> ui_agent (no fact_checker for these in Slice 3)
     if has_discovery:
         graph.add_edge("discovery", "ui_agent")
+    if has_learning:
+        graph.add_edge("learning", "ui_agent")
+    if has_socratic:
+        graph.add_edge("socratic", "ui_agent")
 
     graph.add_edge("ui_agent", END)
 

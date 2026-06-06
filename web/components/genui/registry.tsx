@@ -20,6 +20,10 @@ import { ContradictionAlert } from '@/components/genui/ContradictionAlert';
 import { GapAnalysis } from '@/components/genui/GapAnalysis';
 import { InsightCard } from '@/components/genui/InsightCard';
 import { KnowledgeGraphView } from '@/components/genui/KnowledgeGraphView';
+import { FlashcardDeck } from '@/components/genui/FlashcardDeck';
+import { QuizCard } from '@/components/genui/QuizCard';
+import { SocraticDialog } from '@/components/genui/SocraticDialog';
+import { FeynmanExplainer } from '@/components/genui/FeynmanExplainer';
 import { ErrorState } from '@/components/genui/BlockStates';
 
 type BlockType = UIBlock['type'];
@@ -35,6 +39,10 @@ const registry: RendererMap = {
   GapAnalysis,
   InsightCard,
   KnowledgeGraphView,
+  FlashcardDeck,
+  QuizCard,
+  SocraticDialog,
+  FeynmanExplainer,
 };
 
 /** Render a UIBlock by looking up its component via the discriminator.

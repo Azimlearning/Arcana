@@ -1,11 +1,12 @@
 """UI Agent - Tier 3. The ONLY agent that picks components (invariant #3).
 
 Routes intent/mode to the most appropriate UIBlock variant (FR-UI-04).
-Priority: discovery agent result > research agent result > error block.
-
-Discovery agents signal their desired block type via
-`payload["block_type"]` (e.g. "GapAnalysis", "InsightCard") so the UI
-Agent can dispatch without knowing the internal shape of each agent.
+Priority order (since the graph routes ONE intent per turn):
+  1. Learning agent result  → FlashcardDeck | QuizCard
+  2. Socratic agent result  → SocraticDialog
+  3. Discovery agent result → GapAnalysis | InsightCard
+  4. Research agent result  → CitedSummary (with Fact Check filter)
+  5. Error block            (invariant #6: always terminate with a block)
 
 Slice 1 additions (still in effect):
   - Reads fact_checker result and filters unsupported citations (FR-AGT-09).
@@ -25,8 +26,14 @@ from api.genui._generated import (
     BlockMeta,
     CitedSummary,
     CitedSummaryData,
+    FlashcardDeck,
+    FlashcardDeckData,
     GapAnalysis,
     GapAnalysisData,
+    QuizCard,
+    QuizCardData,
+    SocraticDialog,
+    SocraticDialogData,
     UIBlock,
 )
 
@@ -54,17 +61,35 @@ class UIAgent(BaseAgent):
     def _route_to_block(self, state: AgentState) -> UIBlock:
         """Pick the best UIBlock variant given available agent results.
 
-        Priority order (FR-UI-04):
-          1. Discovery agent result (GapAnalysis / InsightCard)
-          2. Research agent result (CitedSummary, with Fact Check filter)
-          3. Error block (invariant #6: always terminate with a block)
+        The graph routes to ONE intent agent per turn, so typically only
+        one of (learning, socratic, discovery, research) will be present.
+        The priority order is the fallback when multiple somehow coexist.
         """
-        discovery = state.agent_results.get("discovery")
-        if discovery is not None and discovery.status == "ok":
-            block = self._build_from_discovery(discovery, order=len(state.ui_blocks))
+        order = len(state.ui_blocks)
+
+        # 1. Learning (FlashcardDeck | QuizCard)
+        # FeynmanExplainer routing deferred to Slice 4 — see decisions.md.
+        learning = state.agent_results.get("learning")
+        if learning is not None and learning.status == "ok":
+            block = self._build_from_learning(learning, order=order)
             if block is not None:
                 return block
 
+        # 2. Socratic (SocraticDialog)
+        socratic = state.agent_results.get("socratic")
+        if socratic is not None and socratic.status == "ok":
+            block = self._build_from_socratic(socratic, order=order)
+            if block is not None:
+                return block
+
+        # 3. Discovery (GapAnalysis | InsightCard)
+        discovery = state.agent_results.get("discovery")
+        if discovery is not None and discovery.status == "ok":
+            block = self._build_from_discovery(discovery, order=order)
+            if block is not None:
+                return block
+
+        # 4. Research (CitedSummary, with Fact Check filter)
         research = state.agent_results.get("research")
         fact_check = state.agent_results.get("fact_checker")
 
@@ -80,19 +105,67 @@ class UIAgent(BaseAgent):
         )
         try:
             data = CitedSummaryData.model_validate(payload)
-            return self._build_cited_summary(data, status=status, order=len(state.ui_blocks))
+            return self._build_cited_summary(data, status=status, order=order)
         except ValidationError as e:
             logger.warning("ui_agent.payload_invalid", error=str(e))
             return self._error_block(
                 f"Research payload failed schema validation: {e.error_count()} field(s)"
             )
 
-    def _build_from_discovery(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
-        """Build a GapAnalysis or InsightCard from the discovery agent result.
+    # -- Per-agent block builders -----------------------------------------
 
-        Returns None when the payload is missing or fails validation so the
-        caller can fall through to the CitedSummary path.
-        """
+    def _build_from_learning(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "FlashcardDeck":
+            try:
+                data = FlashcardDeckData.model_validate(data_dict)
+                return FlashcardDeck(
+                    type="FlashcardDeck",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.learning_flashcard_invalid", error=str(e))
+                return None
+
+        if block_type == "QuizCard":
+            try:
+                data = QuizCardData.model_validate(data_dict)
+                return QuizCard(
+                    type="QuizCard",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.learning_quiz_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_socratic(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "SocraticDialog":
+            try:
+                data = SocraticDialogData.model_validate(data_dict)
+                return SocraticDialog(
+                    type="SocraticDialog",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.socratic_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_discovery(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
         block_type = result.payload.get("block_type")
         data_dict = result.payload.get("data", {}) or {}
 
@@ -109,9 +182,8 @@ class UIAgent(BaseAgent):
                 logger.warning("ui_agent.discovery_gap_invalid", error=str(e))
                 return None
 
-        # InsightCard routing deferred to Slice 3 (DiscoveryAgent will produce it
-        # once cross-doc connection extraction is grounded — see decisions.md).
-
+        # InsightCard routing deferred (DiscoveryAgent to produce it in Slice 4
+        # with grounded cross-doc connection extraction — see decisions.md).
         return None
 
     # -- Fact-check filter -----------------------------------------------
@@ -123,13 +195,6 @@ class UIAgent(BaseAgent):
         research_status: str,
         fact_check: AgentResult | None,
     ) -> tuple[dict[str, Any], str]:
-        """Return (filtered_payload, final_status).
-
-        If the Fact Checker ran with status='ok' and produced a
-        `dropped_ids` list, remove those citations from `citations` AND
-        from each segment's `citationIds`. Downgrade to 'partial' when
-        more than half were dropped.
-        """
         base_status = "ready" if research_status == "ok" else "partial"
 
         if fact_check is None or fact_check.status != "ok":
@@ -160,7 +225,9 @@ class UIAgent(BaseAgent):
 
     # -- Block constructors ----------------------------------------------
 
-    def _build_cited_summary(self, data: CitedSummaryData, *, status: str, order: int = 0) -> CitedSummary:
+    def _build_cited_summary(
+        self, data: CitedSummaryData, *, status: str, order: int = 0
+    ) -> CitedSummary:
         return CitedSummary(
             type="CitedSummary",
             id=_new_block_id(),
@@ -175,7 +242,7 @@ class UIAgent(BaseAgent):
         return CitedSummary(
             type="CitedSummary",
             id=_new_block_id(),
-            meta=BlockMeta(panel="chat", order=0, status="error"),
+            meta=BlockMeta(panel="chat", order=0, status="error"),  # type: ignore[arg-type]
             data=CitedSummaryData(
                 summary=f"Sorry — {message}",
                 segments=[],

@@ -52,10 +52,50 @@
 ## Entries
 
 <!-- New entries go below this line, newest first. -->
+
+### 2026-06-06 — SocraticAgent reads state.ui_blocks (Tier 3 output slot)
+
+- **Status:** ASSUMED
+- **Context:** `_extract_prior_turns()` in `api/agents/tier2/socratic.py` reads `state.ui_blocks` to reconstruct prior Socratic turns for conversation continuity. `state.ui_blocks` is the UI Agent's output slot (Tier 3), and Tier 2 agents should only read from `state.retrieved_ctx` and `state.agent_results`. This is a seam violation (code-reviewer WARNING-7).
+- **Decision:** Defer the fix to Slice 5 (multi-turn session management). In P1, prior turns should flow through the ChatRequest history payload rather than via the UI output slot. For now the behaviour is correct — prior turns are reconstructed correctly — but the coupling is architecturally fragile.
+- **Why:** Fixing it properly requires the frontend to send session history in `ChatRequest` and `AgentState` to carry a `history` field. That work belongs to the accounts/session slice (§1.8), not Slice 3.
+- **Revisit if:** §1.8 (accounts & sessions) or multi-turn Socratic continuity becomes a test requirement.
+
+### 2026-06-06 — Intent routing unreachable from chat route (study/socratic intents)
+
+- **Status:** ASSUMED
+- **Context:** `api/agents/graph.py` wires `study` and `socratic` intents as LangGraph conditional edges. However, `api/routes/chat.py` constructs `AgentState` with `intent=""` (default), and the orchestrator fallback `state.intent or _DEFAULT_INTENT` always returns `"research"`. LearningAgent and SocraticAgent are registered and wired, but the full chat pipeline cannot route to them without an explicit `state.intent` set upstream.
+- **Decision:** Add a `decisions.md` entry (this one). As a minimal bridge, `active_mode` → `intent` mapping can be added to the orchestrator node in Slice 4 (`"study"` mode → `"study"` intent, `"socratic"` mode → `"socratic"` intent) so agents are reachable without a full intent-detection pass.
+- **Why:** Full intent detection (Q-03) is a P1 work item (§1.3). Agents are testable in isolation; end-to-end routing is the Phase 1 deliverable. Shipping the agents without the router is consistent with the walking-skeleton mandate.
+- **Revisit if:** Slice 4 adds active_mode → intent mapping OR the full intent classifier (§1.3) lands.
+
+### 2026-06-06 — FeynmanExplainer: schema + renderer registered, no producing agent yet
+
+- **Status:** ASSUMED
+- **Context:** `FeynmanExplainer` is defined in the schema (`packages/schema/src/blocks.ts`), has a renderer (`web/components/genui/FeynmanExplainer.tsx`), and is registered in the registry. However, no backend agent produces a `FeynmanExplainer` payload. The UIAgent's `_build_from_learning` branch for FeynmanExplainer was removed (code-reviewer CRITICAL-3) to avoid dead wiring. The FeynmanExplainer frontend component remains live (schema and renderer are correct), waiting for its producing agent.
+- **Decision:** Defer FeynmanExplainer production to Slice 4 (Writing/Explain mode). The schema and renderer are intentionally registered now — they are correct and will be used. No agent produces them yet.
+- **Why:** Adding FeynmanExplainer to `LearningAgent` in Slice 3 would require a new prompt, parse path, and tests — that's a distinct agent concern better grouped with the Writing/Explain mode work in Slice 4.
+- **Revisit if:** Slice 4 Writing mode starts; that slice should implement `_generate_feynman()` in LearningAgent (or a dedicated FeynmanAgent) and restore the UIAgent routing branch.
+
+### 2026-06-06 — Slice 3 complete: Study mode — LearningAgent + SocraticAgent + 4 GenUI components
+
+- **Status:** DECIDED
+- **Context:** Slice 3 goal was to add Study mode: 4 new UIBlock variants, 4 React components, LearningAgent (flashcards + quiz), SocraticAgent (never-answer Socratic dialogue), and UI Agent routing for study/socratic intents.
+- **Decision:**
+  - Preflight: Orchestrator direct-import violation (Slice 2 ADR debt) resolved — constructor params typed as `BaseAgent`.
+  - Chunk 1 (Schema): 4 new UIBlock variants (FlashcardDeck, QuizCard, SocraticDialog, FeynmanExplainer) added to `packages/schema/` + codegen updated (`number → float`, PEP 604 union syntax).
+  - Chunk 2 (React): 4 new GenUI components with all four states + 4 registry rows (registry now covers all 10 UIBlock variants).
+  - Chunk 3 (LearningAgent): Tier-2 agent, hybrid_retrieve → LLM → FlashcardDeck | QuizCard payloads. Intent keyword heuristic for quiz vs flashcard (documented as temp — see WARNING-S1 from code-reviewer).
+  - Chunk 4 (SocraticAgent): Tier-2 agent with never-answer contract (`_is_answer_shaped()` guard, 2-attempt regeneration, safe fallback question).
+  - Chunk 5 (UI Agent + graph): study/socratic intent nodes wired in `graph.py`; UIAgent priority routing updated (learning > socratic > discovery > research > error).
+  - Post-review fixes: blocks.py import facade updated (CRITICAL-1); 5 new validate tests (CRITICAL-2); FeynmanExplainer dead branch removed from UIAgent (CRITICAL-3); bg-accent/8 → bg-accent/10 token fix (WARNING-6); deferred decisions logged (WARNING-4, WARNING-7).
+- **Why:** All chunks kept gates green throughout. Code-reviewer found 3 CRITICALs and 4 WARNINGs — all addressed before commit.
+- **Revisit if:** Slice 4 (Writing/Explain mode) implements FeynmanExplainer production and active_mode → intent mapping.
+
 ### 2026-06-06 — Slice 2 scope: GenUI catalog breadth + UI Agent intent routing
 
 - **Status:** DECIDED
-- **Context:** Slice 1 closed the agent-maturity seam (LangGraph + entity extraction + GraphRetriever + Fact Checker + Memory Agent). The remaining P1 work requires more GenUI components before any new tier-2 agents can emit useful output. FR-UI-02 (24-component catalog), FR-UI-04 (UI Agent selects by intent/mode/history), and FR-AGT-06 (15+ agents) are all P1 Must.
+- **Context:** Slice 1 closed the agent-maturity seam (LangGraph + entity extraction + real GraphRetriever + Fact Checker + Memory Agent). The remaining P1 work requires more GenUI components before any new tier-2 agents can emit useful output. FR-UI-02 (24-component catalog), FR-UI-04 (UI Agent selects by intent/mode/history), and FR-AGT-06 (15+ agents) are all P1 Must.
 - **Decision:** Five-chunk slice: (1) Schema — 5 new UIBlock variants (LiteratureMatrix, ContradictionAlert, GapAnalysis, InsightCard, KnowledgeGraphView); (2) React components — 5 TSX files with all four states + registry rows; (3) UI Agent intent→component routing to replace the always-CitedSummary hard-code (FR-UI-04); (4) DiscoveryAgent (tier-2) — produces GapAnalysis and InsightCard payloads; (5) Design tokens already wired in tailwind.config.ts (no new work needed).
 - **Why:** Components before agents — an agent that emits a GapAnalysis payload needs its renderer to exist or the pipeline will never produce a visible result. Schema-first ordering is the wire-contract invariant (#2). Routing the UI Agent before adding DiscoveryAgent ensures the first non-CitedSummary block type is immediately rendered correctly.
 - **Revisit if:** The interactive D3 KnowledgeGraphView is added (out of scope for this slice; the payload shape is locked so the agent side won't change).

@@ -10,7 +10,7 @@ import { _registeredTypes } from './registry';
 
 describe('GenUI registry', () => {
   it('registers exactly the slice-supported variants', () => {
-    // Slice 2 scope: CitedSummary + 5 new catalog variants.
+    // Slice 3 scope: 6 (Slice 2) + 4 new learning/socratic catalog variants.
     expect(new Set(_registeredTypes())).toEqual(
       new Set([
         'CitedSummary',
@@ -19,6 +19,10 @@ describe('GenUI registry', () => {
         'GapAnalysis',
         'InsightCard',
         'KnowledgeGraphView',
+        'FlashcardDeck',
+        'QuizCard',
+        'SocraticDialog',
+        'FeynmanExplainer',
       ])
     );
   });
