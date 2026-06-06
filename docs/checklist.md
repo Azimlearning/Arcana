@@ -124,9 +124,9 @@
 - [ ] **Verify the worked example** ("compare three papers" with 2 A2A hops + 3 streamed blocks) — *Listing 12.1*.
 
 ### 1.5 Build out the agents (Tier 2/3/4, P1 set)
-- [ ] Tier 2: `learning.py`, `writing.py`, `socratic.py`, `discovery.py`.
-- [ ] Tier 3: `ui_agent.py`, `citation.py`, `visual.py`, `document.py`.
-- [ ] Tier 4: `fact_checker.py`, `annotation.py`, `memory.py`, `ingestion_agent.py`, `web_search.py`, `study_planner.py`, `analytics.py`.
+- [ ] Tier 2: `learning.py` ✓, `writing.py`, `socratic.py` ✓, `discovery.py` ✓ — 3/4 done; `writing.py` → Slice 4.
+- [ ] Tier 3: `ui_agent.py` ✓, `citation.py`, `visual.py`, `document.py`.
+- [ ] Tier 4: `fact_checker.py` ✓, `annotation.py`, `memory.py` ✓, `ingestion_agent.py`, `web_search.py`, `study_planner.py`, `analytics.py`.
 - [x] Fact Checker verifies claims before output is finalised — **FR-AGT-09 (S)**.
 - [ ] Web Search Agent limited to academic discovery (Semantic Scholar / arXiv) — §12, scope non-goal respected.
 
@@ -138,8 +138,8 @@
 - [x] `web/lib/stream.ts`: SSE → `UIBlock[]` consumer — §13.2.
 - [x] `web/components/genui/registry.ts` + `renderBlock()` — *Listing 14.2*, **NFR-MNT-02**.
 - [x] Agents emit declarative typed components, never raw HTML/text — **FR-UI-03 (M)**.
-- [ ] Build the **24-component catalog** (one file each) — **FR-UI-02 (M)**, §13.3, `uiux_plan.md` §5.
-- [ ] Every component implements Empty/Loading/Partial/Error via `BlockStates.tsx` — **NFR-USE-02**, **FR-UI-09 (S)**, `uiux_plan.md` §6.
+- [ ] Build the **24-component catalog** (one file each) — **FR-UI-02 (M)**, §13.3, `uiux_plan.md` §5. *(10/24 done: CitedSummary, LiteratureMatrix, ContradictionAlert, GapAnalysis, InsightCard, KnowledgeGraphView, FlashcardDeck, QuizCard, SocraticDialog, FeynmanExplainer.)*
+- [ ] Every component implements Empty/Loading/Partial/Error via `BlockStates.tsx` — **NFR-USE-02**, **FR-UI-09 (S)**, `uiux_plan.md` §6. *(10/24 implement all four states.)*
 - [x] `ui_agent.py` selects components from intent/mode/history — **FR-UI-04 (M)**, *Listing 13.2*.
 - [ ] 3-panel adaptive shell; panel widths + visibility adapt — **FR-UI-01/05 (M)**.
 - [ ] Ship **≥ 3 modes** (Research, Writing, Study); demonstrate 5 — **FR-UI-06 (M)**, §13.5, `uiux_plan.md` §4.
@@ -148,11 +148,11 @@
 - [ ] Agent-pipeline trace with A2A hop badges, tier-coloured — `uiux_plan.md` §8.
 
 ### 1.7 Learning system
-- [ ] Flashcards from doc/topic — **FR-LRN-01 (M)**.
-- [ ] Spaced-repetition scheduling (FSRS/SM-2 — decide via **Q-04**) — **FR-LRN-02 (M)**.
-- [ ] Quizzes (MCQ + short-answer) at selectable difficulty — **FR-LRN-03 (M)**.
-- [ ] Feynman explanations + gap flags — **FR-LRN-04 (S)**; Cornell notes — **FR-LRN-05 (C)**; blurting — **FR-LRN-06 (C)**.
-- [ ] Socratic tutor never gives direct answers — **FR-LRN-08 (S)**.
+- [x] Flashcards from doc/topic — **FR-LRN-01 (M)** *(Slice 3: LearningAgent → FlashcardDeck)*.
+- [ ] Spaced-repetition scheduling (FSRS/SM-2 — decide via **Q-04**) — **FR-LRN-02 (M)**. *(ScheduleState schema in place; scheduling algorithm deferred.)*
+- [x] Quizzes (MCQ + short-answer) at selectable difficulty — **FR-LRN-03 (M)** *(Slice 3: LearningAgent → QuizCard)*.
+- [ ] Feynman explanations + gap flags — **FR-LRN-04 (S)**; Cornell notes — **FR-LRN-05 (C)**; blurting — **FR-LRN-06 (C)**. *(FeynmanExplainer schema + renderer done; producing agent deferred to Slice 4.)*
+- [x] Socratic tutor never gives direct answers — **FR-LRN-08 (S)** *(Slice 3: SocraticAgent with _is_answer_shaped() guard)*.
 - [ ] Pomodoro + study schedules — **FR-LRN-09 (C)**; per-topic progress tracking — **FR-LRN-10 (S)**.
 
 ### 1.8 Accounts & persistence
