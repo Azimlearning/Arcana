@@ -57,6 +57,27 @@
 
 <!-- New entries go below this line, newest first. -->
 
+### 2026-06-08 — Slice 6 complete: adaptive 3-panel shell — FR-UI-01/05, FR-UI-07
+
+- **Status:** DECIDED
+- **Context:** Slice 6 goal was (a) per-mode panel width/visibility (FR-UI-01/05) and (b) manual drag override (FR-UI-07 layout half).
+- **Decision:**
+  - `PanelLayout` type + `MODE_LAYOUT` record added to `uiStore.ts` (research 20/45/35; study 8/45/47; writing 20/80/0; socratic 18/40/42; exploration 0/25/75). `selectActiveLayout` selector returns `layoutOverride ?? MODE_LAYOUT[activeMode]`. `setActiveMode` clears override so mode switches reset to the mode's default layout.
+  - `Shell.tsx` hardcoded grid replaced with flex row driven by `selectActiveLayout`. Collapsed panels (studio in Writing, sources in Exploration) use `flex-grow:0; overflow:hidden; aria-hidden; inert` so they are invisible to keyboard and screen readers.
+  - `PanelResizer.tsx` (new): 4px drag handle + arrow-key nudge, writes `setLayoutOverride`. Drag math back-calculates sources/studio from the actual chat floor to keep the flex-sum conserved. ARIA splitter attributes (`aria-valuenow/min/max`) added.
+  - `flex-grow` is not CSS-animatable (spec); transition classes removed; width-transition deferred to a follow-up slice using CSS grid fr-tracks or explicit width approach.
+  - 21 frontend tests (was 11 before Slice 6); all 335 backend tests remain green.
+- **Why:** All code-reviewer CRITICALs (React namespace import, flex-unit drift) and WARNINGs (dead transition classes, missing ARIA, keyboard focus into collapsed panels) addressed before commit.
+- **Revisit if:** Width transition animation is needed — then migrate Shell to `grid-template-columns: Xfr 4px Xfr 4px Xfr` which IS animatable.
+
+### 2026-06-08 — Slice 6 scope: adaptive 3-panel shell — frontend layout map
+
+- **Status:** DECIDED
+- **Context:** Slice 6 goal: make the three shell panels resize/hide per mode (FR-UI-01/05) and add a manual-drag override (FR-UI-07 layout half). `uiux_plan.md` §3 states the UI Agent ultimately computes layout per turn; a static frontend map is the pragmatic first cut. Two options: (A) frontend `mode → layout` map in `uiStore` — no schema change; (B) `LayoutHint` over the wire from the UI Agent — schema-first change touching codegen + validator + streamer + UIAgent + stream.ts.
+- **Decision:** Option A — frontend map. `PanelLayout` type and `MODE_LAYOUT` record in `uiStore.ts`. `selectActiveLayout` selector returns `layoutOverride ?? MODE_LAYOUT[activeMode]`. `setActiveMode` clears the override so mode switches always snap to the default for the new mode. `PanelResizer.tsx` writes drag results to `setLayoutOverride`. Chunk order: (1) uiStore + tests, (2) Shell.tsx flex layout + transitions, (3) PanelResizer.tsx drag handle. Agent-driven layout (`LayoutHint` on the wire) explicitly deferred — logged here so Slice 7+ can pick it up cleanly.
+- **Why:** Walking-skeleton mandate — don't build the second of anything until the first is green. A wire-level LayoutHint requires a non-trivial schema-first change (6+ files) while the runtime behaviour is still purely mode-dependent; the frontend map produces identical UX with a fraction of the diff.
+- **Revisit if:** The UI Agent gains per-turn layout intelligence (e.g. expanding Studio when a KnowledgeGraphView streams in) — at that point the LayoutHint wire approach is the right upgrade.
+
 ### 2026-06-07 — Slice 4 complete: Writing mode — WritingAgent + DraftEditor + FeynmanExplainer production
 
 - **Status:** DECIDED
