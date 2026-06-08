@@ -142,8 +142,8 @@
 - [ ] Every component implements Empty/Loading/Partial/Error via `BlockStates.tsx` — **NFR-USE-02**, **FR-UI-09 (S)**, `uiux_plan.md` §6. *(11/24 implement all four states.)*
 - [x] `ui_agent.py` selects components from intent/mode/history — **FR-UI-04 (M)**, *Listing 13.2*.
 - [ ] 3-panel adaptive shell; panel widths + visibility adapt — **FR-UI-01/05 (M)**.
-- [ ] Ship **≥ 3 modes** (Research, Writing, Study); demonstrate 5 — **FR-UI-06 (M)**, §13.5, `uiux_plan.md` §4.
-- [ ] Manual layout/mode override recorded in `uiStore` and respected — **FR-UI-07 (S)**.
+- [x] Ship **≥ 3 modes** (Research, Writing, Study); demonstrate 5 — **FR-UI-06 (M)**, §13.5, `uiux_plan.md` §4. *(Slice 5: 5-mode switcher → `activeMode` on the wire → `_MODE_TO_INTENT` routing. research/study/writing/socratic/exploration all reachable.)*
+- [~] Manual layout/mode override recorded in `uiStore` and respected — **FR-UI-07 (S)**. *(Slice 5: mode override done — switcher writes `uiStore.activeMode`, respected per turn. Layout/panel-width override pending the adaptive shell, Slice 6.)*
 - [ ] First-run/activation flow + error/degradation states (not in mockup yet) — `uiux_plan.md` §7.1, §7.4.
 - [ ] Agent-pipeline trace with A2A hop badges, tier-coloured — `uiux_plan.md` §8.
 
