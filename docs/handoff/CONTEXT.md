@@ -56,7 +56,7 @@ fight the `Edit`/`Write` tools — reach for the MCP tools immediately.
 |---|---|
 | **Branch** | `ExDev` (parent of all the work) |
 | **Phase** | P1 (FYP 2 MVP, graded) |
-| **HEAD** | `6525156` — Slice 5 checklist tick |
+| **Latest work** | Slice 5 — code `e73e830`, checklist `6525156`; the docs/handoff refresh commits sit on top. Run `git log --oneline -6` for the exact HEAD (these docs can't name their own commit hash). |
 | **Tests** | **335 backend** (pytest) + **11 frontend** (vitest) — all green |
 | **Agents** | **10** of the 15+ target (FR-AGT-06) |
 | **GenUI catalog** | **11 of 24** components, all four states each |
@@ -169,6 +169,36 @@ Flow: header switcher → `uiStore.activeMode` → `ChatRequest.activeMode` →
 `AgentState.active_mode` → `_MODE_TO_INTENT` → agent. `research` falls
 through to the default intent; `exploration → discovery`.
 
+## Where things live (the files this handoff names)
+
+Full map: `docs/project_file_structure.md`. The load-bearing files referenced
+above, with their **real** paths/extensions:
+
+```
+packages/schema/src/{api,blocks,payloads,entities}.ts   # wire contract (TS authoritative)
+packages/schema/codegen/to_python.ts                    # → api/genui/_generated.py (Pydantic)
+api/genui/_generated.py     # generated; do not hand-edit
+api/genui/blocks.py         # stable import facade re-exporting _generated
+api/genui/validate.py       # fail-closed UIBlock validator
+api/agents/base.py          # BaseAgent, @tool, registry, route_to_agent, AgentState
+api/agents/graph.py         # LangGraph build_graph(), _orchestrator_node, _MODE_TO_INTENT
+api/agents/orchestrator.py  # graph runner; takes extra_agents=[...]
+api/agents/tier2/*.py       # research, graph_agent, discovery, learning, socratic, writing
+api/agents/tier3/ui_agent.py  # the ONLY component-picker
+api/agents/tier4/*.py       # fact_checker, memory
+api/routes/chat.py          # POST /chat — builds AgentState from ChatRequest
+api/main.py                 # build_orchestrator() — REGISTER new tier-2 agents here
+web/components/shell/*.tsx   # Shell, ChatPanel, SourcesPanel, StudioPanel, ModeIndicator
+web/components/genui/registry.tsx   # NOTE: .tsx, not .ts — single renderBlock() dispatch
+web/components/genui/<Name>.tsx     # one renderer per UIBlock variant
+web/store/uiStore.ts        # activeMode (+ future layout overrides)
+web/store/blockStore.ts     # streamed block list
+web/lib/stream.ts           # SSE-over-POST consumer
+```
+
+(CLAUDE.md and some rule files write `registry.ts`; the file on disk is
+`registry.tsx`. Trust the disk.)
+
 ## What's deferred (and WHY)
 
 ADRs live in `.claude/memory/decisions.md` (newest first). Don't rebuild
@@ -246,6 +276,13 @@ per-mode table). Per-mode targets from §4:
 document, tier-4 web_search/study_planner/analytics) and **Slice 8** (the
 hybrid-vs-flat eval benchmark, §1.12 / R-02 — the primary graded metric).
 Slices 7 and 8 carry most of the remaining grade-weight.
+
+> **Slice numbering note.** Realized slices are P0 + 1–5; 6/7/8 are the
+> planned next increments (numbering continues from the 5 shipped). The
+> *inline* `→ slice N` annotations inside `docs/checklist.md` are from the
+> original pre-build estimate (which guessed ~14 slices) and do **not** map
+> to realized slice numbers — read them as "deferred to a later slice," not
+> as a specific one. When in doubt, this file's ledger is the truth.
 
 When you start a slice, read **PROCESS.md** for the preflight ritual, then
 write the slice plan into a new ADR before any code.

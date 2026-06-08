@@ -14,6 +14,10 @@
 
 ## Template
 
+<!-- The block below is a FORMAT EXAMPLE, not a real ADR. Real entries are
+     under "## Entries" further down, newest first. Do not read the dated
+     example here as the latest decision. -->
+
 ```markdown
 
 ### 2026-06-06 — Slice 2 complete: GenUI catalog breadth + UI Agent routing + DiscoveryAgent

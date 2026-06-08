@@ -78,7 +78,7 @@
 ### 0.9 PoC demo + FYP 1 deliverables
 - [x] Minimal `POST /chat` returning a `CitedSummary` over the demo corpus — fail-closed validation + SSE stream.
 - [x] `eval/`: corpus directory + draft `questions.yaml` (3 placeholders) + stub `run_benchmark.py`.
-- [ ] Working hybrid-retrieval **comparison demo** (hybrid vs flat) — *(P1 §1.12; slice 11.)*
+- [ ] Working hybrid-retrieval **comparison demo** (hybrid vs flat) — *(P1 §1.12 — eval benchmark; planned as a late P1 slice.)*
 - [ ] FYP 1 report + system design written — *(author task, not code.)*
 
 ### ✅ Phase 0 release gate

@@ -95,7 +95,7 @@ Run all six gates. Order doesn't matter; they're independent.
 ```bash
 # Backend
 uv run ruff check api/                                      # → All checks passed
-uv run --with pyright pyright api/                          # → 0 errors
+uv run --with pyright pyright api/                          # → 0 errors, 0 warnings
 uv run pytest -q api/                                       # → 335 passed
 
 # Schema drift
