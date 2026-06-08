@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from api.core.budget import TokenBudget
 from api.core.logging import get_logger
-from api.genui._generated import UIBlock
+from api.genui._generated import Mode, UIBlock
 from api.llm.types import Message
 from api.retrieval.types import RetrievedChunk
 
@@ -81,9 +81,10 @@ class AgentState(BaseModel):
 
     query: str
     notebook_id: str = ""
-    active_mode: Literal[
-        "research", "study", "writing", "socratic", "exploration"
-    ] = "research"
+    # `Mode` is the schema-owned wire type (packages/schema/src/api.ts →
+    # codegen). Imported, never re-declared, so a new mode added to the
+    # schema can't drift from the agent state (R-10).
+    active_mode: Mode = "research"
     intent: str = ""   # set by Orchestrator; consumed by conditional routing
     messages: Annotated[list[Message], add] = Field(default_factory=list)
     retrieved_ctx: Annotated[list[RetrievedChunk], add] = Field(default_factory=list)

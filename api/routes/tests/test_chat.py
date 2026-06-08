@@ -36,9 +36,11 @@ class _StubOrchestrator:
         self._block = block
         self._raise = raise_exc
         self.calls: list[str] = []
+        self.modes: list[str] = []
 
     async def run(self, *, query: str, state: AgentState) -> AgentResult:
         self.calls.append(query)
+        self.modes.append(state.active_mode)
         if self._raise:
             raise self._raise
         if self._block:
@@ -115,6 +117,77 @@ def test_chat_streams_done_even_with_no_blocks():
     assert resp.status_code == 200
     frames = _parse_sse(resp.text)
     assert [f["event"] for f in frames] == ["ready", "done"]
+
+
+# ─── Mode routing (Slice 5, FR-UI-06) ─────────────────────────────
+
+
+def test_chat_passes_active_mode_to_state():
+    """activeMode on the request must reach AgentState.active_mode so the
+    orchestrator can route to the matching agent (graph.py:_MODE_TO_INTENT)."""
+    orch = _StubOrchestrator(block=_sample_block())
+    app = _build_app(orch)
+    client = TestClient(app)
+    resp = client.post(
+        "/chat",
+        json={
+            "notebookId": "nb1",
+            "message": "make flashcards",
+            "history": [],
+            "activeMode": "study",
+        },
+    )
+    assert resp.status_code == 200
+    assert orch.modes == ["study"]
+
+
+def test_chat_passes_exploration_mode_to_state():
+    """'exploration' is a valid wire mode (maps to the discovery intent in
+    graph.py); it must reach AgentState unchanged."""
+    orch = _StubOrchestrator(block=_sample_block())
+    app = _build_app(orch)
+    client = TestClient(app)
+    resp = client.post(
+        "/chat",
+        json={
+            "notebookId": "nb1",
+            "message": "what's missing in my corpus?",
+            "history": [],
+            "activeMode": "exploration",
+        },
+    )
+    assert resp.status_code == 200
+    assert orch.modes == ["exploration"]
+
+
+def test_chat_defaults_mode_to_research_when_omitted():
+    """A request without activeMode coalesces to 'research' (back-compat)."""
+    orch = _StubOrchestrator(block=_sample_block())
+    app = _build_app(orch)
+    client = TestClient(app)
+    resp = client.post(
+        "/chat", json={"notebookId": "nb1", "message": "x", "history": []}
+    )
+    assert resp.status_code == 200
+    assert orch.modes == ["research"]
+
+
+def test_chat_rejects_invalid_mode():
+    """activeMode is a closed Literal; an unknown value fails validation."""
+    orch = _StubOrchestrator(block=_sample_block())
+    app = _build_app(orch)
+    client = TestClient(app)
+    resp = client.post(
+        "/chat",
+        json={
+            "notebookId": "nb1",
+            "message": "x",
+            "history": [],
+            "activeMode": "banana",
+        },
+    )
+    assert resp.status_code == 422
+    assert orch.modes == []
 
 
 # ─── Body validation ─────────────────────────────────────────────

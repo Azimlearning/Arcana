@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     notebookId: str
     message: str
     history: list[ChatMessage]
+    activeMode: Mode | None = None
 
 
 class Chunk(BaseModel):
@@ -287,6 +288,8 @@ ChatRole = Literal['user', 'assistant']
 GapSeverity = Literal['high', 'medium', 'low']
 
 IngestStatus = Literal['pending', 'parsing', 'embedding', 'ready', 'failed']
+
+Mode = Literal['research', 'study', 'writing', 'socratic', 'exploration']
 
 Panel = Literal['sources', 'chat', 'studio']
 

@@ -42,11 +42,14 @@ _DEFAULT_INTENT = "research"
 
 # Maps active_mode strings to intent labels. A mode takes priority over
 # a blank state.intent; an explicit state.intent (set by a future full
-# intent-detection pass) beats both.
+# intent-detection pass) beats both. "research" is absent on purpose: it
+# falls through to _DEFAULT_INTENT. "exploration" routes to the Discovery
+# agent (gap/insight analysis) added in Slice 2.
 _MODE_TO_INTENT: dict[str, str] = {
     "study": "study",
     "socratic": "socratic",
     "writing": "writing",
+    "exploration": "discovery",
 }
 
 logger = get_logger(__name__)
@@ -151,8 +154,10 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
     }
 
 
-# Branch labels recognised by the conditional edge below. Extend ALL of
-# these together when adding a new intent:
+# Branch labels recognised by the conditional edge below. These are *intent*
+# labels, NOT mode names — `_MODE_TO_INTENT` translates modes to these (e.g.
+# the "exploration" mode maps to the "discovery" intent). Extend ALL of these
+# together when adding a new intent:
 #   1. Add the agent + register it
 #   2. Add a node in `build_graph`
 #   3. Add the label here AND in the conditional-edges dict in `build_graph`

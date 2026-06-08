@@ -52,6 +52,9 @@ async def chat(
     state = AgentState(
         query=request.message,
         notebook_id=request.notebookId,
+        # A missing mode coalesces to the safe default; the orchestrator
+        # maps active_mode → intent (graph.py:_MODE_TO_INTENT). FR-UI-06.
+        active_mode=request.activeMode or "research",
     )
 
     async def gen() -> AsyncIterator[str]:
@@ -63,7 +66,10 @@ async def chat(
         # `agent=...` only; the same `request_id` is already bound.
         bind_request_context(request_id=request_id)
         logger.info(
-            "chat.start", request_id=request_id, message_len=len(request.message)
+            "chat.start",
+            request_id=request_id,
+            message_len=len(request.message),
+            mode=state.active_mode,
         )
         try:
             try:

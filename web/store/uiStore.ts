@@ -1,15 +1,17 @@
 // Zustand store for shell UI state.
 //
-// Slice scope: only `activeMode`, fixed to 'research'. Mode switcher,
-// panel-width overrides (FR-UI-07), and animation flags land in P1.
+// `activeMode` drives both the UI (panel layout, mode chrome) and the wire:
+// ChatPanel sends it on every turn so the backend can route to the matching
+// agent (api/agents/graph.py:_MODE_TO_INTENT). FR-UI-06.
 //
-// TODO(P1, FR-UI-07): wire setActiveMode from the mode switcher in the
-// header. Slice ships the setter unused so the ModeIndicator stays a
-// pure read site.
+// `Mode` is owned by the schema package (single source of truth across the
+// wire) and re-exported here so shell components import it from one place.
 
 import { create } from 'zustand';
 
-export type Mode = 'research' | 'study' | 'writing' | 'socratic' | 'exploration';
+import type { Mode } from '@arcana/schema';
+
+export type { Mode };
 
 interface UIStore {
   activeMode: Mode;

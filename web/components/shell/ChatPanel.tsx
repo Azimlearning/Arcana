@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/genui/BlockStates';
 import { Button } from '@/components/ui/Button';
 import { streamChat } from '@/lib/stream';
 import { useBlockStore } from '@/store/blockStore';
+import { useUIStore } from '@/store/uiStore';
 
 interface Props {
   notebookId: string;
@@ -23,6 +24,7 @@ export function ChatPanel({ notebookId }: Props) {
   const replaceBlockById = useBlockStore((s) => s.replaceBlockById);
   const setError = useBlockStore((s) => s.setError);
   const finishTurn = useBlockStore((s) => s.finishTurn);
+  const activeMode = useUIStore((s) => s.activeMode);
 
   const [input, setInput] = useState('');
 
@@ -52,7 +54,7 @@ export function ChatPanel({ notebookId }: Props) {
     let skeletonConsumed = false;
 
     await streamChat(
-      { notebookId, message, history: [] },
+      { notebookId, message, history: [], activeMode },
       {
         onBlock: (block: UIBlock) => {
           if (!skeletonConsumed) {
