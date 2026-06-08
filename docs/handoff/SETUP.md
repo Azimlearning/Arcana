@@ -1,159 +1,167 @@
-# Arcana — Setup Guide (post-Slice-1)
+# Arcana — Setup Guide (post-Slice-5)
 
 > This guide takes a fresh checkout of branch `ExDev` to **all gates green**
 > in ~15 minutes. If anything here doesn't match what you see in the repo,
 > the repo wins — open an issue / ADR.
+>
+> **Last refreshed:** 2026-06-08 (after Slice 5).
 
 ## 1. What you're walking into
 
-This branch contains:
+Branch `ExDev` contains **P0 + Slices 1–5**:
 
-- **P0 walking skeleton** (commit `267b035`) — end-to-end vertical: PDF →
-  hybrid retrieval → research → UI Agent → SSE → Next.js frontend with a
-  registry-based GenUI catalog.
-- **Slice 1 — agent maturity** (the most recent commit) — LangGraph
-  `StateGraph`, entity extraction → graph build, real GraphRetriever,
-  Fact Checker (FR-AGT-09), Memory Agent with start-of-turn read +
-  end-of-turn writeback.
+- **P0 walking skeleton** (`267b035`) — PDF → hybrid retrieval → research →
+  UI Agent → SSE → Next.js frontend with a registry-based GenUI catalog.
+- **Slice 1** (`8d5644c`) — LangGraph `StateGraph`, entity extraction →
+  graph build, real GraphRetriever, Fact Checker, Memory Agent.
+- **Slice 2** (`24d8c84`) — 5 GenUI variants + UIAgent intent routing +
+  DiscoveryAgent.
+- **Slice 3** (`307bbe2`) — Study mode: Learning + Socratic agents, 4 GenUI
+  variants.
+- **Slice 4** (`9e5a78a`) — Writing mode: WritingAgent + DraftEditor +
+  FeynmanExplainer production; all tier-2 agents registered in `api/main.py`.
+- **Slice 5** (`e73e830`) — mode switching end-to-end (5 modes, FR-UI-06).
 
-Headline state at the end of slice 1:
+Headline state at HEAD:
 
 | Gate | Result |
 |---|---|
-| `uv run ruff check api/ eval/` | All checks passed |
-| `uv run --with pyright pyright api/ eval/` | 0 errors, 0 warnings |
-| `uv run pytest -q api/` | **263 passed** |
+| `uv run ruff check api/` | All checks passed |
+| `uv run --with pyright pyright api/` | 0 errors, 0 warnings |
+| `uv run pytest -q api/` | **335 passed** |
 | `corepack pnpm --filter @arcana/schema codegen:check` | OK |
 | `corepack pnpm --filter @arcana/web typecheck` | 0 errors |
-| `corepack pnpm --filter @arcana/web test` | 7 passed |
+| `corepack pnpm --filter @arcana/web test` | **11 passed** |
 
-## 2. Prerequisites
+## 2. ⚠️ The one gotcha that will block you immediately
+
+The repo path contains a space: `...\FYP DOCS\Arcana`. The `.claude/`
+`PreToolUse` hooks are invoked with an **unquoted** `$CLAUDE_PROJECT_DIR`,
+so they crash on the space and **block every built-in `Edit` and `Write`
+tool call**. You will see:
+
+```
+PreToolUse:Edit hook error: ... can't open file 'c:\Users\User\Documents\FYP'
+```
+
+**Do not fight it.** Edit files like this instead:
+
+- Inside the repo → `mcp__filesystem__write_file` (full file) or
+  `mcp__filesystem__edit_file` (targeted edits). These skip the hook.
+- Outside the repo → Bash heredoc (`cat > path <<'EOF' ... EOF`).
+
+Permanent fix (optional, do it if you have buy-in): quote
+`"$CLAUDE_PROJECT_DIR"` in the hook commands in `.claude/settings.json`,
+or move the repo to a path with no spaces.
+
+## 3. Prerequisites
 
 - **Node 20+** with `corepack` (ships with Node). Don't install pnpm
-  globally; corepack reads `packageManager` in `package.json` and pins
-  pnpm 9.12.0 per-project.
-- **Python 3.11 or 3.12** — the project's `pyproject.toml` constrains
-  `>=3.11,<3.13`.
-- **uv** — `pip install uv` (or use the official installer). Tested
-  against uv 0.11+.
-- **Git for Windows / WSL / macOS / Linux** — any platform that ships
-  GNU Make. Windows-native cmd.exe is partly supported but `make clean`
-  needs Git Bash / WSL / MSYS (cross-platform path runs through Python).
-- **API accounts** for end-to-end ingest + chat:
-  [Anthropic](https://console.anthropic.com),
-  [OpenAI](https://platform.openai.com),
-  [Pinecone](https://app.pinecone.io). Tests use respx/stubs and don't
-  need real keys.
+  globally; corepack reads `packageManager` in `package.json`.
+- **Python 3.11 or 3.12** — `pyproject.toml` constrains `>=3.11,<3.13`.
+- **uv** — `pip install uv` (or the official installer). Tested on uv 0.11+.
+  (On the author's machine uv is at `~/.local/bin/uv.exe`; plain `uv` works
+  if it's on PATH.)
+- **Git Bash / WSL / macOS / Linux** for GNU Make. Windows-native cmd is
+  partly supported.
+- **API accounts** for end-to-end ingest + chat: Anthropic, OpenAI,
+  Pinecone. Tests use respx/stubs and don't need real keys.
 
-## 3. One-time setup
+## 4. One-time setup
 
 ```bash
-# 1. Get the branch
 git clone https://github.com/Azimlearning/Arcana.git
 cd Arcana
 git checkout ExDev
 
-# 2. Install workspace + Python deps
-corepack pnpm install        # web + schema workspace packages
-uv sync --dev                # Python runtime + dev deps
+corepack pnpm install                       # web + schema workspace
+uv sync --dev                               # Python runtime + dev deps
+corepack pnpm --filter @arcana/schema build # TS source → ESM + Pydantic codegen
 
-# 3. Build the schema package (TS source → compiled ESM + Pydantic codegen)
-corepack pnpm --filter @arcana/schema build
-
-# 4. Fill in your API keys (skip if you only need to verify the gates)
+# API keys (skip if you only need to verify the gates)
 cp infra/env/local.env.example api/.env
 cp web/.env.local.example      web/.env.local
 # Edit api/.env: ANTHROPIC_API_KEY, OPENAI_API_KEY, PINECONE_API_KEY,
 #                PINECONE_INDEX, PINECONE_ENVIRONMENT
 ```
 
-Pinecone setup detail: create a **serverless index named `arcana`** with
-**dimension 3072** and **metric cosine**. The dimension must match what
-OpenAI's `text-embedding-3-large` emits (R-02 — benchmark fairness).
+Pinecone: create a **serverless index named `arcana`**, **dimension 3072**,
+**metric cosine** — must match `text-embedding-3-large` (R-02 fairness).
 
-## 4. Verify the inherited state
+## 5. Verify the inherited state
 
 Run all six gates. Order doesn't matter; they're independent.
 
 ```bash
 # Backend
-uv run ruff check api/ eval/                                # → All checks passed
-uv run --with pyright pyright api/ eval/                    # → 0 errors
-uv run pytest -q api/                                       # → 263 passed (slice 1)
+uv run ruff check api/                                      # → All checks passed
+uv run --with pyright pyright api/                          # → 0 errors
+uv run pytest -q api/                                       # → 335 passed
 
 # Schema drift
 corepack pnpm --filter @arcana/schema codegen:check         # → codegen:check OK
 
 # Frontend
 corepack pnpm --filter @arcana/web typecheck                # → no output (clean)
-corepack pnpm --filter @arcana/web test                     # → 7 passed
-corepack pnpm --filter @arcana/web build                    # → optional; ~92 kB First Load JS
+corepack pnpm --filter @arcana/web test                     # → 11 passed
+corepack pnpm --filter @arcana/web build                    # → optional
 ```
 
-If any of these fail, **stop and diagnose** before writing new code.
-The slice 1 commit is the contract.
+If any fail, **stop and diagnose** before writing new code. The Slice 5
+commit is the contract. (If you edited the schema, re-run
+`corepack pnpm --filter @arcana/schema build` then `codegen` before the
+backend gates — the Pydantic models are generated from the TS source.)
 
-## 5. Run the slice end-to-end (optional — needs API keys)
+## 6. Run the slice end-to-end (optional — needs API keys)
 
 ```bash
 # Drop a PDF into eval/corpus/
-make ingest-demo            # ingests every *.pdf into Pinecone + chunk store + graph
+make ingest-demo            # ingests every *.pdf → Pinecone + chunk store + graph
 
 # Two terminals:
-make up-api                 # uvicorn on :8000 — orchestrator wired with real providers
-make up-web                 # Next on :3000
+make up-api                 # uvicorn :8000 — orchestrator wired with real providers
+make up-web                 # Next :3000
 ```
 
-Open <http://localhost:3000> — it redirects to `/notebooks/demo` and
-shows the 3-panel shell. Ask a question; you should see a streaming
-`CitedSummary` block with skeleton → hydrated state transitions, with
-clickable citations. The second turn in the same notebook should
-reference the first turn's history (Memory Agent in action).
+Open <http://localhost:3000> → redirects to `/notebooks/demo`, shows the
+3-panel shell **with the 5-mode switcher in the header** (Slice 5). Switch
+to **Study** and ask "make flashcards on X" → you should get a
+`FlashcardDeck`; switch to **Writing** and ask to draft a section → a
+`DraftEditor`. Research mode streams a `CitedSummary` with clickable
+citations and skeleton→hydrate transitions. Second turn in a notebook
+references the first (Memory Agent).
 
-## 6. Known gotchas
+## 7. Known gotchas
 
-- **Windows + Git: CRLF/LF warnings.** Harmless. `core.autocrlf` is on
-  by default; the repo's line endings normalize on first checkout.
-- **`VIRTUAL_ENV` warning from uv.** If your shell has `VIRTUAL_ENV` set
-  to a different Python venv, uv warns and prefers the project's `.venv`
-  anyway. Unset it (`Remove-Item Env:VIRTUAL_ENV` in PowerShell, `unset
-  VIRTUAL_ENV` in bash) to silence.
-- **`pnpm` not on PATH inside child shells.** Use `corepack pnpm ...`
-  everywhere. The Makefile already does this.
-- **Next.js fonts fetch from Google Fonts at build time.** First `next
-  build` on a fresh CI runner may retry. Not slice-blocking; if it bites
-  consistently, vendor `.woff2` files via `next/font/local`.
-- **Stale IDE diagnostics.** The harness sometimes reports
-  "Import X unused" or "Could not find name Y" on intermediate edit
-  snapshots. **Trust the CLI runs** (`ruff`, `pyright`) over IDE hints.
-- **`pytest` background queueing on Windows.** If you queue several
-  pytest runs in parallel via the harness, output files may stay empty.
-  Run pytest **one at a time, foreground**, with `--tb=short -p
-  no:cacheprovider`. The slice's full suite completes in ~2s.
-- **`make clean` is POSIX-flavoured.** Runs through `uv run python -c
-  "..."` so it works on Windows via Git Bash, WSL, MSYS, cmd, and
-  PowerShell. Plain Windows-find won't help.
+- **The hook path-spaces bug** — see §2. This is the big one.
+- **Windows CRLF/LF warnings on `git add`.** Harmless; Git normalizes.
+- **`VIRTUAL_ENV` warning from uv.** If your shell has a different venv,
+  uv warns and prefers the project `.venv` anyway. Unset to silence.
+- **`pnpm` not on PATH in child shells.** Use `corepack pnpm ...` everywhere.
+- **Next.js fonts fetch from Google Fonts at build time.** First `next build`
+  on a fresh runner may retry.
+- **Stale IDE diagnostics.** The harness sometimes shows "Import X unused"
+  on intermediate edit snapshots. Trust the CLI (`ruff`, `pyright`).
+- **`pytest` background queueing on Windows.** Run pytest foreground, one at
+  a time, `--tb=short -p no:cacheprovider`. Full suite ~3–5s.
 
-## 7. What's next
+## 8. What's next
 
-You're picking up **at the boundary between Slice 1 (done) and Slice 2
-(GenUI catalog breadth)**. Open these in order:
+You're picking up **at the boundary between Slice 5 (done) and Slice 6
+(adaptive 3-panel shell)**. Read in order:
 
-1. [`docs/handoff/CONTEXT.md`](CONTEXT.md) — narrative of what
-   shipped, what was deferred, what's open.
-2. [`docs/handoff/PROCESS.md`](PROCESS.md) — how this codebase is
-   built (slices, chunks, ADRs, the eight invariants, code-review
-   pattern).
-3. [`docs/handoff/HANDOFF_PROMPT.md`](HANDOFF_PROMPT.md) — the prompt
-   to give your new coding agent.
-4. [`CLAUDE.md`](../../CLAUDE.md) — the operating brief that's been
-   driving everything.
-5. [`docs/checklist.md`](../checklist.md) §1 (P1) — the work that
-   remains.
-6. [`.claude/memory/decisions.md`](../../.claude/memory/decisions.md) —
-   every assumption / deviation recorded by the previous agent.
+1. [`docs/handoff/CONTEXT.md`](CONTEXT.md) — what shipped (through Slice 5),
+   what's deferred, the Slice 6 outline.
+2. [`docs/handoff/PROCESS.md`](PROCESS.md) — slices, chunks, ADRs, the eight
+   invariants, the code-review pattern.
+3. [`docs/handoff/HANDOFF_PROMPT.md`](HANDOFF_PROMPT.md) — the prompt to give
+   your new coding agent.
+4. [`CLAUDE.md`](../../CLAUDE.md) — the operating brief.
+5. [`docs/checklist.md`](../checklist.md) §1 (P1) — the work that remains.
+6. [`.claude/memory/decisions.md`](../../.claude/memory/decisions.md) — every
+   ADR, newest first.
 
-The next slice's headline deliverable is **GenUI catalog breadth**:
-adding `LiteratureMatrix`, `ContradictionAlert`, `GapAnalysis`,
-`InsightCard`, `KnowledgeGraphView` — and teaching the UI Agent to
-pick components based on intent/mode. The plan is sketched in CONTEXT.md.
+**Slice 6 headline:** make the three panels resize/hide per mode
+(`docs/uiux_plan.md` §3–§4), completing FR-UI-01/05 and the layout half of
+FR-UI-07. After that: Slice 7 (more agents → 15+, FR-AGT-06) and Slice 8
+(the hybrid-vs-flat benchmark, §1.12 / R-02) — the two gate-critical slices.

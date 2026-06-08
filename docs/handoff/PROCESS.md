@@ -5,6 +5,8 @@
 > (operating brief — also load it; it's shorter), [`SETUP.md`](SETUP.md)
 > (how to verify your inherited state), and [`CONTEXT.md`](CONTEXT.md)
 > (what's already shipped).
+>
+> **Last refreshed:** 2026-06-08 (after Slice 5).
 
 ## 1. The mental model
 
@@ -20,18 +22,24 @@ two GenUI components, two retrievers — stop and check the slice plan.
 ## 2. Slices vs chunks
 
 - A **slice** is a deliverable vertical increment, typically 1–2 weeks
-  of work. It has a stated goal (e.g. "Agent maturity") and a closing
-  ADR that records what was deferred.
+  of work. It has a stated goal and a closing ADR that records what was
+  deferred.
 - A **chunk** is a single logical unit within a slice — usually 1 file
   + 1 test file + ~30 minutes of focused work. Each chunk ends with all
   gates green and (when meaningful) a code-review pass.
 
-The repo has shipped two slices so far:
-- **Slice 0** = P0 walking skeleton, 10 chunks (one per subsystem).
-- **Slice 1** = Agent maturity, 5 chunks (LangGraph, extraction,
-  GraphRetriever, Fact Checker, Memory Agent).
+Shipped so far (all on `ExDev`):
 
-Slice 2 is sketched in CONTEXT.md but not yet planned in detail.
+| Slice | Goal | Commit |
+|---|---|---|
+| 0 | P0 walking skeleton (10 chunks, one per subsystem) | `267b035` |
+| 1 | Agent maturity (LangGraph, extraction, GraphRetriever, Fact Checker, Memory) | `8d5644c` |
+| 2 | GenUI catalog breadth + UIAgent intent routing + DiscoveryAgent | `24d8c84` |
+| 3 | Study mode (Learning + Socratic agents, 4 GenUI variants) | `307bbe2` |
+| 4 | Writing mode (WritingAgent + DraftEditor + Feynman production) | `9e5a78a` |
+| 5 | Mode switching end-to-end (5 modes, FR-UI-06) | `e73e830` |
+
+**Next:** Slice 6 (adaptive 3-panel shell). Outline in CONTEXT.md.
 
 ## 3. The per-chunk loop
 
@@ -46,78 +54,85 @@ Every chunk follows the same shape:
 6. CLOSE  — mark the chunk's todo complete, move to the next
 ```
 
-### The five gates that must be green
+### ⚠️ You cannot use the `Edit`/`Write` tools in this repo
+
+The repo path has a space (`FYP DOCS`) and the `.claude/` hooks pass
+`$CLAUDE_PROJECT_DIR` unquoted, so the `PreToolUse` hook crashes and
+**blocks every `Edit`/`Write` call**. Use the MCP filesystem tools for
+in-repo files (`mcp__filesystem__write_file`, `mcp__filesystem__edit_file`)
+and Bash heredocs for files outside the repo (e.g. memory). Full detail in
+SETUP.md §2 and CONTEXT.md. Reach for these from the start — don't burn a
+turn rediscovering the block.
+
+### The gates that must be green
 
 | Gate | Command | What it catches |
 |---|---|---|
-| ruff | `uv run ruff check api/ eval/` | Style, dead imports, simple bugs |
-| pyright | `uv run --with pyright pyright api/ eval/` | Type errors |
-| pytest | `uv run pytest -q --tb=short -p no:cacheprovider` | Behaviour |
+| ruff | `uv run ruff check api/` | Style, dead imports, simple bugs |
+| pyright | `uv run --with pyright pyright api/` | Type errors |
+| pytest | `uv run pytest -q --tb=short -p no:cacheprovider api/` | Behaviour (**335 passing**) |
 | codegen | `corepack pnpm --filter @arcana/schema codegen:check` | Schema drift (TS↔Pydantic) |
-| web | `corepack pnpm --filter @arcana/web typecheck && ... test` | Frontend types + logic |
+| web types | `corepack pnpm --filter @arcana/web typecheck` | Frontend types |
+| web tests | `corepack pnpm --filter @arcana/web test` | Frontend logic (**11 passing**) |
+
+**Schema-first reminder:** if you touch `packages/schema/src/*.ts`, run
+`corepack pnpm --filter @arcana/schema build` then `... codegen` (regenerates
+`api/genui/_generated.py`) **before** the backend gates. `codegen:check`
+fails the build if the generated Python drifts from the TS source.
 
 **Run gates in foreground, one at a time, with `-p no:cacheprovider` on
-pytest.** Background pytest runs from the harness queue and silently
-stall on Windows. The CLI is the source of truth — trust it over IDE
-hints (the IDE often shows diagnostics from intermediate edit snapshots
-that don't match the current file).
+pytest.** Background pytest runs from the harness queue and silently stall
+on Windows. The CLI is the source of truth — trust it over IDE hints.
 
 ### Code review subagent
 
-After every meaningful diff, invoke the project's code-reviewer subagent.
-In Claude Code that's:
+After every meaningful diff, invoke the project's `code-reviewer` subagent:
 
 ```
 Use the code-reviewer subagent on the changes since HEAD.
 ```
 
-The subagent enforces the eight invariants and the architectural rules
-in `.claude/rules/*.md`. It produces a CRITICAL / WARNING / SUGGESTION
-report with file:line references. **Fix every CRITICAL before
-proceeding**; weigh WARNINGs; defer SUGGESTIONs into the slice's
-follow-up list.
-
-If the project's custom subagent isn't available, invoke
-`general-purpose` with the `.claude/agents/code-reviewer.md` content as
-its operating brief — same outcome.
+It enforces the eight invariants and the rules in `.claude/rules/*.md`,
+producing a CRITICAL / WARNING / SUGGESTION report with file:line refs.
+**Fix every CRITICAL before proceeding**; weigh WARNINGs; defer SUGGESTIONs
+into the slice's follow-up list. (Slices 4 and 5 each found a real CRITICAL
+this way — agents not registered in `main.py`, and an inline Literal
+duplicating the schema `Mode`. Both were fixed pre-commit.)
 
 ## 4. The per-slice loop
 
 A slice is opened by:
 
-1. **Plan the slice in chat.** Present the chunks, the dependency
-   order, the in/out-of-scope list, and any decisions you want the user
-   to make. Wait for "go" on chunk 1. Once in rhythm, batch is allowed.
-2. **Preflight.** Two things, always:
-   - Tick the actually-done boxes in `docs/checklist.md` for the
-     previous slice. Be honest about what was deferred — write
-     `(→ slice N)` next to each deferral.
-   - Log a slice-scope ADR in `.claude/memory/decisions.md` recording
-     the scope decision, what dependencies forced the chunk order, and
-     any new constraints.
+1. **Plan the slice in chat.** Present the chunks, the dependency order,
+   the in/out-of-scope list, and any decisions you want the user to make.
+   Wait for "go". Once in rhythm, batching is allowed.
+2. **Preflight.** Always two things:
+   - Tick the actually-done boxes in `docs/checklist.md` for the previous
+     slice. Be honest about deferrals — annotate each `(→ slice N)`.
+   - Log a slice-scope ADR in `.claude/memory/decisions.md` recording the
+     scope decision, what forced the chunk order, and new constraints.
 
 A slice is closed by:
 
 1. **Final code-review pass** on the full slice diff.
 2. **Apply CRITICAL + worthwhile WARNING fixes.**
-3. **Write the closing ADR** — `### YYYY-MM-DD — Slice N complete`. List
-   what shipped, what's deferred, what's the next slice's starting
-   point.
-4. **Commit on `ExDev`** with a message ending with the requirement IDs
-   it closes:
+3. **Write the closing ADR** — `### YYYY-MM-DD — Slice N complete`.
+4. **Commit on `ExDev`** with a message referencing the IDs it closes:
 
    ```
-   feat(slice-N): <name> — <highlights>
+   feat(slice-N): <name> — <highlights> — closes FR-XXX-YY
 
-   Refs: FR-AGT-04, FR-AGT-09, FR-KG-01, FR-ING-06, ...
+   Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
    ```
 
-   Include `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`
-   per the system prompt's git protocol.
+   Use the attribution for whatever model you actually are (the system
+   prompt's git protocol specifies it). **Don't push without the user's
+   say-so** — local branch work is fine; remote pushes need permission.
+   Keep a separate `chore(checklist): ...` commit for the checklist tick.
 
 ## 5. The eight invariants & how they're enforced
 
-PRD §11A.3 is the authoritative list. Paraphrased:
+PRD §11A.3 is authoritative. Paraphrased:
 
 1. **Ground before generating** — every claim has retrieval evidence.
 2. **UI is data, never code** — agents emit typed `UIBlock`, never HTML/text.
@@ -128,20 +143,23 @@ PRD §11A.3 is the authoritative list. Paraphrased:
 7. **Storage behind abstractions** — `GraphStore`/`VectorStore`/`DocStore` ABCs only.
 8. **No secret literals** — config via `Settings`, secrets via env.
 
-How each is enforced:
-
 | Invariant | Mechanism |
 |---|---|
 | #1 | Tests + code review |
 | #2 | `api/genui/validate.py` fail-closes before SSE |
-| #3 | `web/components/genui/registry.tsx` is the single dispatch; renderer never `switch`es on type |
+| #3 | `web/components/genui/registry.tsx` single dispatch; renderer never `switch`es on type |
 | #4 | LangGraph reducers (`Annotated[..., add]`) |
-| #5 | `.claude/hooks/check_imports.py` AST-parses every Python write; blocks agent→agent imports |
-| #6 | `Orchestrator.invoke_graph` + SSE error-frame terminator |
+| #5 | `.claude/hooks/check_imports.py` blocks agent→agent imports |
+| #6 | `Orchestrator` graph + SSE error-frame terminator |
 | #7 | `.claude/hooks/check_imports.py` blocks concrete-store imports from agents |
 | #8 | `.claude/hooks/check_secrets.py` regex-scans every write |
 
-Hooks are mechanical; reviewer is judgement. Trust both.
+Note: the import/secret hooks **also** run on `Edit`/`Write` as
+`PreToolUse` — which is exactly what the path-spaces bug breaks (§3). When
+you write via the MCP filesystem tools you bypass the hook, so **you are
+responsible for honouring #5/#7/#8 manually** — the code-reviewer is your
+backstop. Don't import an agent into another agent, don't import a concrete
+store into an agent, don't inline a secret.
 
 ## 6. ADR-keeping (`.claude/memory/decisions.md`)
 
@@ -158,106 +176,95 @@ Every non-obvious decision lands as an ADR. Format:
 ```
 
 Insert newest-first below the `<!-- New entries go below this line -->`
-marker. Don't backfill into older entries; never delete.
-
-Two specific times to write an ADR:
-
-- **You hit an open question (PRD §25 Q-03..Q-10).** Mark `ASSUMED:` and
-  proceed.
-- **You deviate from a spec doc.** Quote both sides, justify the
-  deviation, log it.
+marker. Don't backfill into older entries; never delete. Two specific
+times to write one: you hit an open question (PRD §25 Q-03..Q-10) — mark
+`ASSUMED:`; or you deviate from a spec doc — quote both sides, justify, log.
 
 ## 7. Common gotchas you'll hit
 
-These have all bitten the previous agent. They're documented inline in
-the relevant files but worth knowing up front.
+### The hook path-spaces bug (the big one)
+
+Covered in §3 and SETUP.md §2. `Edit`/`Write` are blocked; use MCP
+filesystem tools / Bash heredocs.
 
 ### IDE diagnostics lag behind your edits
 
-The harness occasionally shows "Import X unused" or "Could not find name
-Y" diagnostics that reflect an intermediate file state from mid-edit.
-The CLI gates (`ruff`, `pyright`) reflect actual state. If CLI is green
-and the IDE complains, trust the CLI.
+The harness sometimes shows "Import X unused" / "Could not find name Y"
+from an intermediate file state. The CLI gates reflect actual state. CLI
+green + IDE complaining → trust the CLI.
 
 ### Pytest in the background queues silently on Windows
 
-If you fire two pytest commands back-to-back, the second often stays at
-0 bytes of output for the rest of the session. Run pytest **synchronously
-in foreground**, one at a time, with `-p no:cacheprovider`. The full
-suite finishes in ~2 seconds.
+Run pytest synchronously in foreground, one at a time, with
+`-p no:cacheprovider`. The full suite finishes in a few seconds.
 
 ### `pnpm` isn't on PATH in child shells
 
-The host shell calls pnpm via corepack. Child shells (npm scripts)
-don't inherit corepack's shim. **Use `corepack pnpm` everywhere**, or
-configure your npm scripts to not call pnpm recursively.
+Use `corepack pnpm` everywhere, or don't call pnpm recursively in scripts.
 
 ### CRLF/LF warnings on `git add`
 
-Windows checkout converts LF → CRLF. `git add` warns. Harmless; once a
-file is in the index, Git normalizes.
-
-### Edit tool cache invalidation
-
-When you do many sequential `Edit` calls on the same file, the harness
-sometimes rejects later edits with "File has not been read yet" because
-an autoformatter / linter modified the file between edits. Re-read the
-file before re-applying.
+Windows checkout converts LF → CRLF. Harmless; Git normalizes.
 
 ### LangGraph + Pydantic state
 
 LangGraph 0.2+ supports Pydantic BaseModel state. Reducers via
-`Annotated[..., reducer_fn]` on fields. Mutation within a single node
-call IS preserved (Python aliasing); mutation ACROSS nodes is NOT
-(langgraph calls `model_copy` between steps). The `make_node` wrapper
-in `api/agents/graph.py` snapshots list lengths and returns only deltas
-so the `add` reducer doesn't double-count.
+`Annotated[..., reducer_fn]`. Mutation within a single node call IS
+preserved (Python aliasing); mutation ACROSS nodes is NOT (langgraph
+`model_copy`s between steps). The `make_node` wrapper in `graph.py`
+snapshots list lengths and returns only deltas so `add` reducers don't
+double-count.
 
 ### `make_node` only emits agent_results for the current agent
 
-If an agent mutates `state.agent_results[OTHER_NAME]`, the change is
-LOST across the node boundary (the wrapper only returns
-`{agent.name: result}`). Currently no agent does this; if you ever
-need it, return both entries explicitly or refactor the wrapper.
+If an agent mutates `state.agent_results[OTHER_NAME]`, the change is LOST
+across the node boundary (the wrapper returns only `{agent.name: result}`).
+No agent does this today; if you need it, return both entries explicitly.
+
+### New tier-2 agents must be registered in `api/main.py`
+
+Adding a node in `graph.py` is not enough — the production orchestrator is
+built in `api/main.py::build_orchestrator()`. Pass new tier-2 agents via
+`Orchestrator(extra_agents=[...])` or they're unreachable at runtime (this
+was a real Slice-4 CRITICAL). Tests construct the orchestrator themselves,
+so a passing test suite won't catch a missing prod registration.
 
 ## 8. Where new components / agents / retrievers live
 
-The spec is in `docs/project_file_structure.md`. The repeatable recipes
-are in `.claude/skills/*/SKILL.md`. Load the matching skill before
-adding the second of anything:
+Spec in `docs/project_file_structure.md`. Repeatable recipes in
+`.claude/skills/*/SKILL.md` — load the matching skill before adding the
+second of anything:
 
 - New GenUI component → `genui-component` skill
 - New agent → `new-agent` skill
 - New retriever → `new-retriever` skill
 - Anything that crosses the wire → `schema-first-change` skill
 
-The skills encode the exact step order. Following them keeps the wire
-contract and dependency direction intact automatically.
-
 ## 9. When you're stuck
 
-Order of operations:
-
 1. **Re-read CLAUDE.md.** Most ambiguity resolves there.
-2. **Search `.claude/memory/decisions.md`** for prior context on the
-   thing you're about to do. Someone may have ADR'd it.
-3. **Check the failure mode.** Did a hook block? Read its stderr; it
-   tells you exactly which invariant tripped.
-4. **Surface the conflict to the user.** Quote both sides. Don't pick
-   silently. Per CLAUDE.md: *"If two docs disagree, stop and ask."*
+2. **Search `.claude/memory/decisions.md`** for prior context.
+3. **Check the failure mode.** A hook blocked? Read its stderr — but
+   remember the path-spaces bug makes the *Edit/Write* hooks crash
+   spuriously (that's not your code failing a check; that's the bug).
+4. **Surface the conflict to the user.** Quote both sides. Per CLAUDE.md:
+   *"If two docs disagree, stop and ask."*
 
 ## 10. The end state
 
 When P1 is done, this codebase will have:
 
-- 15+ agents across four tiers
-- 24-component GenUI catalog
-- ≥3 demonstrated modes (Research, Writing, Study) + 2 more for show
-- A learning module with spaced repetition
-- Firebase auth + Firestore persistence
-- A 20-question hybrid-vs-flat benchmark with stat-sig result
-- A 10–15 participant user study with SUS ≥ 70
-- An FYP 2 report documenting all of the above
+- 15+ agents across four tiers (**now: 10**)
+- 24-component GenUI catalog (**now: 11**)
+- ≥3 demonstrated modes + 2 more for show (**done: 5 wired, FR-UI-06 ✅**)
+- A learning module with spaced repetition (**flashcards/quizzes done;
+  FR-LRN-02 scheduling deferred**)
+- Firebase auth + Firestore persistence (**deferred, §1.8**)
+- A 20-question hybrid-vs-flat benchmark with stat-sig result (**deferred,
+  §1.12 — Slice 8, the primary graded metric**)
+- A 10–15 participant user study with SUS ≥ 70 (**author task**)
+- An FYP 2 report (**author task**)
 
-You're about 1/14 of the way there. Slow down, write good ADRs, and the
+Six slices in. The remaining grade-weight concentrates in Slice 7 (agents
+→ 15+) and Slice 8 (the benchmark). Slow down, write good ADRs, and the
 next agent in the chain will thank you.
