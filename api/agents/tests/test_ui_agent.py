@@ -426,3 +426,196 @@ async def test_writing_invalid_payload_falls_through_to_research():
 
     block = state.ui_blocks[0]
     assert isinstance(block, CitedSummary), "malformed DraftEditor should fall through"
+
+
+# ── Slice 7 routing ────────────────────────────────────────────────────────────────────────
+
+def _graph_view_payload() -> dict:
+    return {
+        "block_type": "KnowledgeGraphView",
+        "data": {
+            "nodes": [
+                {"id": "rag", "label": "RAG", "nodeType": "Concept"},
+                {"id": "transformer", "label": "Transformer", "nodeType": "Concept"},
+            ],
+            "edges": [{"source": "rag", "target": "transformer", "relation": "RELATED_TO"}],
+            "focusNodeId": "rag",
+        },
+    }
+
+
+def _literature_matrix_payload() -> dict:
+    return {
+        "block_type": "LiteratureMatrix",
+        "data": {
+            "query": "compare RAG methods",
+            "dimensions": ["Methodology", "Dataset"],
+            "rows": [
+                {
+                    "docId": "doc1",
+                    "docTitle": "RAG Paper",
+                    "cells": [
+                        {"text": "Dense retrieval", "citationId": None},
+                        {"text": "NQ", "citationId": None},
+                    ],
+                }
+            ],
+            "citations": [_source()],
+        },
+    }
+
+
+def _contradiction_payload() -> dict:
+    return {
+        "block_type": "ContradictionAlert",
+        "data": {
+            "concept": "RAG accuracy",
+            "summary": "Sources disagree.",
+            "claims": [
+                {"docId": "d1", "docTitle": "Paper A", "stance": "helps", "quote": "quote1"},
+                {"docId": "d2", "docTitle": "Paper B", "stance": "does not help", "quote": "quote2"},
+            ],
+        },
+    }
+
+
+def _insight_card_payload() -> dict:
+    return {
+        "block_type": "InsightCard",
+        "data": {
+            "insight": "Both assume zero-shot generalisation.",
+            "connection": "Shared transferability assumption.",
+            "docAId": "doc1",
+            "docATitle": "Paper A",
+            "docBId": "doc2",
+            "docBTitle": "Paper B",
+            "citations": [_source()],
+        },
+    }
+
+
+async def test_routes_knowledge_graph_view_from_graph_agent():
+    from api.genui._generated import KnowledgeGraphView
+
+    state = AgentState(query="show knowledge graph for RAG")
+    state.agent_results["graph_agent"] = AgentResult(
+        agent_name="graph_agent", payload=_graph_view_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("show knowledge graph", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, KnowledgeGraphView)
+    assert block.type == "KnowledgeGraphView"
+    assert block.meta.panel == "studio"
+    assert block.data.focusNodeId == "rag"
+    assert len(block.data.nodes) == 2
+    assert len(block.data.edges) == 1
+
+
+async def test_routes_literature_matrix_from_literature_agent():
+    from api.genui._generated import LiteratureMatrix
+
+    state = AgentState(query="compare RAG methods")
+    state.agent_results["literature"] = AgentResult(
+        agent_name="literature", payload=_literature_matrix_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("compare RAG methods", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, LiteratureMatrix)
+    assert block.type == "LiteratureMatrix"
+    assert block.meta.panel == "studio"
+    assert block.data.dimensions == ["Methodology", "Dataset"]
+    assert len(block.data.rows) == 1
+
+
+async def test_routes_contradiction_alert_from_contradiction_agent():
+    from api.genui._generated import ContradictionAlert
+
+    state = AgentState(query="do sources agree on RAG?")
+    state.agent_results["contradiction"] = AgentResult(
+        agent_name="contradiction", payload=_contradiction_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("do sources agree?", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, ContradictionAlert)
+    assert block.type == "ContradictionAlert"
+    assert block.meta.panel == "chat"
+    assert block.data.concept == "RAG accuracy"
+    assert len(block.data.claims) == 2
+
+
+async def test_routes_insight_card_from_cross_doc_agent():
+    from api.genui._generated import InsightCard
+
+    state = AgentState(query="find cross-doc insight")
+    state.agent_results["cross_doc"] = AgentResult(
+        agent_name="cross_doc", payload=_insight_card_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("find cross-doc insight", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, InsightCard)
+    assert block.type == "InsightCard"
+    assert block.meta.panel == "chat"
+    assert block.data.docAId == "doc1"
+    assert block.data.docBId == "doc2"
+
+
+async def test_routes_insight_card_from_discovery_agent():
+    """InsightCard routing from discovery agent is now live (was deferred in Slice 2)."""
+    from api.genui._generated import InsightCard
+
+    state = AgentState(query="find insight")
+    state.agent_results["discovery"] = AgentResult(
+        agent_name="discovery", payload=_insight_card_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("find insight", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, InsightCard)
+    assert block.type == "InsightCard"
+
+
+async def test_comparator_produces_cited_summary():
+    state = AgentState(query="compare RAG and RLHF")
+    state.agent_results["comparator"] = AgentResult(
+        agent_name="comparator",
+        payload=_research_payload(summary="RAG vs RLHF comparison."),
+        status="ok",
+    )
+
+    agent = UIAgent()
+    await agent.run("compare", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, CitedSummary)
+    assert block.meta.status == "ready"
+    assert "comparison" in block.data.summary
+
+
+async def test_annotation_produces_gap_analysis():
+    from api.genui._generated import GapAnalysis
+
+    state = AgentState(query="annotate coverage")
+    state.agent_results["annotate"] = AgentResult(
+        agent_name="annotate", payload=_gap_analysis_payload(), status="ok"
+    )
+
+    agent = UIAgent()
+    await agent.run("annotate coverage", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, GapAnalysis)
+    assert block.type == "GapAnalysis"

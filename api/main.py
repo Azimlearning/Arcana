@@ -33,10 +33,17 @@ def build_orchestrator():
     Imports are local to keep `from api.main import create_app` cheap
     in test code that builds a minimal app without real providers."""
     from api.agents.orchestrator import Orchestrator
+    from api.agents.tier2.annotation import AnnotationAgent
+    from api.agents.tier2.comparator import ComparatorAgent
+    from api.agents.tier2.contradiction import ContradictionAgent
+    from api.agents.tier2.cross_doc import CrossDocAgent
     from api.agents.tier2.discovery import DiscoveryAgent
+    from api.agents.tier2.graph_agent import GraphAgent
     from api.agents.tier2.learning import LearningAgent
+    from api.agents.tier2.literature import LiteratureAgent
     from api.agents.tier2.research import ResearchAgent
     from api.agents.tier2.socratic import SocraticAgent
+    from api.agents.tier2.timeline_agent import TimelineAgent
     from api.agents.tier2.writing import WritingAgent
     from api.agents.tier3.ui_agent import UIAgent
     from api.agents.tier4.fact_checker import FactChecker
@@ -96,6 +103,14 @@ def build_orchestrator():
         SocraticAgent(llm_service=llm, **_retriever_kwargs),
         DiscoveryAgent(llm_service=llm, **_retriever_kwargs),
         WritingAgent(llm_service=llm, **_retriever_kwargs),
+        # Slice 7: dormant-UIBlock activators + supporting trio (FR-AGT-06)
+        GraphAgent(llm_service=llm, graph_store=graph_store),
+        LiteratureAgent(llm_service=llm, **_retriever_kwargs),
+        ContradictionAgent(llm_service=llm, **_retriever_kwargs),
+        CrossDocAgent(llm_service=llm, **_retriever_kwargs),
+        ComparatorAgent(llm_service=llm, **_retriever_kwargs),
+        TimelineAgent(llm_service=llm, **_retriever_kwargs),
+        AnnotationAgent(llm_service=llm, **_retriever_kwargs),
     ]
 
     return Orchestrator(

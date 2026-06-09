@@ -57,6 +57,24 @@
 
 <!-- New entries go below this line, newest first. -->
 
+### 2026-06-08 — Slice 7 scope: 15+ agents — FR-AGT-06
+
+- **Status:** DECIDED
+- **Context:** FR-AGT-06 requires ≥15 agents registered and callable via `route_to_agent`. Currently 8 are registered (research, learning, socratic, discovery, writing, ui_agent, fact_checker, memory). Four dormant UIBlocks have complete schemas + renderers but no producing agents: `LiteratureMatrix`, `ContradictionAlert`, `InsightCard`, `KnowledgeGraphView`.
+- **Decision:** Add 7 new agents → 15 total:
+  1. `GraphAgent` (tier 2) — queries GraphStore entity neighborhood; produces `KnowledgeGraphView`. Intent: "graph".
+  2. `LiteratureAgent` (tier 2) — hybrid_retrieve → LLM structures papers × dimensions matrix; produces `LiteratureMatrix`. Intent: "literature".
+  3. `ContradictionAgent` (tier 2) — hybrid_retrieve → LLM detects cross-source disagreements; produces `ContradictionAlert`. Intent: "contradiction".
+  4. `CrossDocAgent` (tier 2) — hybrid_retrieve → LLM finds serendipitous cross-document connections; produces `InsightCard`. Intent: "cross_doc".
+  5. `ComparatorAgent` (tier 2) — comparison-framed synthesis; produces `CitedSummary`. Intent: "compare".
+  6. `TimelineAgent` (tier 2) — chronological synthesis; produces `CitedSummary`. Intent: "timeline".
+  7. `AnnotationAgent` (tier 2) — claim-extraction and gap framing; produces `GapAnalysis`. Intent: "annotate".
+  - `_MODE_TO_INTENT` unchanged — new intents are reachable only via explicit `state.intent` (future intent classifier) or `route_to_agent` from tests/other agents. No mode currently maps to them.
+  - `GraphEdge` store↔wire type distinction: store uses `src/dst/type`, wire uses `source/target/relation`. `GraphAgent` synthesizes wire edges as `{source, target, relation="RELATED_TO"}` from the `expand()` neighborhood (ASSUMED: real edge-type lookup deferred to when GraphStore ABC gains a `get_edges_around()` method).
+  - InsightCard deferred routing in `UIAgent._build_from_discovery()` also enabled: DiscoveryAgent can now produce InsightCard if its payload has `block_type="InsightCard"`.
+- **Why:** 4 dormant UIBlocks activated with zero schema changes (they were pre-defined in Slice 2). Supporting trio (compare/timeline/annotate) reuses existing UIBlock types — new prompts, not new schemas. This minimises the diff while crossing the ≥15 threshold.
+- **Revisit if:** GraphStore ABC gains a `get_edges_around(node_id, hops)` method — then `GraphAgent` can produce typed edge relations instead of synthetic RELATED_TO.
+
 ### 2026-06-08 — Slice 6 complete: adaptive 3-panel shell — FR-UI-01/05, FR-UI-07
 
 - **Status:** DECIDED

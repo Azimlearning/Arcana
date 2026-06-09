@@ -13,6 +13,10 @@ into the graph as new nodes + edges; the chat route doesn't change.
 Slice 2 addition: discovery intent node.
 Slice 3 addition: learning and socratic intent nodes.
 Slice 4 addition: writing intent node; active_mode → intent mapping.
+Slice 7 addition: graph_agent, literature, contradiction, cross_doc,
+  compare, timeline, annotate intent nodes (FR-AGT-06: ≥15 agents).
+  New intents are NOT in _MODE_TO_INTENT — they are triggered by explicit
+  state.intent (future intent classifier) or route_to_agent in tests.
 
 How state flows:
   - Each node receives the live `AgentState` snapshot for that step.
@@ -161,7 +165,24 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
 #   1. Add the agent + register it
 #   2. Add a node in `build_graph`
 #   3. Add the label here AND in the conditional-edges dict in `build_graph`
-_WIRED_INTENTS = frozenset({"research", "discovery", "study", "socratic", "writing"})
+#
+# Slice 7 intents (not mode-triggered; callable via route_to_agent + explicit
+# state.intent from a future intent classifier — FR-AGT-06):
+_WIRED_INTENTS = frozenset({
+    "research",
+    "discovery",
+    "study",
+    "socratic",
+    "writing",
+    # Slice 7
+    "graph",
+    "literature",
+    "contradiction",
+    "cross_doc",
+    "compare",
+    "timeline",
+    "annotate",
+})
 
 
 def _route_after_orchestrator(state: AgentState) -> str:
@@ -199,6 +220,14 @@ def build_graph() -> Any:
     has_learning = registry.get_agent("learning") is not None
     has_socratic = registry.get_agent("socratic") is not None
     has_writing = registry.get_agent("writing") is not None
+    # Slice 7 agents
+    has_graph_agent = registry.get_agent("graph_agent") is not None
+    has_literature = registry.get_agent("literature") is not None
+    has_contradiction = registry.get_agent("contradiction") is not None
+    has_cross_doc = registry.get_agent("cross_doc") is not None
+    has_comparator = registry.get_agent("comparator") is not None
+    has_timeline = registry.get_agent("timeline") is not None
+    has_annotate = registry.get_agent("annotate") is not None
 
     if has_memory:
         graph.add_node("memory", make_node("memory"))
@@ -227,6 +256,28 @@ def build_graph() -> Any:
     if has_writing:
         graph.add_node("writing", make_node("writing"))
         conditional_map["writing"] = "writing"
+    # Slice 7 nodes
+    if has_graph_agent:
+        graph.add_node("graph_agent", make_node("graph_agent"))
+        conditional_map["graph"] = "graph_agent"
+    if has_literature:
+        graph.add_node("literature", make_node("literature"))
+        conditional_map["literature"] = "literature"
+    if has_contradiction:
+        graph.add_node("contradiction", make_node("contradiction"))
+        conditional_map["contradiction"] = "contradiction"
+    if has_cross_doc:
+        graph.add_node("cross_doc", make_node("cross_doc"))
+        conditional_map["cross_doc"] = "cross_doc"
+    if has_comparator:
+        graph.add_node("comparator", make_node("comparator"))
+        conditional_map["compare"] = "comparator"
+    if has_timeline:
+        graph.add_node("timeline", make_node("timeline"))
+        conditional_map["timeline"] = "timeline"
+    if has_annotate:
+        graph.add_node("annotate", make_node("annotate"))
+        conditional_map["annotate"] = "annotate"
 
     graph.add_conditional_edges(
         "orchestrator",
@@ -251,6 +302,21 @@ def build_graph() -> Any:
         graph.add_edge("socratic", "ui_agent")
     if has_writing:
         graph.add_edge("writing", "ui_agent")
+    # Slice 7
+    if has_graph_agent:
+        graph.add_edge("graph_agent", "ui_agent")
+    if has_literature:
+        graph.add_edge("literature", "ui_agent")
+    if has_contradiction:
+        graph.add_edge("contradiction", "ui_agent")
+    if has_cross_doc:
+        graph.add_edge("cross_doc", "ui_agent")
+    if has_comparator:
+        graph.add_edge("comparator", "ui_agent")
+    if has_timeline:
+        graph.add_edge("timeline", "ui_agent")
+    if has_annotate:
+        graph.add_edge("annotate", "ui_agent")
 
     graph.add_edge("ui_agent", END)
 

@@ -6,12 +6,25 @@ Priority order (since the graph routes ONE intent per turn):
   2. Socratic agent result  → SocraticDialog
   3. Writing agent result   → DraftEditor
   4. Discovery agent result → GapAnalysis | InsightCard
-  5. Research agent result  → CitedSummary (with Fact Check filter)
-  6. Error block            (invariant #6: always terminate with a block)
+  5. Cross-doc agent result → InsightCard
+  6. Graph agent result     → KnowledgeGraphView
+  7. Literature agent result → LiteratureMatrix
+  8. Contradiction agent result → ContradictionAlert
+  9. Comparator / Timeline agent result → CitedSummary (comparison/timeline framing)
+ 10. Annotation agent result → GapAnalysis (annotation framing)
+ 11. Research agent result  → CitedSummary (with Fact Check filter)
+ 12. Error block            (invariant #6: always terminate with a block)
 
 Slice 1 additions (still in effect):
   - Reads fact_checker result and filters unsupported citations (FR-AGT-09).
   - Downgrades ready -> partial when >50% of citations were dropped.
+
+Slice 7 additions:
+  - Routing for KnowledgeGraphView (graph_agent), LiteratureMatrix (literature),
+    ContradictionAlert (contradiction), InsightCard (cross_doc + discovery).
+  - InsightCard routing in DiscoveryAgent result is now live (was deferred in Slice 2).
+  - Comparator/Timeline produce CitedSummary; Annotation produces GapAnalysis via
+    existing builder paths.
 """
 
 from __future__ import annotations
@@ -27,6 +40,8 @@ from api.genui._generated import (
     BlockMeta,
     CitedSummary,
     CitedSummaryData,
+    ContradictionAlert,
+    ContradictionAlertData,
     DraftEditor,
     DraftEditorData,
     FeynmanExplainer,
@@ -35,6 +50,12 @@ from api.genui._generated import (
     FlashcardDeckData,
     GapAnalysis,
     GapAnalysisData,
+    InsightCard,
+    InsightCardData,
+    KnowledgeGraphView,
+    KnowledgeGraphViewData,
+    LiteratureMatrix,
+    LiteratureMatrixData,
     QuizCard,
     QuizCardData,
     SocraticDialog,
@@ -95,7 +116,56 @@ class UIAgent(BaseAgent):
             if block is not None:
                 return block
 
-        # 5. Research (CitedSummary, with Fact Check filter)
+        # 5. Cross-doc (InsightCard)
+        cross_doc = state.agent_results.get("cross_doc")
+        if cross_doc is not None and cross_doc.status == "ok":
+            block = self._build_from_cross_doc(cross_doc, order=order)
+            if block is not None:
+                return block
+
+        # 6. Graph (KnowledgeGraphView)
+        graph = state.agent_results.get("graph_agent")
+        if graph is not None and graph.status == "ok":
+            block = self._build_from_graph(graph, order=order)
+            if block is not None:
+                return block
+
+        # 7. Literature (LiteratureMatrix)
+        literature = state.agent_results.get("literature")
+        if literature is not None and literature.status == "ok":
+            block = self._build_from_literature(literature, order=order)
+            if block is not None:
+                return block
+
+        # 8. Contradiction (ContradictionAlert)
+        contradiction = state.agent_results.get("contradiction")
+        if contradiction is not None and contradiction.status == "ok":
+            block = self._build_from_contradiction(contradiction, order=order)
+            if block is not None:
+                return block
+
+        # 9. Comparator → CitedSummary
+        comparator = state.agent_results.get("comparator")
+        if comparator is not None and comparator.status == "ok":
+            block = self._build_cited_summary_from_result(comparator, order=order)
+            if block is not None:
+                return block
+
+        # 10. Timeline → CitedSummary
+        timeline = state.agent_results.get("timeline")
+        if timeline is not None and timeline.status == "ok":
+            block = self._build_cited_summary_from_result(timeline, order=order)
+            if block is not None:
+                return block
+
+        # 11. Annotation → GapAnalysis
+        annotation = state.agent_results.get("annotate")
+        if annotation is not None and annotation.status == "ok":
+            block = self._build_from_discovery(annotation, order=order)
+            if block is not None:
+                return block
+
+        # 12. Research (CitedSummary, with Fact Check filter)
         research = state.agent_results.get("research")
         fact_check = state.agent_results.get("fact_checker")
 
@@ -222,9 +292,108 @@ class UIAgent(BaseAgent):
                 logger.warning("ui_agent.discovery_gap_invalid", error=str(e))
                 return None
 
-        # InsightCard routing deferred (DiscoveryAgent to produce it in Slice 4+
-        # with grounded cross-doc connection extraction — see decisions.md).
+        if block_type == "InsightCard":
+            try:
+                data = InsightCardData.model_validate(data_dict)
+                return InsightCard(
+                    type="InsightCard",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.discovery_insight_invalid", error=str(e))
+                return None
+
         return None
+
+    def _build_from_cross_doc(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "InsightCard":
+            try:
+                data = InsightCardData.model_validate(data_dict)
+                return InsightCard(
+                    type="InsightCard",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.cross_doc_insight_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_graph(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "KnowledgeGraphView":
+            try:
+                data = KnowledgeGraphViewData.model_validate(data_dict)
+                return KnowledgeGraphView(
+                    type="KnowledgeGraphView",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.graph_view_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_literature(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "LiteratureMatrix":
+            try:
+                data = LiteratureMatrixData.model_validate(data_dict)
+                return LiteratureMatrix(
+                    type="LiteratureMatrix",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.literature_matrix_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_contradiction(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "ContradictionAlert":
+            try:
+                data = ContradictionAlertData.model_validate(data_dict)
+                return ContradictionAlert(
+                    type="ContradictionAlert",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.contradiction_alert_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_cited_summary_from_result(
+        self, result: AgentResult, *, order: int = 0
+    ) -> UIBlock | None:
+        """Build CitedSummary from a comparator/timeline AgentResult payload."""
+        try:
+            data = CitedSummaryData.model_validate(result.payload)
+            status = "ready" if result.status == "ok" else "partial"
+            return self._build_cited_summary(data, status=status, order=order)
+        except ValidationError as e:
+            logger.warning("ui_agent.cited_summary_from_result_invalid", error=str(e))
+            return None
 
     # -- Fact-check filter -----------------------------------------------
 

@@ -120,7 +120,7 @@
 - [ ] Partial-result streaming for long tasks — **FR-AGT-07 (S)**.
 - [x] Graceful degradation on tool/agent failure — **FR-AGT-08 (M)**.
 - [x] Hop-budget recursion guard + terminal join — **FR-AGT-10 (M)**, §11.6.
-- [ ] Reach **15+ agents across four tiers** (full vision 25) — **FR-AGT-06 (M)**.
+- [x] Reach **15+ agents across four tiers** (full vision 25) — **FR-AGT-06 (M)**.
 - [ ] **Verify the worked example** ("compare three papers" with 2 A2A hops + 3 streamed blocks) — *Listing 12.1*.
 
 ### 1.5 Build out the agents (Tier 2/3/4, P1 set)
