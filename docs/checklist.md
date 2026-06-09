@@ -181,9 +181,9 @@
 - [ ] API spend capped + monitored — **NFR-COST-01**, **R-03**.
 
 ### 1.12 Evaluation (FYP evidence)
-- [ ] Finalise `eval/questions.yaml` (~20 cross-document Qs, pre-registered) — **Q-03**, **R-02**.
-- [ ] `run_benchmark.py`: hybrid vs flat baseline, identical embeddings/corpus/questions — §23.1.
-- [ ] `metrics.py`: accuracy, citation correctness, latency; informal NotebookLM comparison.
+- [x] Finalise `eval/questions.yaml` (~20 cross-document Qs, pre-registered) — **Q-03**, **R-02**.
+- [x] `run_benchmark.py`: hybrid vs flat baseline, identical embeddings/corpus/questions — §23.1.
+- [x] `metrics.py`: accuracy, citation correctness, latency; informal NotebookLM comparison.
 - [ ] User study (10–15 participants) across Research/Study/Writing; SUS + task metrics — §23.2.
 
 ### ✅ Phase 1 release gate (§24)
