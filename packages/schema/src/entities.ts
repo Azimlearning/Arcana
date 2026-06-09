@@ -21,3 +21,31 @@ export interface Chunk {
   text: string;
   page: number | null;
 }
+
+// ── UserProfile ───────────────────────────────────────────────────────────
+// Persistent user identity + preferences. FR-USR-02.
+
+export interface UserProfile {
+  uid: string;           // Firebase UID or dev stub id
+  email: string | null;
+  displayName: string | null;
+  createdAt: string;     // ISO 8601
+  preferences: UserPreferences;
+}
+
+export interface UserPreferences {
+  defaultMode: string;   // 'research' | 'study' | 'writing' | 'socratic' | 'exploration'
+  theme: string;         // 'light' | 'dark' | 'system'
+}
+
+// ── Notebook ──────────────────────────────────────────────────────────────
+// Named workspace scoped to a user. FR-USR-03, FR-USR-06.
+
+export interface Notebook {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;  // ISO 8601
+  updatedAt: string;  // ISO 8601
+  docCount: number;
+}

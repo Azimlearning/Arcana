@@ -233,6 +233,36 @@ class MatrixRow(BaseModel):
     cells: list[MatrixCell]
 
 
+class Notebook(BaseModel):
+    id: str
+    userId: str
+    title: str
+    createdAt: str
+    updatedAt: str
+    docCount: float
+
+
+class NotebookCreate(BaseModel):
+    title: str
+
+
+class NotebookDeleteResponse(BaseModel):
+    deleted: str
+
+
+class NotebookItem(BaseModel):
+    id: str
+    userId: str
+    title: str
+    createdAt: str
+    updatedAt: str
+    docCount: float
+
+
+class NotebookListResponse(BaseModel):
+    notebooks: list[NotebookItem]
+
+
 class QuizCard(BaseModel):
     type: Literal['QuizCard']
     id: str
@@ -253,6 +283,19 @@ class QuizCardData(BaseModel):
 class QuizOption(BaseModel):
     index: float
     text: str
+
+
+class ReviewRequest(BaseModel):
+    cardId: str
+    rating: ReviewRating
+
+
+class ReviewResponse(BaseModel):
+    cardId: str
+    dueAt: str
+    interval: float
+    easeFactor: float
+    repetitions: float
 
 
 class ScheduleState(BaseModel):
@@ -286,6 +329,19 @@ class SummarySegment(BaseModel):
     citationIds: list[str]
 
 
+class UserPreferences(BaseModel):
+    defaultMode: str
+    theme: str
+
+
+class UserProfile(BaseModel):
+    uid: str
+    email: str | None
+    displayName: str | None
+    createdAt: str
+    preferences: UserPreferences
+
+
 BlockStatus = Literal['loading', 'partial', 'ready', 'error']
 
 BloomLevel = Literal['recall', 'comprehension', 'application', 'analysis', 'synthesis', 'evaluation']
@@ -303,6 +359,8 @@ Panel = Literal['sources', 'chat', 'studio']
 QuizDifficulty = Literal['recall', 'comprehension', 'application', 'analysis']
 
 QuizType = Literal['mcq', 'short_answer']
+
+ReviewRating = float
 
 SocraticRole = Literal['tutor', 'learner']
 

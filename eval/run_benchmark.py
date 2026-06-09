@@ -5,7 +5,7 @@ Usage
     # basic run (no LLM judge, no API calls for scoring)
     uv run python -m eval.run_benchmark
 
-    # with LLM judge (costs API credits per question × 2)
+    # with LLM judge (costs API credits per question x 2)
     uv run python -m eval.run_benchmark --llm-judge
 
     # override defaults
@@ -52,6 +52,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 QUESTIONS_PATH = REPO_ROOT / "eval" / "questions.yaml"
 RESULTS_DIR = REPO_ROOT / "eval" / "results"
 
+from eval.metrics import QuestionResult  # noqa: E402
 
 # ── Synthesis helper (shared by both pipelines) ──────────────────────────
 
@@ -86,10 +87,10 @@ async def _run_question(
     graph_retriever: object,
     llm: object,
     with_llm_judge: bool,
-) -> "QuestionResult":
-    from eval.baseline_flat_rag import flat_retrieve
-    from eval.metrics import QuestionResult, RunMetrics, llm_judge
+) -> QuestionResult:
     from api.retrieval.hybrid import hybrid_retrieve
+    from eval.baseline_flat_rag import flat_retrieve
+    from eval.metrics import RunMetrics, llm_judge
 
     query = q["question"]
     gold_ids = q.get("gold_doc_ids") or []

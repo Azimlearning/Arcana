@@ -30,3 +30,46 @@ export interface IngestResponse {
   status: 'ready' | 'failed';
   chunkCount: number;
 }
+
+// ── Spaced-repetition review (FR-LRN-02) ─────────────────────────────────────
+
+// Rating for spaced-repetition review: 0-2 = fail (again); 3 = hard; 4 = good; 5 = easy.
+export type ReviewRating = number;
+
+export interface ReviewRequest {
+  cardId: string;
+  rating: ReviewRating;
+  // currentSchedule omitted — server reconstructs from its own store.
+  // Keeps the wire minimal and prevents client-side schedule tampering.
+}
+
+export interface ReviewResponse {
+  cardId: string;
+  dueAt: string;        // ISO 8601
+  interval: number;     // days until next review
+  easeFactor: number;   // SM-2 ease factor
+  repetitions: number;  // times successfully reviewed
+}
+
+// ── Notebook CRUD (FR-USR-03) ────────────────────────────────────────────────
+
+export interface NotebookCreate {
+  title: string;
+}
+
+export interface NotebookItem {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  docCount: number;
+}
+
+export interface NotebookListResponse {
+  notebooks: NotebookItem[];
+}
+
+export interface NotebookDeleteResponse {
+  deleted: string;
+}

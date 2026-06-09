@@ -59,6 +59,10 @@ extend-exclude = [".claude", "packages", "web", "infra", "node_modules", "docs",
 select = ["E", "F", "I", "W", "B", "UP", "RUF", "ASYNC"]
 ignore = ["E501"]   # line length is handled by the formatter
 
+[tool.ruff.lint.per-file-ignores]
+# eval/ benchmark scripts use intentional blocking I/O before async tasks start.
+"eval/run_benchmark.py" = ["ASYNC230", "ASYNC240"]
+
 [tool.ruff.format]
 quote-style = "double"
 

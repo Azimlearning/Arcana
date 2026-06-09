@@ -32,7 +32,6 @@ from typing import Any
 
 from api.retrieval.types import RetrievedChunk
 
-
 # ── Result containers ─────────────────────────────────────────────────────
 
 
@@ -125,7 +124,7 @@ def _safe_mean(vals: list[float]) -> float:
 def _wins(a_vals: list[float], b_vals: list[float]) -> tuple[int, int, int]:
     """Count (a_wins, b_wins, ties) across paired finite values."""
     a_w = b_w = ties = 0
-    for a, b in zip(a_vals, b_vals):
+    for a, b in zip(a_vals, b_vals, strict=False):
         if math.isnan(a) or math.isnan(b):
             continue
         if a > b:

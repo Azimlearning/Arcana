@@ -9,7 +9,7 @@
      a freshly ingested document is visible to the next chat turn without a
      server restart.
 
-Auth, Firebase Admin SDK init are intentionally absent for the slice (P1 §1.8).
+Slice 9: auth (api/core/auth.py) and notebooks/review routes added.
 CORS is open to localhost:3000 for local dev; tighten for deployment.
 """
 
@@ -28,6 +28,8 @@ from api.routes.chat import get_orchestrator
 from api.routes.chat import router as chat_router
 from api.routes.ingest import IngestContext, get_ingest_context
 from api.routes.ingest import router as ingest_router
+from api.routes.notebooks import router as notebooks_router
+from api.routes.review import router as review_router
 
 logger = get_logger(__name__)
 
@@ -97,6 +99,9 @@ def _build_shared_resources():
     )
     memory_store = InMemoryMemoryStore()
 
+    from api.stores.notebook_store import JsonlNotebookStore
+    notebook_store = JsonlNotebookStore(root=settings.local_storage_path / "notebooks")
+
     return {
         "settings": settings,
         "llm": llm,
@@ -109,6 +114,7 @@ def _build_shared_resources():
         "bm25_retriever": bm25_retriever,
         "graph_retriever": graph_retriever,
         "memory_store": memory_store,
+        "notebook_store": notebook_store,
     }
 
 
@@ -133,6 +139,7 @@ def build_orchestrator(shared: dict):
     from api.agents.tier3.ui_agent import UIAgent
     from api.agents.tier4.fact_checker import FactChecker
     from api.agents.tier4.memory import MemoryAgent
+    from api.agents.tier4.study_planner import StudyPlannerAgent
 
     llm = shared["llm"]              # sonnet-4.6: standard
     llm_heavy = shared["llm_heavy"]  # opus-4.8 → sonnet fallback
@@ -177,13 +184,15 @@ def build_orchestrator(shared: dict):
         CrossDocAgent(llm_service=llm_heavy, **_retriever_kwargs),
     ]
 
+    study_planner = StudyPlannerAgent(llm_service=llm_light)
+
     return Orchestrator(
         research=research,
         ui_agent=UIAgent(),
         fact_checker=FactChecker(llm=llm_light),
         memory_agent=memory_agent,
         memory_store=memory_store,
-        extra_agents=tier2_agents,
+        extra_agents=[*tier2_agents, study_planner],
     )
 
 
@@ -216,6 +225,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         embedder=shared["embedder"],
         llm=shared["llm"],
     )
+    # Expose shared resources on app.state so routes can resolve them.
+    app.state.shared = shared
     yield
     logger.info("arcana.shutdown")
 
@@ -233,6 +244,8 @@ def create_app() -> FastAPI:
     )
     app.include_router(chat_router)
     app.include_router(ingest_router)
+    app.include_router(review_router)
+    app.include_router(notebooks_router)
     return app
 
 

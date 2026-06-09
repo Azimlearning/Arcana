@@ -220,6 +220,8 @@ def build_graph() -> Any:
     has_learning = registry.get_agent("learning") is not None
     has_socratic = registry.get_agent("socratic") is not None
     has_writing = registry.get_agent("writing") is not None
+    # Slice 9 agents
+    has_study_planner = registry.get_agent("study_planner") is not None
     # Slice 7 agents
     has_graph_agent = registry.get_agent("graph_agent") is not None
     has_literature = registry.get_agent("literature") is not None
@@ -278,6 +280,10 @@ def build_graph() -> Any:
     if has_annotate:
         graph.add_node("annotate", make_node("annotate"))
         conditional_map["annotate"] = "annotate"
+    # Slice 9
+    if has_study_planner:
+        graph.add_node("study_planner", make_node("study_planner"))
+        conditional_map["schedule"] = "study_planner"
 
     graph.add_conditional_edges(
         "orchestrator",
@@ -317,6 +323,9 @@ def build_graph() -> Any:
         graph.add_edge("timeline", "ui_agent")
     if has_annotate:
         graph.add_edge("annotate", "ui_agent")
+    # Slice 9
+    if has_study_planner:
+        graph.add_edge("study_planner", "ui_agent")
 
     graph.add_edge("ui_agent", END)
 

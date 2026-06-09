@@ -82,7 +82,7 @@ class LLMService:
         *,
         settings: Settings | None = None,
         fallback_model: str | None = None,
-    ) -> "LLMService":
+    ) -> LLMService:
         """Create a service pinned to a specific OpenRouter model.
 
         Adds a second provider with `fallback_model` so a transient outage

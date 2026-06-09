@@ -149,7 +149,7 @@
 
 ### 1.7 Learning system
 - [x] Flashcards from doc/topic — **FR-LRN-01 (M)** *(Slice 3: LearningAgent → FlashcardDeck)*.
-- [ ] Spaced-repetition scheduling (FSRS/SM-2 — decide via **Q-04**) — **FR-LRN-02 (M)**. *(ScheduleState schema in place; scheduling algorithm deferred.)*
+- [x] Spaced-repetition scheduling (SM-2) — **FR-LRN-02 (M)**. *(SM-2 algorithm in api/learning/sm2.py; POST /review endpoint; 24 unit tests; StudyPlannerAgent tier-4.)*
 - [x] Quizzes (MCQ + short-answer) at selectable difficulty — **FR-LRN-03 (M)** *(Slice 3: LearningAgent → QuizCard)*.
 - [x] Feynman explanations + gap flags — **FR-LRN-04 (S)** *(Slice 4: LearningAgent._generate_feynman() → FeynmanExplainer)*.
 - [ ] Cornell notes — **FR-LRN-05 (C)**; blurting — **FR-LRN-06 (C)**.
@@ -157,9 +157,9 @@
 - [ ] Pomodoro + study schedules — **FR-LRN-09 (C)**; per-topic progress tracking — **FR-LRN-10 (S)**.
 
 ### 1.8 Accounts & persistence
-- [ ] Firebase email + Google OAuth — **FR-USR-01 (M)**; `core/auth.py` guards all routes — **NFR-SEC-01**.
+- [x] `core/auth.py` guards routes — **FR-USR-01 (M), NFR-SEC-01**. *(get_current_user dep: Firebase token verify when firebase_project_id set; X-Dev-User-Id header in local dev.)*
 - [ ] Persistent profile (preferences, context) — **FR-USR-02 (M)**.
-- [ ] Notebook workspaces (CRUD) — **FR-USR-03 (M)**; per-user isolation — **FR-USR-06 (M)** / **NFR-SEC-02**.
+- [x] Notebook workspaces (CRUD) — **FR-USR-03 (M)**; per-user isolation — **FR-USR-06 (M)** / **NFR-SEC-02**. *(JsonlNotebookStore + POST/GET/DELETE /notebooks routes.)*
 - [ ] Interaction history persists + informs adaptation — **FR-USR-04 (S)**.
 - [ ] User highlights/notes ingested back into the graph — **FR-USR-05 (S)**.
 
