@@ -54,7 +54,21 @@ def _build_shared_resources():
 
     settings = get_settings()
 
-    llm = LLMService(settings=settings)
+    # Three model tiers — each falls back to sonnet-4.6 on outage.
+    # Heavy (Opus 4.8): research, writing, literature, contradiction.
+    # Standard (Sonnet 4.6): most analysis agents, general default.
+    # Light (Haiku 4.5): extraction, fact-check, flashcards, memory.
+    llm = LLMService(settings=settings)  # standard: sonnet-4.6
+    llm_heavy = LLMService.for_model(
+        settings.llm_heavy,
+        settings=settings,
+        fallback_model=settings.llm_fallback,
+    )
+    llm_light = LLMService.for_model(
+        settings.llm_light,
+        settings=settings,
+        fallback_model=settings.llm_fallback,
+    )
     embedder = EmbeddingService(settings=settings)
 
     vector_store = PineconeVectorStore(
@@ -86,6 +100,8 @@ def _build_shared_resources():
     return {
         "settings": settings,
         "llm": llm,
+        "llm_heavy": llm_heavy,
+        "llm_light": llm_light,
         "embedder": embedder,
         "stores": stores,
         "doc_store": doc_store,
@@ -118,7 +134,9 @@ def build_orchestrator(shared: dict):
     from api.agents.tier4.fact_checker import FactChecker
     from api.agents.tier4.memory import MemoryAgent
 
-    llm = shared["llm"]
+    llm = shared["llm"]              # sonnet-4.6: standard
+    llm_heavy = shared["llm_heavy"]  # opus-4.8 → sonnet fallback
+    llm_light = shared["llm_light"]  # haiku-4.5 → sonnet fallback
     embedder = shared["embedder"]
     doc_store = shared["doc_store"]
     stores = shared["stores"]
@@ -133,8 +151,9 @@ def build_orchestrator(shared: dict):
         graph_retriever=graph_retriever,
     )
 
+    # Heavy: primary research synthesis — quality matters most here.
     research = ResearchAgent(
-        llm_service=llm,
+        llm_service=llm_heavy,
         embedder=embedder,
         doc_store=doc_store,
         **_retriever_kwargs,
@@ -142,24 +161,26 @@ def build_orchestrator(shared: dict):
     memory_agent = MemoryAgent(store=memory_store)
 
     tier2_agents = [
-        LearningAgent(llm_service=llm, **_retriever_kwargs),
+        # Light: structured output, repetitive generation
+        LearningAgent(llm_service=llm_light, **_retriever_kwargs),
+        AnnotationAgent(llm_service=llm_light, **_retriever_kwargs),
+        GraphAgent(llm_service=llm_light, graph_store=stores.graph),
+        # Standard: analysis and dialogue
         SocraticAgent(llm_service=llm, **_retriever_kwargs),
         DiscoveryAgent(llm_service=llm, **_retriever_kwargs),
-        WritingAgent(llm_service=llm, **_retriever_kwargs),
-        # Slice 7: dormant-UIBlock activators + supporting trio (FR-AGT-06)
-        GraphAgent(llm_service=llm, graph_store=stores.graph),
-        LiteratureAgent(llm_service=llm, **_retriever_kwargs),
-        ContradictionAgent(llm_service=llm, **_retriever_kwargs),
-        CrossDocAgent(llm_service=llm, **_retriever_kwargs),
         ComparatorAgent(llm_service=llm, **_retriever_kwargs),
         TimelineAgent(llm_service=llm, **_retriever_kwargs),
-        AnnotationAgent(llm_service=llm, **_retriever_kwargs),
+        # Heavy: deep cross-document reasoning and long-form writing
+        WritingAgent(llm_service=llm_heavy, **_retriever_kwargs),
+        LiteratureAgent(llm_service=llm_heavy, **_retriever_kwargs),
+        ContradictionAgent(llm_service=llm_heavy, **_retriever_kwargs),
+        CrossDocAgent(llm_service=llm_heavy, **_retriever_kwargs),
     ]
 
     return Orchestrator(
         research=research,
         ui_agent=UIAgent(),
-        fact_checker=FactChecker(llm=llm),
+        fact_checker=FactChecker(llm=llm_light),
         memory_agent=memory_agent,
         memory_store=memory_store,
         extra_agents=tier2_agents,

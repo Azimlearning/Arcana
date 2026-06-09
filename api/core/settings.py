@@ -41,14 +41,19 @@ class Settings(BaseSettings):
     graph_backend: Literal["networkx", "neo4j"] = "networkx"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
-    # ── LLM primary (Anthropic) — REQUIRED ────────────────────────
-    anthropic_api_key: SecretStr
+    # ── LLM primary (Anthropic) — OPTIONAL (skip provider if absent) ──
+    anthropic_api_key: SecretStr | None = None
     llm_primary: str = "claude-sonnet"
     llm_primary_max_tokens: int = 4096
 
-    # ── LLM fallback (OpenRouter) — RECOMMENDED ───────────────────
+    # ── LLM tiers (all via OpenRouter) ──────────────────────────────
+    # Heavy: complex synthesis, long-form research, writing
+    # Standard: most analysis agents (default fallback)
+    # Light: structured extraction, fact-checking, flashcard gen
     openrouter_api_key: SecretStr | None = None
-    llm_fallback: str = "openrouter/auto"
+    llm_heavy: str = "anthropic/claude-opus-4.8"
+    llm_fallback: str = "anthropic/claude-sonnet-4.6"
+    llm_light: str = "anthropic/claude-haiku-4.5"
 
     # ── Embeddings (OpenAI) — REQUIRED ────────────────────────────
     openai_api_key: SecretStr

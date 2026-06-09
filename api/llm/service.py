@@ -54,12 +54,16 @@ class LLMService:
 
     # ── Construction helpers ──────────────────────────────────────
     def _default_providers(self) -> list[LLMProvider]:
-        return [
-            AnthropicProvider(
-                api_key=self.settings.anthropic_api_key.get_secret_value(),
-                model=self.settings.llm_primary,
-                default_max_tokens=self.settings.llm_primary_max_tokens,
-            ),
+        providers: list[LLMProvider] = []
+        if self.settings.anthropic_api_key:
+            providers.append(
+                AnthropicProvider(
+                    api_key=self.settings.anthropic_api_key.get_secret_value(),
+                    model=self.settings.llm_primary,
+                    default_max_tokens=self.settings.llm_primary_max_tokens,
+                )
+            )
+        providers.append(
             OpenRouterProvider(
                 api_key=(
                     self.settings.openrouter_api_key.get_secret_value()
@@ -67,8 +71,29 @@ class LLMService:
                     else None
                 ),
                 model=self.settings.llm_fallback,
-            ),
-        ]
+            )
+        )
+        return providers
+
+    @classmethod
+    def for_model(
+        cls,
+        model: str,
+        *,
+        settings: Settings | None = None,
+        fallback_model: str | None = None,
+    ) -> "LLMService":
+        """Create a service pinned to a specific OpenRouter model.
+
+        Adds a second provider with `fallback_model` so a transient outage
+        on the primary doesn't surface as AllProvidersFailed.
+        """
+        s = settings or get_settings()
+        api_key = s.openrouter_api_key.get_secret_value() if s.openrouter_api_key else None
+        providers: list[LLMProvider] = [OpenRouterProvider(api_key=api_key, model=model)]
+        if fallback_model and fallback_model != model:
+            providers.append(OpenRouterProvider(api_key=api_key, model=fallback_model))
+        return cls(settings=s, providers=providers)
 
     def _default_cache(self) -> LLMCache | None:
         if self.settings.env != "local":
