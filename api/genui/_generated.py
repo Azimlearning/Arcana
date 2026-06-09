@@ -165,6 +165,13 @@ class GraphNode(BaseModel):
     nodeType: str
 
 
+class IngestResponse(BaseModel):
+    docId: str
+    title: str
+    status: Literal['ready', 'failed']
+    chunkCount: float
+
+
 class InsightCard(BaseModel):
     type: Literal['InsightCard']
     id: str

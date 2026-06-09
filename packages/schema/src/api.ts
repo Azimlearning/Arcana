@@ -21,3 +21,12 @@ export interface ChatRequest {
   // backend coalesces a missing mode to 'research'. FR-UI-06.
   activeMode?: Mode;
 }
+
+// Response from POST /ingest (FR-ING-01). The request is multipart/form-data
+// so it has no schema type; only the response crosses the wire as JSON.
+export interface IngestResponse {
+  docId: string;
+  title: string;
+  status: 'ready' | 'failed';
+  chunkCount: number;
+}
