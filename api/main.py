@@ -10,6 +10,7 @@
      server restart.
 
 Slice 9: auth (api/core/auth.py) and notebooks/review routes added.
+Slice 10: analytics event store + feedback/sus/export routes added.
 CORS is open to localhost:3000 for local dev; tighten for deployment.
 """
 
@@ -28,6 +29,8 @@ from api.routes.chat import get_orchestrator
 from api.routes.chat import router as chat_router
 from api.routes.ingest import IngestContext, get_ingest_context
 from api.routes.ingest import router as ingest_router
+from api.routes.analytics import router as analytics_router
+from api.routes.feedback import router as feedback_router
 from api.routes.notebooks import router as notebooks_router
 from api.routes.review import router as review_router
 
@@ -102,6 +105,9 @@ def _build_shared_resources():
     from api.stores.notebook_store import JsonlNotebookStore
     notebook_store = JsonlNotebookStore(root=settings.local_storage_path / "notebooks")
 
+    from api.analytics.event_store import JsonlEventStore
+    event_store = JsonlEventStore(root=settings.local_storage_path / "events")
+
     return {
         "settings": settings,
         "llm": llm,
@@ -115,6 +121,7 @@ def _build_shared_resources():
         "graph_retriever": graph_retriever,
         "memory_store": memory_store,
         "notebook_store": notebook_store,
+        "event_store": event_store,
     }
 
 
@@ -246,6 +253,8 @@ def create_app() -> FastAPI:
     app.include_router(ingest_router)
     app.include_router(review_router)
     app.include_router(notebooks_router)
+    app.include_router(feedback_router)
+    app.include_router(analytics_router)
     return app
 
 

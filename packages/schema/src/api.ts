@@ -73,3 +73,36 @@ export interface NotebookListResponse {
 export interface NotebookDeleteResponse {
   deleted: string;
 }
+
+// ── Analytics / User Study (FR-ANL-01, FR-ANL-03, R-03) ─────────────────────
+
+export interface TurnEvent {
+  sessionId: string;
+  userId: string;
+  timestamp: string;           // ISO 8601
+  query: string;               // truncated to 500 chars
+  mode: Mode;
+  intent: string;
+  agentsTriggered: string[];
+  latencyMs: number;
+  blockTypes: string[];
+  retrievedChunkCount: number;
+}
+
+export interface FeedbackRating {
+  sessionId: string;
+  blockId: string;
+  userId: string;
+  rating: 'up' | 'down';
+  blockType: string;
+  timestamp: string;           // ISO 8601
+}
+
+export interface SurveySubmission {
+  sessionId: string;
+  userId: string;
+  timestamp: string;           // ISO 8601
+  responses: number[];         // 10 items, Likert 1-5
+  susScore: number;            // computed 0-100
+  taskDescription: string;
+}

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { CitedSummary as CitedSummaryBlock, UIBlock } from '@arcana/schema';
 
 import { renderBlock } from '@/components/genui/registry';
 import { EmptyState } from '@/components/genui/BlockStates';
+import { BlockFeedback } from '@/components/feedback/BlockFeedback';
+import { SUSModal } from '@/components/feedback/SUSModal';
 import { Button } from '@/components/ui/Button';
 import { streamChat } from '@/lib/stream';
 import { useBlockStore } from '@/store/blockStore';
@@ -27,6 +29,12 @@ export function ChatPanel({ notebookId }: Props) {
   const activeMode = useUIStore((s) => s.activeMode);
 
   const [input, setInput] = useState('');
+  const [turnCount, setTurnCount] = useState(0);
+  const [showSUS, setShowSUS] = useState(false);
+  const [susShownOnce, setSusShownOnce] = useState(false);
+
+  // Stable session ID for the lifetime of this component mount.
+  const sessionId = useRef(crypto.randomUUID()).current;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,9 +44,6 @@ export function ChatPanel({ notebookId }: Props) {
     setInput('');
     startTurn();
 
-    // Optimistic skeleton: append a loading-state block so the panel has
-    // shape within ~50ms (uiux_plan.md §1 principle 2 — structure before
-    // content). Tracked by id so multi-block turns (P1) don't clobber it.
     const optimisticId = `loading_${crypto.randomUUID()}`;
     const optimistic: CitedSummaryBlock = {
       type: 'CitedSummary',
@@ -48,9 +53,6 @@ export function ChatPanel({ notebookId }: Props) {
     };
     pushBlock(optimistic);
 
-    // Track whether we've consumed the optimistic skeleton yet. First
-    // real block REPLACES it (by id); subsequent blocks APPEND. Same
-    // skeleton-key on error.
     let skeletonConsumed = false;
 
     await streamChat(
@@ -70,21 +72,25 @@ export function ChatPanel({ notebookId }: Props) {
             replaceBlockById(optimisticId, {
               ...optimistic,
               meta: { ...optimistic.meta, status: 'error' },
-              data: {
-                ...optimistic.data,
-                summary: err.error || 'Stream failed.',
-              },
+              data: { ...optimistic.data, summary: err.error || 'Stream failed.' },
             });
             skeletonConsumed = true;
           }
         },
-        onDone: () => finishTurn(),
+        onDone: () => {
+          finishTurn();
+          setTurnCount((n) => {
+            const next = n + 1;
+            if (next >= 5 && !susShownOnce) {
+              setShowSUS(true);
+              setSusShownOnce(true);
+            }
+            return next;
+          });
+        },
       },
     );
 
-    // Belt-and-suspenders: streamChat catches internally and routes to
-    // onError, but if neither onDone nor onError fired (shouldn't happen)
-    // make sure `streaming` clears so the user can submit again.
     if (useBlockStore.getState().streaming) {
       finishTurn();
     }
@@ -103,7 +109,17 @@ export function ChatPanel({ notebookId }: Props) {
             hint="The research agent will ground its answer in your ingested documents and cite each claim."
           />
         ) : (
-          blocks.map((block) => <div key={block.id}>{renderBlock(block)}</div>)
+          blocks.map((block) => (
+            <div key={block.id}>
+              {renderBlock(block)}
+              <BlockFeedback
+                blockId={block.id}
+                blockType={block.type}
+                sessionId={sessionId}
+                ready={block.meta?.status === 'ready'}
+              />
+            </div>
+          ))
         )}
       </div>
 
@@ -132,6 +148,10 @@ export function ChatPanel({ notebookId }: Props) {
         <div className="px-4 py-2 text-xs font-mono text-red bg-red-bg border-t border-red/30">
           {lastError.code ?? 'error'}: {lastError.error}
         </div>
+      )}
+
+      {showSUS && (
+        <SUSModal sessionId={sessionId} onDismiss={() => setShowSUS(false)} />
       )}
     </main>
   );

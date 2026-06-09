@@ -169,8 +169,8 @@
 - [ ] BibTeX / RIS citation export — **FR-EXP-08 (S)**.
 
 ### 1.10 Analytics & instrumentation
-- [ ] Log retrieval quality metrics — **FR-ANL-01 (S)**.
-- [ ] Instrument usage events for the user study — **FR-ANL-03 (S)**.
+- [x] Log retrieval quality metrics — **FR-ANL-01 (S)**.
+- [x] Instrument usage events for the user study — **FR-ANL-03 (S)**.
 - [ ] Capture events listed in §20 (ingestion, retrieval, agents, learning, UI).
 
 ### 1.11 Non-functional verification

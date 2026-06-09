@@ -105,6 +105,15 @@ class DraftSection(BaseModel):
     citationIds: list[str]
 
 
+class FeedbackRating(BaseModel):
+    sessionId: str
+    blockId: str
+    userId: str
+    rating: Literal['up', 'down']
+    blockType: str
+    timestamp: str
+
+
 class FeynmanExplainer(BaseModel):
     type: Literal['FeynmanExplainer']
     id: str
@@ -327,6 +336,28 @@ class SocraticTurn(BaseModel):
 class SummarySegment(BaseModel):
     text: str
     citationIds: list[str]
+
+
+class SurveySubmission(BaseModel):
+    sessionId: str
+    userId: str
+    timestamp: str
+    responses: list[float]
+    susScore: float
+    taskDescription: str
+
+
+class TurnEvent(BaseModel):
+    sessionId: str
+    userId: str
+    timestamp: str
+    query: str
+    mode: Mode
+    intent: str
+    agentsTriggered: list[str]
+    latencyMs: float
+    blockTypes: list[str]
+    retrievedChunkCount: float
 
 
 class UserPreferences(BaseModel):
