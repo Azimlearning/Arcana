@@ -94,18 +94,18 @@
 ## Phase 1 — FYP 2 MVP (graded build)
 
 ### 1.1 Expand ingestion
-- [ ] `parsers/web.py` — **FR-ING-02 (M)**.
+- [x] `parsers/web.py` — **FR-ING-02 (M)**. *(Slice 12: httpx + BeautifulSoup HTML extractor; POST /ingest/url; doc-id derived from URL.)*
 - [ ] `parsers/youtube.py` (transcript) — **FR-ING-03 (S)**.
 - [ ] `ocr.py` for scanned PDFs — **FR-ING-04 (S)**.
 - [ ] Per-document progress + status surfaced to UI — **FR-ING-07 (S)**.
-- [ ] Failed ingest reported with cause + retry — **FR-ING-08 (M)**.
+- [x] Failed ingest reported with cause + retry — **FR-ING-08 (M)**. *(Slice 12: GET /docs + GET /docs/{docId} returning DocStatusResponse with status/error fields.)*
 - [ ] Entity canonicalisation (same concept → one node) — **FR-ING-09 (S)**.
 
 ### 1.2 Knowledge graph maturity
-- [ ] Graph persists per user across sessions — **FR-KG-02 (M)**.
+- [x] Graph persists per user across sessions — **FR-KG-02 (M)**. *(Slice 14: UserGraphRegistry; per-user graphs at {storage}/graphs/{uid}.json; ingest + chat routes resolve per-user graph.)*
 - [ ] Incremental update on new document (no full reprocess) — **FR-KG-03 (S)**.
 - [ ] Louvain communities — **FR-KG-04 (S)**; PageRank — **FR-KG-05 (S)**; betweenness bridges — **FR-KG-06 (C)**.
-- [ ] Interactive graph view endpoint — **FR-KG-08 (M)**.
+- [x] Interactive graph view endpoint — **FR-KG-08 (M)**. *(Slice 14: GET /graph returns GraphViewResponse; GraphViewNode/Edge types in schema + codegen.)*
 - [ ] Migrate to `neo4j_store.py`; flip `graph_backend=neo4j` — **R-06**; verify no regressions vs NetworkX.
 
 ### 1.3 Retrieval features
@@ -124,9 +124,9 @@
 - [ ] **Verify the worked example** ("compare three papers" with 2 A2A hops + 3 streamed blocks) — *Listing 12.1*.
 
 ### 1.5 Build out the agents (Tier 2/3/4, P1 set)
-- [x] Tier 2: `learning.py` ✓, `writing.py` ✓, `socratic.py` ✓, `discovery.py` ✓ — **4/4 done** *(Slice 3+4)*.
+- [x] Tier 2: `learning.py` ✓, `writing.py` ✓, `socratic.py` ✓, `discovery.py` ✓ *(Slice 3+4)*; `graph_agent.py` ✓, `literature.py` ✓, `contradiction.py` ✓, `cross_doc.py` ✓, `comparator.py` ✓, `timeline.py` ✓, `annotation.py` ✓ *(Slice 7)* — **11/12 P1 tier-2 done** *(methodology.py → P2)*.
 - [ ] Tier 3: `ui_agent.py` ✓, `citation.py`, `visual.py`, `document.py`.
-- [ ] Tier 4: `fact_checker.py` ✓, `annotation.py`, `memory.py` ✓, `ingestion_agent.py`, `web_search.py`, `study_planner.py`, `analytics.py`.
+- [ ] Tier 4: `fact_checker.py` ✓, `memory.py` ✓, `study_planner.py` ✓ *(Slice 9)*; `annotation.py` → moved to tier-2 in Slice 7; `ingestion_agent.py`, `web_search.py`, `analytics.py` → P2.
 - [x] Fact Checker verifies claims before output is finalised — **FR-AGT-09 (S)**.
 - [ ] Web Search Agent limited to academic discovery (Semantic Scholar / arXiv) — §12, scope non-goal respected.
 
@@ -138,8 +138,8 @@
 - [x] `web/lib/stream.ts`: SSE → `UIBlock[]` consumer — §13.2.
 - [x] `web/components/genui/registry.ts` + `renderBlock()` — *Listing 14.2*, **NFR-MNT-02**.
 - [x] Agents emit declarative typed components, never raw HTML/text — **FR-UI-03 (M)**.
-- [ ] Build the **24-component catalog** (one file each) — **FR-UI-02 (M)**, §13.3, `uiux_plan.md` §5. *(11/24 done: CitedSummary, LiteratureMatrix, ContradictionAlert, GapAnalysis, InsightCard, KnowledgeGraphView, FlashcardDeck, QuizCard, SocraticDialog, FeynmanExplainer, DraftEditor.)*
-- [ ] Every component implements Empty/Loading/Partial/Error via `BlockStates.tsx` — **NFR-USE-02**, **FR-UI-09 (S)**, `uiux_plan.md` §6. *(11/24 implement all four states.)*
+- [x] Build the **24-component catalog** (P0+P1 complete) — **FR-UI-02 (M)**, §13.3, `uiux_plan.md` §5. *(22/22 P0+P1 components done: CitedSummary, LiteratureMatrix, ContradictionAlert, GapAnalysis, InsightCard, KnowledgeGraphView, FlashcardDeck, QuizCard, SocraticDialog, FeynmanExplainer, DraftEditor, StudyPlanner, BlurtingPrompt, CornellNotes, SourceList, CitationPreview, BibliographyExport, ConceptMap, ComparisonChart, Timeline, DataTable, ProgressDashboard. Remaining 2 — PlagiarismReport, AudioSummary — are P2.)*
+- [x] Every component implements Empty/Loading/Partial/Error via `BlockStates.tsx` — **NFR-USE-02**, **FR-UI-09 (S)**, `uiux_plan.md` §6. *(All 22 P0+P1 components implement all four states.)*
 - [x] `ui_agent.py` selects components from intent/mode/history — **FR-UI-04 (M)**, *Listing 13.2*.
 - [x] 3-panel adaptive shell; panel widths + visibility adapt — **FR-UI-01/05 (M)**. *(Slice 6: MODE_LAYOUT map in uiStore; Shell flex row + PanelResizer; Writing hides Studio, Exploration hides Sources.)*
 - [x] Ship **≥ 3 modes** (Research, Writing, Study); demonstrate 5 — **FR-UI-06 (M)**, §13.5, `uiux_plan.md` §4. *(Slice 5: 5-mode switcher → `activeMode` on the wire → `_MODE_TO_INTENT` routing. research/study/writing/socratic/exploration all reachable.)*
@@ -152,13 +152,13 @@
 - [x] Spaced-repetition scheduling (SM-2) — **FR-LRN-02 (M)**. *(SM-2 algorithm in api/learning/sm2.py; POST /review endpoint; 24 unit tests; StudyPlannerAgent tier-4.)*
 - [x] Quizzes (MCQ + short-answer) at selectable difficulty — **FR-LRN-03 (M)** *(Slice 3: LearningAgent → QuizCard)*.
 - [x] Feynman explanations + gap flags — **FR-LRN-04 (S)** *(Slice 4: LearningAgent._generate_feynman() → FeynmanExplainer)*.
-- [ ] Cornell notes — **FR-LRN-05 (C)**; blurting — **FR-LRN-06 (C)**.
+- [x] Cornell notes — **FR-LRN-05 (C)**; blurting — **FR-LRN-06 (C)**. *(Slice 11: CornellNotes + BlurtingPrompt GenUI components; LearningAgent generates both.)*
 - [x] Socratic tutor never gives direct answers — **FR-LRN-08 (S)** *(Slice 3: SocraticAgent with _is_answer_shaped() guard)*.
 - [ ] Pomodoro + study schedules — **FR-LRN-09 (C)**; per-topic progress tracking — **FR-LRN-10 (S)**.
 
 ### 1.8 Accounts & persistence
 - [x] `core/auth.py` guards routes — **FR-USR-01 (M), NFR-SEC-01**. *(get_current_user dep: Firebase token verify when firebase_project_id set; X-Dev-User-Id header in local dev.)*
-- [ ] Persistent profile (preferences, context) — **FR-USR-02 (M)**.
+- [x] Persistent profile (preferences, context) — **FR-USR-02 (M)**. *(Slice 15: UserProfileStore at {storage}/profiles/{uid}.json; GET /profile + PUT /profile; UserPreferences with defaultMode, theme, citationStyle, studyContext.)*
 - [x] Notebook workspaces (CRUD) — **FR-USR-03 (M)**; per-user isolation — **FR-USR-06 (M)** / **NFR-SEC-02**. *(JsonlNotebookStore + POST/GET/DELETE /notebooks routes.)*
 - [ ] Interaction history persists + informs adaptation — **FR-USR-04 (S)**.
 - [ ] User highlights/notes ingested back into the graph — **FR-USR-05 (S)**.

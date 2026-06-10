@@ -635,6 +635,14 @@ class TurnEvent(BaseModel):
     retrievedChunkCount: float
 
 
+class UpdateProfileRequest(BaseModel):
+    displayName: str | None = None
+    defaultMode: str | None = None
+    theme: str | None = None
+    citationStyle: str | None = None
+    studyContext: str | None = None
+
+
 class UrlIngestRequest(BaseModel):
     url: str
     notebookId: str | None = None
@@ -643,6 +651,8 @@ class UrlIngestRequest(BaseModel):
 class UserPreferences(BaseModel):
     defaultMode: str
     theme: str
+    citationStyle: str
+    studyContext: str
 
 
 class UserProfile(BaseModel):
@@ -650,6 +660,7 @@ class UserProfile(BaseModel):
     email: str | None
     displayName: str | None
     createdAt: str
+    updatedAt: str
     preferences: UserPreferences
 
 

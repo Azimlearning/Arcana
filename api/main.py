@@ -12,6 +12,7 @@
 Slice 9: auth (api/core/auth.py) and notebooks/review routes added.
 Slice 10: analytics event store + feedback/sus/export routes added.
 Slice 14: UserGraphRegistry replaces the single shared graph_store (FR-KG-02).
+Slice 15: UserProfileStore added — GET/PUT /profile (FR-USR-02).
 CORS is open to localhost:3000 for local dev; tighten for deployment.
 """
 
@@ -34,6 +35,7 @@ from api.routes.graph import router as graph_router
 from api.routes.ingest import IngestContext, get_ingest_context
 from api.routes.ingest import router as ingest_router
 from api.routes.notebooks import router as notebooks_router
+from api.routes.profile import router as profile_router
 from api.routes.review import router as review_router
 
 logger = get_logger(__name__)
@@ -59,6 +61,7 @@ def _build_shared_resources():
     from api.stores.networkx_store import NetworkXGraphStore
     from api.stores.pinecone_store import PineconeVectorStore
     from api.stores.user_graph_registry import UserGraphRegistry
+    from api.stores.user_profile_store import UserProfileStore
 
     settings = get_settings()
 
@@ -118,6 +121,10 @@ def _build_shared_resources():
     from api.analytics.event_store import JsonlEventStore
     event_store = JsonlEventStore(root=settings.local_storage_path / "events")
 
+    # FR-USR-02: per-user profile store. Profiles persist at
+    # {local_storage_path}/profiles/{uid}.json.
+    profile_store = UserProfileStore(root=settings.local_storage_path / "profiles")
+
     return {
         "settings": settings,
         "llm": llm,
@@ -133,6 +140,7 @@ def _build_shared_resources():
         "notebook_store": notebook_store,
         "event_store": event_store,
         "graph_registry": graph_registry,
+        "profile_store": profile_store,
     }
 
 
@@ -262,7 +270,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000"],
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "OPTIONS", "PUT"],
         allow_headers=["*"],
     )
     app.include_router(chat_router)
@@ -272,6 +280,7 @@ def create_app() -> FastAPI:
     app.include_router(feedback_router)
     app.include_router(analytics_router)
     app.include_router(graph_router)
+    app.include_router(profile_router)
     return app
 
 

@@ -13,7 +13,7 @@
 //   - export type X = A | B | ...   (all class refs with `type:` lit)
 //                                                   → Annotated[A | B, Field(discriminator='type')]
 //   - Field types: string | number | boolean | null | T[] | Array<T>
-//                  | 'literal' | T | A | B | A | null | Foo
+//                  | Record<K, V> | 'literal' | T | A | B | A | null | Foo
 //
 // Anything else fails loudly with the offending construct printed.
 
@@ -91,6 +91,7 @@ function mapPrimitive(text: string, ctx: string): string {
     case 'number':  return 'float';
     case 'boolean': return 'bool';
     case 'null':    return 'None';
+    case 'unknown': return 'Any';
   }
   if (isStringLiteralText(text)) return `Literal[${normalizeStringLiteral(text)}]`;
   // Bare identifier — assume it's a defined interface/alias (forward refs ok via __future__ annotations)
@@ -104,7 +105,7 @@ function mapTypeNode(node: TypeNode, ctx: string): string {
     const elemText = (node.asKindOrThrow(SyntaxKind.ArrayType)).getElementTypeNode().getText();
     return `list[${mapPrimitive(elemText, ctx)}]`;
   }
-  // Array<Foo>
+  // Array<Foo> and Record<K, V>
   if (node.getKind() === SyntaxKind.TypeReference) {
     const ref = node.asKindOrThrow(SyntaxKind.TypeReference);
     const name = ref.getTypeName().getText();
@@ -114,6 +115,14 @@ function mapTypeNode(node: TypeNode, ctx: string): string {
       const a = args[0];
       if (!a) fail(ctx, `Array<...> missing element type`);
       return `list[${mapPrimitive(a.getText(), ctx)}]`;
+    }
+    if (name === 'Record') {
+      const args = ref.getTypeArguments();
+      if (args.length !== 2) fail(ctx, `Record<...> needs exactly 2 type args`);
+      const k = args[0];
+      const v = args[1];
+      if (!k || !v) fail(ctx, `Record<...> missing type args`);
+      return `dict[${mapPrimitive(k.getText(), ctx)}, ${mapPrimitive(v.getText(), ctx)}]`;
     }
     // Plain reference (Foo)
     return mapPrimitive(name, ctx);
@@ -234,6 +243,7 @@ for (const item of aliases) {
 const bodyJoined = body.join('\n');
 const typingNames: string[] = [];
 if (bodyJoined.includes('Annotated[')) typingNames.push('Annotated');
+if (bodyJoined.includes('Any'))        typingNames.push('Any');
 if (bodyJoined.includes('Literal['))   typingNames.push('Literal');
 
 const pydanticNames: string[] = ['BaseModel'];

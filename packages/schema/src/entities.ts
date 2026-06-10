@@ -30,12 +30,15 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   createdAt: string;     // ISO 8601
+  updatedAt: string;     // ISO 8601
   preferences: UserPreferences;
 }
 
 export interface UserPreferences {
-  defaultMode: string;   // 'research' | 'study' | 'writing' | 'socratic' | 'exploration'
-  theme: string;         // 'light' | 'dark' | 'system'
+  defaultMode: string;     // 'research' | 'study' | 'writing' | 'socratic' | 'exploration'
+  theme: string;           // 'light' | 'dark' | 'system'
+  citationStyle: string;   // 'apa' | 'mla' | 'chicago' | 'ieee' | 'harvard'
+  studyContext: string;    // free-text; injected into agent system prompts for personalisation
 }
 
 // ── Notebook ──────────────────────────────────────────────────────────────

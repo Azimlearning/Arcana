@@ -153,3 +153,15 @@ export interface GraphViewResponse {
   nodeCount: number;
   edgeCount: number;
 }
+
+// ── User profile CRUD (FR-USR-02) ─────────────────────────────────────────────
+// GET /profile returns UserProfile (defined in entities.ts).
+// PUT /profile accepts UpdateProfileRequest; returns the updated UserProfile.
+
+export interface UpdateProfileRequest {
+  displayName?: string | null;
+  defaultMode?: string;
+  theme?: string;
+  citationStyle?: string;
+  studyContext?: string;
+}
