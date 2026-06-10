@@ -109,7 +109,7 @@
 - [ ] Migrate to `neo4j_store.py`; flip `graph_backend=neo4j` — **R-06**; verify no regressions vs NetworkX.
 
 ### 1.3 Retrieval features
-- [ ] Cross-document comparison questions over the whole corpus — **FR-RET-05 (M)**.
+- [x] Cross-document comparison questions over the whole corpus — **FR-RET-05 (M)**. *(Slice 16: ComparatorAgent upgraded — top_k=20 corpus sweep; ≥2 docs → LiteratureMatrix JSON matrix; single-doc fallback → CitedSummary. UIAgent dispatches on block_type.)*
 - [ ] Contradiction surfacing on a queried concept — **FR-RET-06 (S)**.
 - [ ] Local/global/hybrid mode select or auto — **FR-RET-07 (C)**.
 

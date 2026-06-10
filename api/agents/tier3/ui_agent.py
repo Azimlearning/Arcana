@@ -10,10 +10,11 @@ Priority order (since the graph routes ONE intent per turn):
   6. Graph agent result     → KnowledgeGraphView
   7. Literature agent result → LiteratureMatrix
   8. Contradiction agent result → ContradictionAlert
-  9. Comparator / Timeline agent result → CitedSummary (comparison/timeline framing)
- 10. Annotation agent result → GapAnalysis (annotation framing)
- 11. Research agent result  → CitedSummary (with Fact Check filter)
- 12. Error block            (invariant #6: always terminate with a block)
+  9. Comparator → LiteratureMatrix (multi-doc, FR-RET-05) or CitedSummary (single-doc)
+ 10. Timeline agent result → CitedSummary (timeline framing)
+ 11. Annotation agent result → GapAnalysis (annotation framing)
+ 12. Research agent result  → CitedSummary (with Fact Check filter)
+ 13. Error block            (invariant #6: always terminate with a block)
 
 Slice 1 additions (still in effect):
   - Reads fact_checker result and filters unsupported citations (FR-AGT-09).
@@ -30,6 +31,10 @@ Slice 7 additions:
   - InsightCard routing in DiscoveryAgent result is now live (was deferred in Slice 2).
   - Comparator/Timeline produce CitedSummary; Annotation produces GapAnalysis via
     existing builder paths.
+
+Slice 16 (FR-RET-05):
+  - Comparator now returns LiteratureMatrix when ≥2 docs found; UIAgent dispatches
+    on block_type to pick _build_from_literature vs _build_cited_summary_from_result.
 """
 
 from __future__ import annotations
@@ -162,10 +167,13 @@ class UIAgent(BaseAgent):
             if block is not None:
                 return block
 
-        # 9. Comparator → CitedSummary
+        # 9. Comparator → LiteratureMatrix (multi-doc, FR-RET-05) or CitedSummary (single-doc)
         comparator = state.agent_results.get("comparator")
         if comparator is not None and comparator.status == "ok":
-            block = self._build_cited_summary_from_result(comparator, order=order)
+            if comparator.payload.get("block_type") == "LiteratureMatrix":
+                block = self._build_from_literature(comparator, order=order)
+            else:
+                block = self._build_cited_summary_from_result(comparator, order=order)
             if block is not None:
                 return block
 
