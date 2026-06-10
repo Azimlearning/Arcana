@@ -25,12 +25,12 @@ from pydantic import ValidationError
 
 from api.core.errors import ArcanaError, arcana_error_handler
 from api.core.logging import configure_logging, get_logger
+from api.routes.analytics import router as analytics_router
 from api.routes.chat import get_orchestrator
 from api.routes.chat import router as chat_router
+from api.routes.feedback import router as feedback_router
 from api.routes.ingest import IngestContext, get_ingest_context
 from api.routes.ingest import router as ingest_router
-from api.routes.analytics import router as analytics_router
-from api.routes.feedback import router as feedback_router
 from api.routes.notebooks import router as notebooks_router
 from api.routes.review import router as review_router
 

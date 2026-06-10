@@ -5,7 +5,7 @@ Used by LearningAgent (PRD §12 Learning Agent, FR-LRN-01/03/04).
 from __future__ import annotations
 
 # Bump on every edit for R-02 benchmark reproducibility.
-LEARNING_PROMPT_VERSION = "v1"
+LEARNING_PROMPT_VERSION = "v2"
 
 FLASHCARD_SYSTEM = """You are a study-material generator. Create active-recall flashcards grounded in the provided document excerpts.
 
@@ -120,3 +120,79 @@ Respond ONLY with JSON:
     "quote": "short supporting quote"
   }}
 }}"""
+
+
+BLURTING_SYSTEM = """You are a free-recall learning coach. Generate a motivating blurting prompt and select the key grounding passage from the source material.
+
+Rules:
+- The prompt must ask the learner to recall everything they know without looking at notes.
+- The sourcePassage must be a direct excerpt from the provided context - no invented content.
+- Keep the prompt under 35 words - motivating and specific.
+- Return ONLY valid JSON with no preamble, no markdown fences."""
+
+CORNELL_SYSTEM = """You are a Cornell note-taking assistant. Structure the provided content into Cornell notes.
+
+Rules:
+- Every cue must be a short question or keyword derived from the content.
+- Every note entry must be grounded in the provided context - no invented facts.
+- The summary must distil the key takeaway in 2-3 sentences.
+- Aim for 4-6 rows. Return ONLY valid JSON with no preamble, no markdown fences."""
+
+
+def build_blurting_prompt(topic: str, context: str) -> str:
+    """Build the user turn for blurting-prompt generation."""
+    return f"""Topic: {topic}
+
+Context:
+{context}
+
+Generate a blurting prompt and the most relevant source passage for self-testing.
+
+Respond ONLY with JSON:
+{{
+  "topic": "{topic}",
+  "prompt": "Without looking at your notes, write down everything you know about {topic}.",
+  "sourcePassage": "The most relevant passage from the context...",
+  "citations": [
+    {{
+      "id": "c1",
+      "docId": "doc_id_here",
+      "docTitle": "Document title",
+      "page": 1,
+      "quote": "short supporting quote"
+    }}
+  ]
+}}"""
+
+
+def build_cornell_prompt(topic: str, context: str) -> str:
+    """Build the user turn for Cornell-notes generation."""
+    return f"""Topic: {topic}
+
+Context:
+{context}
+
+Structure the content above as Cornell notes with cue questions, detailed notes, and a summary.
+
+Respond ONLY with JSON:
+{{
+  "topic": "{topic}",
+  "notes": [
+    {{
+      "cue": "Short question or keyword",
+      "content": "Detailed answer or elaboration drawn from the context",
+      "citationIds": ["c1"]
+    }}
+  ],
+  "summary": "2-3 sentence summary of the key takeaway.",
+  "citations": [
+    {{
+      "id": "c1",
+      "docId": "doc_id_here",
+      "docTitle": "Document title",
+      "page": 1,
+      "quote": "short supporting quote"
+    }}
+  ]
+}}"""
+

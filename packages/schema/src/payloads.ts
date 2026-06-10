@@ -214,3 +214,53 @@ export interface DraftEditorData {
   citations: Citation[];
   wordCount: number;
 }
+
+// ── StudyPlanner ────────────────────────────────────────────────────────
+// SM-2 due-card queue + session stats (StudyPlannerAgent tier-4, studio panel).
+// FR-LRN-09, FR-LRN-10.
+
+export interface DueCard {
+  cardId: string;
+  front: string;        // question side shown in the queue
+  topic: string;
+  dueAt: string;        // ISO 8601 date
+  intervalDays: number;
+  overdue: boolean;
+}
+
+export interface StudyPlannerData {
+  notebookId: string;
+  dueCards: DueCard[];
+  totalDue: number;
+  overdueCount: number;
+  nextSessionAt: string | null; // ISO date of the next card not yet due, null if queue empty
+  sessionGoal: number;          // target cards to review this session (default 10)
+}
+
+// ── BlurtingPrompt ────────────────────────────────────────────────────
+// Free-recall prompt + grounding passage revealed after blurt (Learning, chat).
+// FR-LRN-06.
+
+export interface BlurtingPromptData {
+  topic: string;
+  prompt: string;         // e.g. "Without looking at your notes, write down everything you know about X"
+  sourcePassage: string;  // grounding text revealed after the user blurts
+  citations: Citation[];
+}
+
+// ── CornellNotes ────────────────────────────────────────────────────────
+// Structured cue / notes / summary note (Learning, studio panel).
+// FR-LRN-05.
+
+export interface CornellNote {
+  cue: string;           // left-column question / keyword
+  content: string;       // right-column answer / elaboration
+  citationIds: string[];
+}
+
+export interface CornellNotesData {
+  topic: string;
+  notes: CornellNote[];
+  summary: string;       // bottom summary paragraph
+  citations: Citation[];
+}

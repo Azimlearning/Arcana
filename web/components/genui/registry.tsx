@@ -25,6 +25,9 @@ import { InsightCard } from '@/components/genui/InsightCard';
 import { KnowledgeGraphView } from '@/components/genui/KnowledgeGraphView';
 import { QuizCard } from '@/components/genui/QuizCard';
 import { SocraticDialog } from '@/components/genui/SocraticDialog';
+import { BlurtingPrompt } from '@/components/genui/BlurtingPrompt';
+import { CornellNotes } from '@/components/genui/CornellNotes';
+import { StudyPlanner } from '@/components/genui/StudyPlanner';
 import { ErrorState } from '@/components/genui/BlockStates';
 
 type BlockType = UIBlock['type'];
@@ -45,6 +48,9 @@ const registry: RendererMap = {
   KnowledgeGraphView,
   QuizCard,
   SocraticDialog,
+  BlurtingPrompt,
+  CornellNotes,
+  StudyPlanner,
 };
 
 /** Render a UIBlock by looking up its component via the discriminator.

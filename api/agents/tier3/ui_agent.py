@@ -19,6 +19,11 @@ Slice 1 additions (still in effect):
   - Reads fact_checker result and filters unsupported citations (FR-AGT-09).
   - Downgrades ready -> partial when >50% of citations were dropped.
 
+Slice 11 additions:
+  - Priority-0 StudyPlanner routing slot (_build_from_study_planner).
+  - BlurtingPrompt and CornellNotes cases added to _build_from_learning.
+  - is_llm_error propagation for BlurtingPrompt + CornellNotes (mirrors DraftEditor).
+
 Slice 7 additions:
   - Routing for KnowledgeGraphView (graph_agent), LiteratureMatrix (literature),
     ContradictionAlert (contradiction), InsightCard (cross_doc + discovery).
@@ -38,10 +43,14 @@ from api.agents.base import AgentResult, AgentState, BaseAgent
 from api.core.logging import get_logger
 from api.genui._generated import (
     BlockMeta,
+    BlurtingPrompt,
+    BlurtingPromptData,
     CitedSummary,
     CitedSummaryData,
     ContradictionAlert,
     ContradictionAlertData,
+    CornellNotes,
+    CornellNotesData,
     DraftEditor,
     DraftEditorData,
     FeynmanExplainer,
@@ -60,6 +69,8 @@ from api.genui._generated import (
     QuizCardData,
     SocraticDialog,
     SocraticDialogData,
+    StudyPlanner,
+    StudyPlannerData,
     UIBlock,
 )
 
@@ -88,7 +99,14 @@ class UIAgent(BaseAgent):
         """Pick the best UIBlock variant given available agent results."""
         order = len(state.ui_blocks)
 
-        # 1. Learning (FlashcardDeck | QuizCard | FeynmanExplainer)
+        # 0. StudyPlanner (StudyPlanner)
+        study_planner = state.agent_results.get("study_planner")
+        if study_planner is not None and study_planner.status == "ok":
+            block = self._build_from_study_planner(study_planner, order=order)
+            if block is not None:
+                return block
+
+        # 1. Learning (FlashcardDeck | QuizCard | FeynmanExplainer | BlurtingPrompt | CornellNotes)
         learning = state.agent_results.get("learning")
         if learning is not None and learning.status == "ok":
             block = self._build_from_learning(learning, order=order)
@@ -170,6 +188,13 @@ class UIAgent(BaseAgent):
         fact_check = state.agent_results.get("fact_checker")
 
         if research is None:
+            # A specialist agent was routed but failed — surface its error.
+            for _name in ("study_planner", "discovery", "learning", "socratic", "writing"):
+                _result = state.agent_results.get(_name)
+                if _result is not None:
+                    return self._error_block(
+                        _result.error or f"{_name} agent failed to produce a result."
+                    )
             return self._error_block("Research agent did not run.")
         if research.status == "failed":
             return self._error_block(research.error or "Research agent failed.")
@@ -193,6 +218,7 @@ class UIAgent(BaseAgent):
     def _build_from_learning(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
         block_type = result.payload.get("block_type")
         data_dict = result.payload.get("data", {}) or {}
+        is_llm_error = bool(result.payload.get("_error"))
 
         if block_type == "FlashcardDeck":
             try:
@@ -231,6 +257,53 @@ class UIAgent(BaseAgent):
                 )
             except ValidationError as e:
                 logger.warning("ui_agent.learning_feynman_invalid", error=str(e))
+                return None
+
+        if block_type == "BlurtingPrompt":
+            try:
+                data = BlurtingPromptData.model_validate(data_dict)
+                status = "error" if is_llm_error else "ready"
+                return BlurtingPrompt(
+                    type="BlurtingPrompt",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status=status),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.learning_blurting_invalid", error=str(e))
+                return None
+
+        if block_type == "CornellNotes":
+            try:
+                data = CornellNotesData.model_validate(data_dict)
+                status = "error" if is_llm_error else "ready"
+                return CornellNotes(
+                    type="CornellNotes",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status=status),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.learning_cornell_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_study_planner(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "StudyPlanner":
+            try:
+                data = StudyPlannerData.model_validate(data_dict)
+                return StudyPlanner(
+                    type="StudyPlanner",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.study_planner_invalid", error=str(e))
                 return None
 
         return None

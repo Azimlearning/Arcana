@@ -18,6 +18,20 @@ class BlockMeta(BaseModel):
     status: BlockStatus
 
 
+class BlurtingPrompt(BaseModel):
+    type: Literal['BlurtingPrompt']
+    id: str
+    meta: BlockMeta
+    data: BlurtingPromptData
+
+
+class BlurtingPromptData(BaseModel):
+    topic: str
+    prompt: str
+    sourcePassage: str
+    citations: list[Citation]
+
+
 class ChatMessage(BaseModel):
     role: ChatRole
     content: str
@@ -78,6 +92,26 @@ class ContradictionAlertData(BaseModel):
     claims: list[ContradictingClaim]
 
 
+class CornellNote(BaseModel):
+    cue: str
+    content: str
+    citationIds: list[str]
+
+
+class CornellNotes(BaseModel):
+    type: Literal['CornellNotes']
+    id: str
+    meta: BlockMeta
+    data: CornellNotesData
+
+
+class CornellNotesData(BaseModel):
+    topic: str
+    notes: list[CornellNote]
+    summary: str
+    citations: list[Citation]
+
+
 class Document(BaseModel):
     id: str
     title: str
@@ -103,6 +137,15 @@ class DraftSection(BaseModel):
     heading: str
     body: str
     citationIds: list[str]
+
+
+class DueCard(BaseModel):
+    cardId: str
+    front: str
+    topic: str
+    dueAt: str
+    intervalDays: float
+    overdue: bool
 
 
 class FeedbackRating(BaseModel):
@@ -333,6 +376,22 @@ class SocraticTurn(BaseModel):
     text: str
 
 
+class StudyPlanner(BaseModel):
+    type: Literal['StudyPlanner']
+    id: str
+    meta: BlockMeta
+    data: StudyPlannerData
+
+
+class StudyPlannerData(BaseModel):
+    notebookId: str
+    dueCards: list[DueCard]
+    totalDue: float
+    overdueCount: float
+    nextSessionAt: str | None
+    sessionGoal: float
+
+
 class SummarySegment(BaseModel):
     text: str
     citationIds: list[str]
@@ -395,4 +454,4 @@ ReviewRating = float
 
 SocraticRole = Literal['tutor', 'learner']
 
-UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer | DraftEditor, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer | DraftEditor | StudyPlanner | BlurtingPrompt | CornellNotes, Field(discriminator='type')]

@@ -8,8 +8,10 @@
 // The codegen mirrors steps 1-2 into api/genui/_generated.py automatically.
 
 import type {
+  BlurtingPromptData,
   CitedSummaryData,
   ContradictionAlertData,
+  CornellNotesData,
   DraftEditorData,
   FeynmanExplainerData,
   FlashcardDeckData,
@@ -19,6 +21,7 @@ import type {
   LiteratureMatrixData,
   QuizCardData,
   SocraticDialogData,
+  StudyPlannerData,
 } from './payloads.js';
 
 export type Panel = 'sources' | 'chat' | 'studio';
@@ -107,6 +110,27 @@ export interface DraftEditor {
   data: DraftEditorData;
 }
 
+export interface StudyPlanner {
+  type: 'StudyPlanner';
+  id: string;
+  meta: BlockMeta;
+  data: StudyPlannerData;
+}
+
+export interface BlurtingPrompt {
+  type: 'BlurtingPrompt';
+  id: string;
+  meta: BlockMeta;
+  data: BlurtingPromptData;
+}
+
+export interface CornellNotes {
+  type: 'CornellNotes';
+  id: string;
+  meta: BlockMeta;
+  data: CornellNotesData;
+}
+
 // Discriminated union: the `type` field is the discriminator.
 // Codegen emits Annotated[X | Y | Z, Field(discriminator='type')] in Python.
 export type UIBlock =
@@ -120,4 +144,7 @@ export type UIBlock =
   | QuizCard
   | SocraticDialog
   | FeynmanExplainer
-  | DraftEditor;
+  | DraftEditor
+  | StudyPlanner
+  | BlurtingPrompt
+  | CornellNotes;

@@ -1,17 +1,17 @@
 """StudyPlannerAgent - Tier 4. Spaced-repetition schedule advisor.
 
 Reads the current session's FlashcardDeck cards (from AgentState), filters
-to those due today (via SM-2 is_due), and returns a FlashcardDeck payload
-with dueCount set so the frontend can render the review queue.
+to those due today (via SM-2 is_due), and returns a StudyPlanner payload
+with the due-card queue so the frontend can render the session view.
 
-If no cards are available from state (e.g. the agent is called standalone),
-it falls back to a lightweight LLM call to suggest a study topic.
+If no cards are available from state the agent returns an empty StudyPlanner
+payload (totalDue=0) which renders the EmptyState in the frontend.
 
 Tier-4 role: post-processing utility; never retrieves or synthesises content.
-Uses llm_light (Haiku-4.5) for the fallback suggestion path — low stakes,
-high frequency.
+Uses llm_light (Haiku-4.5) for nothing in this path - fully deterministic.
 
-FR-LRN-02: spaced-repetition scheduling.
+FR-LRN-09: study queue view.
+FR-LRN-10: session goal tracking.
 """
 
 from __future__ import annotations
@@ -23,19 +23,13 @@ from api.agents.base import AgentResult, AgentState, BaseAgent
 from api.core.logging import get_logger
 from api.learning.sm2 import from_wire, is_due
 from api.llm.service import LLMService
-from api.llm.types import Message
 
 logger = get_logger(__name__)
 
-_PLANNER_SYSTEM = (
-    "You are a study coach. Given the user's query, suggest one specific topic "
-    "they should review today, in one sentence. Be concise and direct."
-)
+_SESSION_GOAL = 10
 
 
 class StudyPlannerAgent(BaseAgent):
-    """Tier-4 utility agent. Produces due-card queue from SM-2 schedules."""
-
     name = "study_planner"
     tier = 4
 
@@ -44,64 +38,53 @@ class StudyPlannerAgent(BaseAgent):
 
     async def run(self, query: str, state: AgentState) -> AgentResult:
         today = date.today()
+        topic = _infer_topic(state)
 
-        # Scan AgentState for any FlashcardDeck payloads produced this turn.
         due_cards: list[dict[str, Any]] = []
-        all_cards: list[dict[str, Any]] = []
+        not_due_dates: list[str] = []
 
         for payload in _extract_flashcard_payloads(state):
-            for card in payload.get("cards", []):
-                all_cards.append(card)
+            deck_topic = str(payload.get("topic") or topic)
+            for i, card in enumerate(payload.get("cards", [])):
                 schedule_raw = card.get("schedule")
                 if schedule_raw is None:
-                    # New card — always due on first encounter.
-                    due_cards.append(card)
+                    due_cards.append(_build_due_card(card, deck_topic, i, today.isoformat(), overdue=False))
                 else:
                     try:
                         sched = from_wire(schedule_raw)
+                        raw_due = schedule_raw.get("dueAt", today.isoformat())
                         if is_due(sched, today):
-                            due_cards.append(card)
+                            overdue = str(raw_due) < today.isoformat()
+                            due_cards.append(_build_due_card(card, deck_topic, i, str(raw_due), overdue=overdue))
+                        else:
+                            not_due_dates.append(str(raw_due))
                     except (KeyError, ValueError, TypeError):
-                        due_cards.append(card)  # corrupt schedule → due
+                        due_cards.append(_build_due_card(card, deck_topic, i, today.isoformat(), overdue=False))
 
-        if all_cards:
-            topic = _infer_topic(state)
-            return AgentResult(
-                agent_name=self.name,
-                payload={
-                    "block_type": "FlashcardDeck",
-                    "data": {
-                        "topic": topic,
-                        "cards": due_cards,
-                        "totalCards": len(all_cards),
-                        "dueCount": len(due_cards),
-                    },
-                },
-                status="ok",
-            )
+        overdue_count = sum(1 for c in due_cards if c.get("overdue"))
+        next_session_at: str | None = min(not_due_dates) if not_due_dates else None
 
-        # No flashcard state — produce a lightweight suggestion.
-        suggestion = await _suggest_topic(query, self._llm)
         return AgentResult(
             agent_name=self.name,
             payload={
-                "block_type": "FlashcardDeck",
+                "block_type": "StudyPlanner",
                 "data": {
-                    "topic": suggestion,
-                    "cards": [],
-                    "totalCards": 0,
-                    "dueCount": 0,
+                    "notebookId": query[:80],
+                    "dueCards": due_cards,
+                    "totalDue": len(due_cards),
+                    "overdueCount": overdue_count,
+                    "nextSessionAt": next_session_at,
+                    "sessionGoal": _SESSION_GOAL,
                 },
             },
             status="ok",
         )
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# -- Helpers ------------------------------------------------------------------
 
 
 def _extract_flashcard_payloads(state: AgentState) -> list[dict]:
-    """Walk AgentState intermediate_results for FlashcardDeck payloads."""
     results: list[dict] = []
     for result in getattr(state, "intermediate_results", []):
         payload = getattr(result, "payload", {}) or {}
@@ -116,14 +99,13 @@ def _infer_topic(state: AgentState) -> str:
     return query[:80] if query else "Study session"
 
 
-async def _suggest_topic(query: str, llm: LLMService) -> str:
-    try:
-        completion = await llm.complete(
-            [Message(role="user", content=f"Query: {query[:200]}")],
-            system=_PLANNER_SYSTEM,
-            max_tokens=80,
-        )
-        return completion.text.strip()[:200] or "Review your notes today."
-    except Exception:
-        logger.warning("study_planner.llm_failed", query=query[:80])
-        return "Review your notes today."
+def _build_due_card(card: dict, topic: str, index: int, due_at: str, *, overdue: bool) -> dict:
+    schedule_raw = card.get("schedule") or {}
+    return {
+        "cardId": f"card_{index}",
+        "front": str(card.get("front") or ""),
+        "topic": topic[:80],
+        "dueAt": due_at,
+        "intervalDays": int(schedule_raw.get("interval", 0)),
+        "overdue": overdue,
+    }

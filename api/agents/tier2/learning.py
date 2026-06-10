@@ -1,7 +1,7 @@
 """LearningAgent - Tier 2. Generates grounded study artifacts.
 
-Produces FlashcardDeck, QuizCard, and FeynmanExplainer payloads
-(Slice 3: FR-LRN-01/03, Slice 4: FR-LRN-04).
+Produces FlashcardDeck, QuizCard, FeynmanExplainer, BlurtingPrompt, and CornellNotes payloads
+(Slice 3: FR-LRN-01/03, Slice 4: FR-LRN-04, Slice 11: FR-LRN-05/06).
 
 Pipeline:
   1. hybrid_retrieve(query) - grounds all material (invariant #1).
@@ -18,10 +18,14 @@ from typing import Any
 from api.agents.base import AgentResult, AgentState, BaseAgent
 from api.core.logging import get_logger
 from api.llm.prompts.learning import (
+    BLURTING_SYSTEM,
+    CORNELL_SYSTEM,
     FEYNMAN_SYSTEM,
     FLASHCARD_SYSTEM,
     LEARNING_PROMPT_VERSION,
     QUIZ_SYSTEM,
+    build_blurting_prompt,
+    build_cornell_prompt,
     build_feynman_prompt,
     build_flashcard_prompt,
     build_quiz_prompt,
@@ -87,11 +91,23 @@ class LearningAgent(BaseAgent):
             kw in query.lower()
             for kw in ("feynman", "eli5", "explain simply", "simple terms", "like im", "like i'm")
         )
+        want_blurting = any(
+            kw in query.lower()
+            for kw in ("blurt", "recall", "without looking", "brain dump", "free recall")
+        )
+        want_cornell = any(
+            kw in query.lower()
+            for kw in ("cornell", "structured notes", "take notes", "cue", "note format")
+        )
 
         if want_quiz:
             payload = await self._generate_quiz(query, ctx_text)
         elif want_feynman:
             payload = await self._generate_feynman(query, ctx_text)
+        elif want_blurting:
+            payload = await self._generate_blurting(query, ctx_text)
+        elif want_cornell:
+            payload = await self._generate_cornell_notes(query, ctx_text)
         else:
             payload = await self._generate_flashcards(query, ctx_text)
 
@@ -141,6 +157,33 @@ class LearningAgent(BaseAgent):
             return _error_feynman_payload(topic, str(exc))
 
         return _parse_feynman_response(raw, topic=topic)
+
+
+    async def _generate_blurting(self, topic: str, ctx_text: str) -> dict[str, Any]:
+        messages = [Message(role="user", content=build_blurting_prompt(topic, ctx_text))]
+        try:
+            completion = await self._llm.complete(
+                messages, system=BLURTING_SYSTEM, max_tokens=600
+            )
+            raw = completion.text
+        except Exception as exc:
+            logger.exception("learning.llm_failed_blurting")
+            return _error_blurting_payload(topic, str(exc))
+
+        return _parse_blurting_response(raw, topic=topic)
+
+    async def _generate_cornell_notes(self, topic: str, ctx_text: str) -> dict[str, Any]:
+        messages = [Message(role="user", content=build_cornell_prompt(topic, ctx_text))]
+        try:
+            completion = await self._llm.complete(
+                messages, system=CORNELL_SYSTEM, max_tokens=1200
+            )
+            raw = completion.text
+        except Exception as exc:
+            logger.exception("learning.llm_failed_cornell")
+            return _error_cornell_payload(topic, str(exc))
+
+        return _parse_cornell_response(raw, topic=topic)
 
 
 # ── Response parsing ──────────────────────────────────────────────────────
@@ -295,3 +338,80 @@ def _error_feynman_payload(topic: str, error: str) -> dict[str, Any]:
             "source": {"id": "err", "docId": "", "docTitle": "", "page": None, "quote": ""},
         },
     }
+
+
+def _parse_blurting_response(raw: str, *, topic: str) -> dict[str, Any]:
+    parsed = _extract_json(raw)
+    citations_raw = parsed.get("citations") or []
+    citations: list[dict[str, Any]] = []
+    if isinstance(citations_raw, list):
+        for c in citations_raw:
+            if isinstance(c, dict):
+                citations.append(_safe_source(c))
+    return {
+        "block_type": "BlurtingPrompt",
+        "data": {
+            "topic": str(parsed.get("topic") or topic[:100]),
+            "prompt": str(parsed.get("prompt") or f"Without looking at your notes, write down everything you know about {topic[:60]}."),
+            "sourcePassage": str(parsed.get("sourcePassage") or ""),
+            "citations": citations,
+        },
+    }
+
+
+def _parse_cornell_response(raw: str, *, topic: str) -> dict[str, Any]:
+    parsed = _extract_json(raw)
+    raw_notes = parsed.get("notes") or []
+    notes: list[dict[str, Any]] = []
+    if isinstance(raw_notes, list):
+        for note in raw_notes:
+            if not isinstance(note, dict):
+                continue
+            cit_ids = note.get("citationIds") or []
+            notes.append({
+                "cue": str(note.get("cue") or ""),
+                "content": str(note.get("content") or ""),
+                "citationIds": [str(c) for c in cit_ids] if isinstance(cit_ids, list) else [],
+            })
+    citations_raw = parsed.get("citations") or []
+    citations: list[dict[str, Any]] = []
+    if isinstance(citations_raw, list):
+        for c in citations_raw:
+            if isinstance(c, dict):
+                citations.append(_safe_source(c))
+    return {
+        "block_type": "CornellNotes",
+        "data": {
+            "topic": str(parsed.get("topic") or topic[:100]),
+            "notes": notes,
+            "summary": str(parsed.get("summary") or ""),
+            "citations": citations,
+        },
+    }
+
+
+def _error_blurting_payload(topic: str, error: str) -> dict[str, Any]:
+    return {
+        "block_type": "BlurtingPrompt",
+        "data": {
+            "topic": topic[:100],
+            "prompt": f"Recall everything you know about {topic[:60]}.",
+            "sourcePassage": f"Error generating passage: {error}",
+            "citations": [],
+        },
+        "_error": error,
+    }
+
+
+def _error_cornell_payload(topic: str, error: str) -> dict[str, Any]:
+    return {
+        "block_type": "CornellNotes",
+        "data": {
+            "topic": topic[:100],
+            "notes": [],
+            "summary": f"Error generating notes: {error}",
+            "citations": [],
+        },
+        "_error": error,
+    }
+

@@ -57,6 +57,19 @@
 
 <!-- New entries go below this line, newest first. -->
 
+### 2026-06-10 — Slice 11 scope: three new GenUI catalog components
+
+- **Status:** DECIDED
+- **Context:** Slice 10 closed with user-study infrastructure. The highest-impact optional code work (per HANDOFF_PROMPT.md §6) is expanding the GenUI catalog (currently 11/24). FR-UI-02 (Must) requires 24 components; the learning system (FR-LRN-05/06/09/10) has several open Should/Could items that map directly to unbuilt catalog components. All three chosen components use already-registered agents, eliminating the main.py production-registration trap.
+- **Decision:** Build three new GenUI components: `StudyPlanner`, `BlurtingPrompt`, `CornellNotes`.
+  - `StudyPlanner` (studio panel) — emitted by `StudyPlannerAgent` (tier-4, already registered via `extra_agents`). Shows the SM-2 due-card queue, overdue count, and next-session date. Closes FR-LRN-09/10 partial.
+  - `BlurtingPrompt` (chat panel) — emitted by `LearningAgent` (tier-2, registered). Free-recall prompt + grounding passage revealed after blurt. Closes FR-LRN-06.
+  - `CornellNotes` (studio panel) — emitted by `LearningAgent`. Cue/notes/summary structured format. Closes FR-LRN-05.
+  - Chunk order (schema-first invariant): (1) schema — 3 payload interfaces + 3 UIBlock variants + codegen; (2) renderers — 3 TSX files with all four states; (3) registry + validate.py; (4) producing agents — extend StudyPlannerAgent + LearningAgent output paths, add UIAgent routing; (5) final review + close.
+  - Out of scope this slice: the other 10 unbuilt catalog components, web/DOCX parser (FR-ING-02), @tool decorators.
+- **Why:** All three components close open Must/Should/Could learning FRs using zero new agent registrations. Walking-skeleton mandate satisfied: each has a clear producing agent before the renderer exists. Brings catalog from 11/24 to 14/24.
+- **Revisit if:** Supervisor requests specific other components (e.g. `ConceptMap`, `Timeline`) — add as Slice 12 using the same genui-component pattern.
+
 ### 2026-06-08 — Slice 7 scope: 15+ agents — FR-AGT-06
 
 - **Status:** DECIDED
@@ -248,3 +261,19 @@
 - **Decision:** Created `.claude/` with a trimmed `CLAUDE.md`, path-scoped rule files, three subagents (schema-guardian, code-reviewer, qa-runner), four Skills, and three hooks (secret-literal block, dependency-direction block, post-write format + check).
 - **Why:** Spec invariants enforced in review only are spec invariants honoured maybe. Hooks turn them into mechanism.
 - **Revisit if:** Claude Code hook/agent schema changes (track release notes); new invariants emerge from PRD updates.
+### 2026-06-10 — StudyPlannerAgent exemption from hybrid_retrieve (invariant #1)
+- Status: ASSUMED
+- Decision: StudyPlannerAgent (Tier-4) is exempt from calling hybrid_retrieve because it performs
+  pure deterministic scheduling — no content generation, no LLM call, no synthesis. It only
+  re-filters Flashcard objects that were already grounded by LearningAgent earlier in the same turn.
+  Calling hybrid_retrieve(top_k=1) would add latency/cost with zero semantic benefit and would
+  require wiring three retriever dependencies into a utility agent whose contract is stateless
+  post-processing.
+- Deferred: Add reviewedCount field to StudyPlannerData (packages/schema/src/payloads.ts) once
+  the frontend session-tracking flow is implemented. Progress bar removed from StudyPlanner.tsx
+  until that field exists (WARNING #3 from Slice-11 code review).
+- Note: state.retrieved_ctx is intentionally not extended by this agent. The traceability gap
+  is acceptable because the agent emits no new knowledge claims — all cards originated from
+  LearningAgent which DID extend retrieved_ctx. Surface this at FYP-2 checkpoint for reviewer
+  sign-off.
+
