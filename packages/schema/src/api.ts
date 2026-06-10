@@ -128,3 +128,28 @@ export interface SurveySubmission {
   susScore: number;            // computed 0-100
   taskDescription: string;
 }
+
+// ── Graph view (FR-KG-08) ─────────────────────────────────────────────────────
+// Wire types for GET /graph — returns the calling user's knowledge graph so the
+// frontend can render an interactive visualisation.
+
+export interface GraphViewNode {
+  id: string;
+  label: string;
+  nodeType: string;             // 'Concept' | 'Person' | 'Document' | 'Topic' | …
+  properties: Record<string, unknown>;
+}
+
+export interface GraphViewEdge {
+  id: string;                   // "{src}-[{type}]->{dst}"
+  src: string;
+  dst: string;
+  edgeType: string;
+}
+
+export interface GraphViewResponse {
+  nodes: GraphViewNode[];
+  edges: GraphViewEdge[];
+  nodeCount: number;
+  edgeCount: number;
+}

@@ -7,15 +7,21 @@ The IngestContext dependency is overridden by api/main.py at startup with
 the shared store/embedder/llm instances so the graph_store is the same
 object the orchestrator reads from — changes are immediately visible to
 subsequent chat turns without a server restart.
+
+Slice 14 (FR-KG-02): IngestContext now carries a UserGraphRegistry. Each
+ingest call writes entities into the requesting user's personal graph
+(resolved from CurrentUser.uid) and saves it to disk after completion.
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from api.core.auth import CurrentUser, get_current_user
 from api.core.errors import IngestFailed
 from api.core.logging import get_logger
 from api.embeddings.service import EmbedderProtocol
@@ -30,6 +36,9 @@ from api.ingestion.stores_bundle import Stores
 from api.llm.service import LLMService
 from api.stores.doc_store import DocMetadata
 from api.stores.errors import DocNotFound
+
+if TYPE_CHECKING:
+    from api.stores.user_graph_registry import UserGraphRegistry
 
 logger = get_logger(__name__)
 
@@ -65,6 +74,7 @@ class IngestContext:
     stores: Stores
     embedder: EmbedderProtocol
     llm: LLMService
+    graph_registry: UserGraphRegistry | None = field(default=None)
 
 
 def get_ingest_context() -> IngestContext:
@@ -85,6 +95,7 @@ async def ingest(
     file: UploadFile = File(..., description="PDF file to ingest"),  # noqa: B008
     notebook_id: str = Form("demo"),
     ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+    user: CurrentUser = Depends(get_current_user),    # noqa: B008
 ) -> IngestResponse:
     """Ingest a PDF into the knowledge graph + vector index.
 
@@ -102,18 +113,34 @@ async def ingest(
     doc_id = _doc_id_for(filename)
     title = filename
 
-    logger.info("ingest.start", doc_id=doc_id, title=title, size_bytes=len(raw))
+    # FR-KG-02: resolve the requesting user's personal graph store so that
+    # ingested entities land in their namespace, not a shared corpus graph.
+    stores = ctx.stores
+    if ctx.graph_registry is not None:
+        user_graph = await ctx.graph_registry.get_or_create(user.uid)
+        from api.ingestion.stores_bundle import Stores as _Stores
+        stores = _Stores(
+            doc=ctx.stores.doc,
+            vector=ctx.stores.vector,
+            graph=user_graph,
+            chunks=ctx.stores.chunks,
+        )
+
+    logger.info("ingest.start", doc_id=doc_id, title=title, size_bytes=len(raw), user_id=user.uid)
     try:
         await ingest_pdf(
             doc_id=doc_id,
             raw=raw,
             title=title,
             source_uri=f"upload/{title}",
-            stores=ctx.stores,
+            stores=stores,
             embedder=ctx.embedder,
             llm=ctx.llm,
         )
-        # Count stored chunks for this doc (filter from full list).
+        # Persist the user's graph to disk after successful ingestion.
+        if ctx.graph_registry is not None:
+            await ctx.graph_registry.save(user.uid)
+
         all_chunks = await ctx.stores.chunks.list_all()
         chunk_count = sum(1 for c in all_chunks if c.doc_id == doc_id)
 
@@ -138,20 +165,36 @@ async def ingest(
 async def ingest_url_route(
     body: UrlIngestRequest,
     ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+    user: CurrentUser = Depends(get_current_user),    # noqa: B008
 ) -> IngestResponse:
     """Fetch a public URL, extract text, and ingest it."""
     url = body.url.strip()
     if not url:
         raise HTTPException(status_code=422, detail="url must not be empty.")
 
-    logger.info("ingest_url.request", url=url)
+    # FR-KG-02: same per-user graph resolution as the PDF route.
+    stores = ctx.stores
+    if ctx.graph_registry is not None:
+        user_graph = await ctx.graph_registry.get_or_create(user.uid)
+        from api.ingestion.stores_bundle import Stores as _Stores
+        stores = _Stores(
+            doc=ctx.stores.doc,
+            vector=ctx.stores.vector,
+            graph=user_graph,
+            chunks=ctx.stores.chunks,
+        )
+
+    logger.info("ingest_url.request", url=url, user_id=user.uid)
     try:
         meta = await ingest_url(
             url=url,
-            stores=ctx.stores,
+            stores=stores,
             embedder=ctx.embedder,
             llm=ctx.llm,
         )
+        if ctx.graph_registry is not None:
+            await ctx.graph_registry.save(user.uid)
+
         all_chunks = await ctx.stores.chunks.list_all()
         chunk_count = sum(1 for c in all_chunks if c.doc_id == meta.id)
         return IngestResponse(

@@ -15,11 +15,15 @@ Store types (api/stores/graph_store.py): GraphNode(id, type, label),
 
 Edge relations: synthetic "RELATED_TO" for all expand() neighbors (real relation
 types not exposed via GraphStore ABC — see decisions.md Slice 7 ADR).
+
+FR-KG-02: when a UserGraphRegistry is supplied, the agent resolves the calling
+user's personal graph via state.user_id. Falls back to a shared GraphStore for
+callers that haven't been updated (backward-compatible).
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from api.agents.base import AgentResult, AgentState, BaseAgent
 from api.core.errors import IngestFailed
@@ -28,6 +32,9 @@ from api.ingestion.extractor import extract_entities
 from api.llm.service import LLMService
 from api.stores.graph_store import GraphNode as StoreNode
 from api.stores.graph_store import GraphStore
+
+if TYPE_CHECKING:
+    from api.stores.user_graph_registry import UserGraphRegistry
 
 logger = get_logger(__name__)
 
@@ -45,12 +52,25 @@ class GraphAgent(BaseAgent):
         self,
         *,
         llm_service: LLMService,
-        graph_store: GraphStore,
+        graph_store: GraphStore | None = None,
+        graph_registry: UserGraphRegistry | None = None,
     ) -> None:
+        if graph_registry is None and graph_store is None:
+            raise ValueError("Either graph_registry or graph_store must be supplied")
         self._llm = llm_service
         self._graph = graph_store
+        self._registry = graph_registry
+
+    async def _resolve_graph(self, user_id: str) -> GraphStore:
+        """Return the graph store for this request's user."""
+        if self._registry is not None:
+            return await self._registry.get_or_create(user_id)
+        assert self._graph is not None
+        return self._graph
 
     async def run(self, query: str, state: AgentState) -> AgentResult:
+        graph = await self._resolve_graph(state.user_id)
+
         # 1. Extract entity slugs from query text (reuses ingestion extractor).
         try:
             extraction = await extract_entities(
@@ -79,14 +99,14 @@ class GraphAgent(BaseAgent):
         focus_node_id: str | None = None
 
         for entity in extraction.nodes[:_MAX_QUERY_ENTITIES]:
-            store_node = await self._graph.get_node(entity.id)
+            store_node = await graph.get_node(entity.id)
             if store_node is None:
                 continue
             if focus_node_id is None:
                 focus_node_id = store_node.id
             nodes[store_node.id] = _to_wire_node(store_node)
 
-            neighbors = await self._graph.expand(store_node.id, hops=1)
+            neighbors = await graph.expand(store_node.id, hops=1)
             for nbr in neighbors[:_MAX_NEIGHBORS_PER_ENTITY]:
                 if nbr.id not in nodes:
                     nodes[nbr.id] = _to_wire_node(nbr)

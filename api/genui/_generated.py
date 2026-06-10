@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -334,6 +334,27 @@ class GraphNode(BaseModel):
     id: str
     label: str
     nodeType: str
+
+
+class GraphViewEdge(BaseModel):
+    id: str
+    src: str
+    dst: str
+    edgeType: str
+
+
+class GraphViewNode(BaseModel):
+    id: str
+    label: str
+    nodeType: str
+    properties: dict[str, Any]
+
+
+class GraphViewResponse(BaseModel):
+    nodes: list[GraphViewNode]
+    edges: list[GraphViewEdge]
+    nodeCount: float
+    edgeCount: float
 
 
 class IngestResponse(BaseModel):

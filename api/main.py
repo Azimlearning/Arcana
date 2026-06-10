@@ -11,6 +11,7 @@
 
 Slice 9: auth (api/core/auth.py) and notebooks/review routes added.
 Slice 10: analytics event store + feedback/sus/export routes added.
+Slice 14: UserGraphRegistry replaces the single shared graph_store (FR-KG-02).
 CORS is open to localhost:3000 for local dev; tighten for deployment.
 """
 
@@ -29,6 +30,7 @@ from api.routes.analytics import router as analytics_router
 from api.routes.chat import get_orchestrator
 from api.routes.chat import router as chat_router
 from api.routes.feedback import router as feedback_router
+from api.routes.graph import router as graph_router
 from api.routes.ingest import IngestContext, get_ingest_context
 from api.routes.ingest import router as ingest_router
 from api.routes.notebooks import router as notebooks_router
@@ -56,6 +58,7 @@ def _build_shared_resources():
     from api.stores.jsonl_chunk_store import JsonlChunkStore
     from api.stores.networkx_store import NetworkXGraphStore
     from api.stores.pinecone_store import PineconeVectorStore
+    from api.stores.user_graph_registry import UserGraphRegistry
 
     settings = get_settings()
 
@@ -80,23 +83,30 @@ def _build_shared_resources():
         api_key=settings.pinecone_api_key.get_secret_value(),
         index_name=settings.pinecone_index,
     )
-    graph_store = NetworkXGraphStore(
-        persist_path=settings.local_storage_path / "graph.json",
+
+    # FR-KG-02: per-user graph registry. Each user's graph persists at
+    # {local_storage_path}/graphs/{uid}.json. The shared_graph is a fallback
+    # used by the GraphRetriever (which reads the graph of the "anon" user
+    # in local dev and the shared corpus in single-tenant deployments).
+    graph_registry = UserGraphRegistry(root=settings.local_storage_path / "graphs")
+    shared_graph = NetworkXGraphStore(
+        persist_path=settings.local_storage_path / "graphs" / "shared.json",
     )
+
     doc_store = FilesystemDocStore(root=settings.local_storage_path)
     chunk_store = JsonlChunkStore(root=settings.local_storage_path)
 
     stores = Stores(
         doc=doc_store,
         vector=vector_store,
-        graph=graph_store,
+        graph=shared_graph,
         chunks=chunk_store,
     )
 
     vector_retriever = VectorRetriever(vector_store=vector_store, embedder=embedder)
     bm25_retriever = BM25Retriever(chunk_store=chunk_store)
     graph_retriever = GraphRetriever(
-        graph_store=graph_store,
+        graph_store=shared_graph,
         chunk_store=chunk_store,
         llm=llm,
     )
@@ -122,6 +132,7 @@ def _build_shared_resources():
         "memory_store": memory_store,
         "notebook_store": notebook_store,
         "event_store": event_store,
+        "graph_registry": graph_registry,
     }
 
 
@@ -153,11 +164,11 @@ def build_orchestrator(shared: dict):
     llm_light = shared["llm_light"]  # haiku-4.5 → sonnet fallback
     embedder = shared["embedder"]
     doc_store = shared["doc_store"]
-    stores = shared["stores"]
     vector_retriever = shared["vector_retriever"]
     bm25_retriever = shared["bm25_retriever"]
     graph_retriever = shared["graph_retriever"]
     memory_store = shared["memory_store"]
+    graph_registry = shared["graph_registry"]
 
     _retriever_kwargs = dict(
         vector_retriever=vector_retriever,
@@ -178,7 +189,9 @@ def build_orchestrator(shared: dict):
         # Light: structured output, repetitive generation
         LearningAgent(llm_service=llm_light, **_retriever_kwargs),
         AnnotationAgent(llm_service=llm_light, **_retriever_kwargs),
-        GraphAgent(llm_service=llm_light, graph_store=stores.graph),
+        # FR-KG-02: GraphAgent uses the per-user registry so KnowledgeGraphView
+        # reflects the calling user's own graph, not a shared corpus.
+        GraphAgent(llm_service=llm_light, graph_registry=graph_registry),
         # Standard: analysis and dialogue
         SocraticAgent(llm_service=llm, **_retriever_kwargs),
         DiscoveryAgent(llm_service=llm, **_retriever_kwargs),
@@ -231,10 +244,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         stores=shared["stores"],
         embedder=shared["embedder"],
         llm=shared["llm"],
+        graph_registry=shared["graph_registry"],
     )
     # Expose shared resources on app.state so routes can resolve them.
     app.state.shared = shared
     yield
+    # Flush all per-user graphs on shutdown.
+    await shared["graph_registry"].save_all()
     logger.info("arcana.shutdown")
 
 
@@ -255,6 +271,7 @@ def create_app() -> FastAPI:
     app.include_router(notebooks_router)
     app.include_router(feedback_router)
     app.include_router(analytics_router)
+    app.include_router(graph_router)
     return app
 
 

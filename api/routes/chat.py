@@ -7,9 +7,6 @@ Lifecycle of one turn:
      the resulting UIBlock to `state.ui_blocks`.
   4. Stream `state.ui_blocks` to the client over SSE.
   5. Fire a `TurnEvent` to the EventStore (fire-and-forget, FR-ANL-01).
-
-Auth is intentionally absent for the slice (P0 shortcut per env guide §2.6).
-Firebase token verification lands in P1 §1.8.
 """
 
 from __future__ import annotations
@@ -59,6 +56,7 @@ async def chat(
     state = AgentState(
         query=body.message,
         notebook_id=body.notebookId,
+        user_id=user.uid,   # FR-KG-02: threads user identity through the agent graph
         # A missing mode coalesces to the safe default; the orchestrator
         # maps active_mode → intent (graph.py:_MODE_TO_INTENT). FR-UI-06.
         active_mode=body.activeMode or "research",

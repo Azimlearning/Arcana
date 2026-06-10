@@ -8,7 +8,7 @@ The keystone of the agentic pipeline. Defines:
   - `route_to_agent` — composability primitive (PRD §11.4, FR-AGT-03).
 
 Slice-shape simplifications (carry-overs from the slice ADR):
-  - AgentState omits `intent` (no intent detection yet) and `user_profile`.
+  - AgentState omits `user_profile`.
   - LangGraph reducer annotations are absent — the slice wires agents with
     direct async calls (orchestrator → research → ui_agent), so append
     semantics are caller-enforced rather than reducer-enforced.
@@ -81,6 +81,7 @@ class AgentState(BaseModel):
 
     query: str
     notebook_id: str = ""
+    user_id: str = "anon"   # populated by chat route from CurrentUser.uid (FR-KG-02)
     # `Mode` is the schema-owned wire type (packages/schema/src/api.ts →
     # codegen). Imported, never re-declared, so a new mode added to the
     # schema can't drift from the agent state (R-10).
