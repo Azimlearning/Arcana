@@ -29,6 +29,28 @@ export interface IngestResponse {
   title: string;
   status: 'ready' | 'failed';
   chunkCount: number;
+  error: string | null;  // populated when status='failed'
+}
+
+// POST /ingest/url request body (FR-ING-02).
+export interface UrlIngestRequest {
+  url: string;
+  notebookId?: string;
+}
+
+// GET /docs and GET /docs/{docId} (FR-ING-08).
+export interface DocStatusResponse {
+  docId: string;
+  title: string;
+  sourceUri: string;
+  status: 'pending' | 'parsing' | 'embedding' | 'ready' | 'failed';
+  sizeBytes: number;
+  error: string | null;
+  createdAt: string;  // ISO 8601
+}
+
+export interface DocListResponse {
+  docs: DocStatusResponse[];
 }
 
 // ── Spaced-repetition review (FR-LRN-02) ─────────────────────────────────────

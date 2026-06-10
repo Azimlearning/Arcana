@@ -86,9 +86,16 @@ class FilesystemDocStore(DocStore):
         except (ValueError, OSError) as e:
             raise DocStoreError(f"corrupt metadata for doc_id={doc_id!r}: {e}") from e
 
-    async def update_status(self, doc_id: str, status: IngestStatus) -> DocMetadata:
+    async def update_status(
+        self,
+        doc_id: str,
+        status: IngestStatus,
+        *,
+        extra_update: dict[str, str] | None = None,
+    ) -> DocMetadata:
         meta = await self.get_metadata(doc_id)
-        updated = meta.model_copy(update={"ingest_status": status})
+        new_extra = {**meta.extra, **(extra_update or {})}
+        updated = meta.model_copy(update={"ingest_status": status, "extra": new_extra})
         # Atomic via temp-file + os.replace. Slice-time concurrent writes
         # to the same doc are still undefined (no per-id lock); fine while
         # a single ingestion pipeline owns each document end-to-end.

@@ -23,6 +23,7 @@ from api.embeddings.service import EmbedderProtocol
 from api.ingestion.chunker import chunk as chunk_pages
 from api.ingestion.extractor import ExtractionResult, extract_entities
 from api.ingestion.parsers import pdf
+from api.ingestion.parsers import web as web_parser
 from api.ingestion.stores_bundle import Stores
 from api.ingestion.types import Chunk
 from api.llm.service import LLMService
@@ -136,9 +137,10 @@ async def ingest_pdf(
         raise IngestFailed(f"unhandled error during ingest: {e}") from e
 
 
-async def _mark_failed(stores: Stores, doc_id: str) -> None:
+async def _mark_failed(stores: Stores, doc_id: str, *, cause: str | None = None) -> None:
     try:
-        await stores.doc.update_status(doc_id, "failed")
+        extra = {"error_cause": cause} if cause else None
+        await stores.doc.update_status(doc_id, "failed", extra_update=extra)
     except Exception:
         # Don't mask the original error if the status update itself fails.
         logger.warning("ingest.status_update_failed", doc_id=doc_id)
@@ -230,3 +232,103 @@ async def _merge_extraction(extraction: ExtractionResult, *, graph: GraphStore) 
                 dst=edge.dst,
                 type=edge.type,
             )
+
+
+async def ingest_url(
+    *,
+    url: str,
+    stores: Stores,
+    embedder: EmbedderProtocol,
+    llm: LLMService | None = None,
+) -> DocMetadata:
+    """Fetch *url*, extract text, and ingest it into the knowledge graph.
+
+    Mirrors ingest_pdf but uses the web parser instead of PyMuPDF.
+    Returns final DocMetadata on success; raises IngestFailed on error.
+    """
+    doc_id = web_parser.doc_id_for_url(url)
+
+    # Persist a placeholder immediately so _mark_failed can always write the
+    # cause even if fetch_and_parse raises before we have the real bytes.
+    await stores.doc.put(
+        doc_id,
+        b"",
+        content_type="text/plain",
+        title=url[:256],
+        source_uri=url,
+        ingest_status="parsing",
+    )
+    logger.info("ingest_url.start", doc_id=doc_id, url=url)
+
+    try:
+        title, pages = await web_parser.fetch_and_parse(url)
+
+        raw = "\n\n".join(p.text for p in pages).encode("utf-8")
+        # Update stored raw bytes and title now that we have real content.
+        await stores.doc.put(
+            doc_id,
+            raw,
+            content_type="text/plain",
+            title=title,
+            source_uri=url,
+            ingest_status="parsing",
+        )
+
+        chunks: list[Chunk] = chunk_pages(pages, doc_id=doc_id)
+        if not chunks:
+            raise IngestFailed("chunker produced zero chunks", details={"doc_id": doc_id, "url": url})
+
+        await stores.doc.update_status(doc_id, "embedding")
+
+        vectors = await embedder.embed([c.text for c in chunks])
+        if len(vectors) != len(chunks):
+            raise IngestFailed(
+                f"embedder returned {len(vectors)} vectors for {len(chunks)} chunks",
+                details={"doc_id": doc_id},
+            )
+
+        await stores.vector.upsert(
+            [
+                VectorItem(
+                    id=c.id,
+                    vector=v,
+                    metadata={
+                        "doc_id": c.doc_id,
+                        "page": c.page,
+                        "char_offset": c.char_offset,
+                        "text": c.text,
+                    },
+                )
+                for c, v in zip(chunks, vectors, strict=True)
+            ]
+        )
+        await stores.chunks.upsert_many([
+            StoredChunk(
+                id=c.id,
+                doc_id=c.doc_id,
+                text=c.text,
+                page=c.page,
+                char_offset=c.char_offset,
+            )
+            for c in chunks
+        ])
+
+        if llm is not None:
+            await _extract_and_upsert_graph(
+                chunks=chunks,
+                doc_id=doc_id,
+                llm=llm,
+                graph=stores.graph,
+            )
+
+        meta = await stores.doc.update_status(doc_id, "ready")
+        logger.info("ingest_url.ready", doc_id=doc_id, chunks=len(chunks))
+        return meta
+
+    except IngestFailed as exc:
+        await _mark_failed(stores, doc_id, cause=str(exc))
+        raise
+    except Exception as e:
+        await _mark_failed(stores, doc_id, cause=str(e))
+        logger.exception("ingest_url.unhandled", doc_id=doc_id)
+        raise IngestFailed(f"unhandled error during URL ingest: {e}") from e

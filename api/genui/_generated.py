@@ -112,6 +112,20 @@ class CornellNotesData(BaseModel):
     citations: list[Citation]
 
 
+class DocListResponse(BaseModel):
+    docs: list[DocStatusResponse]
+
+
+class DocStatusResponse(BaseModel):
+    docId: str
+    title: str
+    sourceUri: str
+    status: Literal['pending', 'parsing', 'embedding', 'ready', 'failed']
+    sizeBytes: float
+    error: str | None
+    createdAt: str
+
+
 class Document(BaseModel):
     id: str
     title: str
@@ -222,6 +236,7 @@ class IngestResponse(BaseModel):
     title: str
     status: Literal['ready', 'failed']
     chunkCount: float
+    error: str | None
 
 
 class InsightCard(BaseModel):
@@ -417,6 +432,11 @@ class TurnEvent(BaseModel):
     latencyMs: float
     blockTypes: list[str]
     retrievedChunkCount: float
+
+
+class UrlIngestRequest(BaseModel):
+    url: str
+    notebookId: str | None = None
 
 
 class UserPreferences(BaseModel):

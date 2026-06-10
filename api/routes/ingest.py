@@ -16,12 +16,20 @@ from dataclasses import dataclass
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from api.core.errors import IngestFailed
 from api.core.logging import get_logger
 from api.embeddings.service import EmbedderProtocol
-from api.genui._generated import IngestResponse
-from api.ingestion.pipeline import ingest_pdf
+from api.genui._generated import (
+    DocListResponse,
+    DocStatusResponse,
+    IngestResponse,
+    UrlIngestRequest,
+)
+from api.ingestion.pipeline import ingest_pdf, ingest_url
 from api.ingestion.stores_bundle import Stores
 from api.llm.service import LLMService
+from api.stores.doc_store import DocMetadata
+from api.stores.errors import DocNotFound
 
 logger = get_logger(__name__)
 
@@ -115,9 +123,85 @@ async def ingest(
             title=title,
             status="ready",
             chunkCount=chunk_count,
+            error=None,
         )
     except HTTPException:
         raise
     except Exception as e:
         logger.exception("ingest.failed", doc_id=doc_id)
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {e}") from e
+
+
+# ── URL ingest ────────────────────────────────────────────────────────────────
+
+@router.post("/ingest/url", response_model=IngestResponse)
+async def ingest_url_route(
+    body: UrlIngestRequest,
+    ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+) -> IngestResponse:
+    """Fetch a public URL, extract text, and ingest it."""
+    url = body.url.strip()
+    if not url:
+        raise HTTPException(status_code=422, detail="url must not be empty.")
+
+    logger.info("ingest_url.request", url=url)
+    try:
+        meta = await ingest_url(
+            url=url,
+            stores=ctx.stores,
+            embedder=ctx.embedder,
+            llm=ctx.llm,
+        )
+        all_chunks = await ctx.stores.chunks.list_all()
+        chunk_count = sum(1 for c in all_chunks if c.doc_id == meta.id)
+        return IngestResponse(
+            docId=meta.id,
+            title=meta.title,
+            status="ready",
+            chunkCount=chunk_count,
+            error=None,
+        )
+    except IngestFailed:
+        raise
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("ingest_url.failed")
+        raise HTTPException(status_code=500, detail=f"URL ingestion failed: {e}") from e
+
+
+# ── Document status ───────────────────────────────────────────────────────────
+
+def _meta_to_status(meta: DocMetadata) -> DocStatusResponse:
+    """Map DocMetadata to the wire-visible DocStatusResponse."""
+    return DocStatusResponse(
+        docId=meta.id,
+        title=meta.title,
+        sourceUri=meta.source_uri,
+        status=meta.ingest_status,
+        sizeBytes=float(meta.size_bytes),
+        error=meta.extra.get("error_cause"),
+        createdAt=meta.created_at.isoformat(),
+    )
+
+
+@router.get("/docs", response_model=DocListResponse)
+async def list_docs(
+    ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+) -> DocListResponse:
+    """List all ingested documents and their current status."""
+    docs = await ctx.stores.doc.list_documents()
+    return DocListResponse(docs=[_meta_to_status(m) for m in docs])
+
+
+@router.get("/docs/{doc_id}", response_model=DocStatusResponse)
+async def get_doc_status(
+    doc_id: str,
+    ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+) -> DocStatusResponse:
+    """Get ingestion status for a specific document."""
+    try:
+        meta = await ctx.stores.doc.get_metadata(doc_id)
+    except DocNotFound:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id!r} not found.") from None
+    return _meta_to_status(meta)

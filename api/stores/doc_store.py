@@ -61,7 +61,13 @@ class DocStore(ABC):
     async def get_metadata(self, doc_id: str) -> DocMetadata: ...
 
     @abstractmethod
-    async def update_status(self, doc_id: str, status: IngestStatus) -> DocMetadata: ...
+    async def update_status(
+        self,
+        doc_id: str,
+        status: IngestStatus,
+        *,
+        extra_update: dict[str, str] | None = None,
+    ) -> DocMetadata: ...
 
     @abstractmethod
     async def list_documents(self) -> list[DocMetadata]: ...
