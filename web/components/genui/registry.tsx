@@ -14,20 +14,28 @@ import type { ComponentType } from 'react';
 
 import type { UIBlock } from '@arcana/schema';
 
+import { BibliographyExport } from '@/components/genui/BibliographyExport';
+import { BlurtingPrompt } from '@/components/genui/BlurtingPrompt';
+import { CitationPreview } from '@/components/genui/CitationPreview';
 import { CitedSummary } from '@/components/genui/CitedSummary';
-import { LiteratureMatrix } from '@/components/genui/LiteratureMatrix';
+import { ComparisonChart } from '@/components/genui/ComparisonChart';
+import { ConceptMap } from '@/components/genui/ConceptMap';
 import { ContradictionAlert } from '@/components/genui/ContradictionAlert';
+import { CornellNotes } from '@/components/genui/CornellNotes';
+import { DataTable } from '@/components/genui/DataTable';
 import { DraftEditor } from '@/components/genui/DraftEditor';
 import { FeynmanExplainer } from '@/components/genui/FeynmanExplainer';
 import { FlashcardDeck } from '@/components/genui/FlashcardDeck';
 import { GapAnalysis } from '@/components/genui/GapAnalysis';
 import { InsightCard } from '@/components/genui/InsightCard';
 import { KnowledgeGraphView } from '@/components/genui/KnowledgeGraphView';
+import { LiteratureMatrix } from '@/components/genui/LiteratureMatrix';
+import { ProgressDashboard } from '@/components/genui/ProgressDashboard';
 import { QuizCard } from '@/components/genui/QuizCard';
 import { SocraticDialog } from '@/components/genui/SocraticDialog';
-import { BlurtingPrompt } from '@/components/genui/BlurtingPrompt';
-import { CornellNotes } from '@/components/genui/CornellNotes';
+import { SourceList } from '@/components/genui/SourceList';
 import { StudyPlanner } from '@/components/genui/StudyPlanner';
+import { Timeline } from '@/components/genui/Timeline';
 import { ErrorState } from '@/components/genui/BlockStates';
 
 type BlockType = UIBlock['type'];
@@ -37,20 +45,28 @@ type RendererMap = {
 };
 
 const registry: RendererMap = {
+  BibliographyExport,
+  BlurtingPrompt,
+  CitationPreview,
   CitedSummary,
-  LiteratureMatrix,
+  ComparisonChart,
+  ConceptMap,
   ContradictionAlert,
+  CornellNotes,
+  DataTable,
   DraftEditor,
   FeynmanExplainer,
   FlashcardDeck,
   GapAnalysis,
   InsightCard,
   KnowledgeGraphView,
+  LiteratureMatrix,
+  ProgressDashboard,
   QuizCard,
   SocraticDialog,
-  BlurtingPrompt,
-  CornellNotes,
+  SourceList,
   StudyPlanner,
+  Timeline,
 };
 
 /** Render a UIBlock by looking up its component via the discriminator.

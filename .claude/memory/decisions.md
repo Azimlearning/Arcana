@@ -276,4 +276,13 @@
   is acceptable because the agent emits no new knowledge claims — all cards originated from
   LearningAgent which DID extend retrieved_ctx. Surface this at FYP-2 checkpoint for reviewer
   sign-off.
+### 2026-06-10 — Slice 12 scope: URL ingestion + document status API
+- Status: DECIDED
+- Decision: (1) api/ingestion/parsers/web.py using httpx+bs4 (both already installed);
+  page numbers simulated as ~1500-char logical sections. (2) DocStore.update_status()
+  extended with optional extra_update dict to persist error causes. (3) New routes:
+  POST /ingest/url (JSON body), GET /docs (list), GET /docs/{doc_id} (status+error).
+- Out of scope this slice: DOCX parser (FR-ING-03), OCR (FR-ING-04), YouTube (FR-ING-03),
+  trafilatura (not installed — bs4 is sufficient for MVP).
+- doc_id strategy for URLs: "url_" + sha256(url)[:16] — stable, same URL = same doc_id.
 

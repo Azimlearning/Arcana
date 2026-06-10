@@ -8,10 +8,15 @@
 // The codegen mirrors steps 1-2 into api/genui/_generated.py automatically.
 
 import type {
+  BibliographyExportData,
   BlurtingPromptData,
+  CitationPreviewData,
   CitedSummaryData,
+  ComparisonChartData,
+  ConceptMapData,
   ContradictionAlertData,
   CornellNotesData,
+  DataTableData,
   DraftEditorData,
   FeynmanExplainerData,
   FlashcardDeckData,
@@ -19,10 +24,14 @@ import type {
   InsightCardData,
   KnowledgeGraphViewData,
   LiteratureMatrixData,
+  ProgressDashboardData,
   QuizCardData,
   SocraticDialogData,
+  SourceListData,
   StudyPlannerData,
+  TimelineData,
 } from './payloads.js';
+
 
 export type Panel = 'sources' | 'chat' | 'studio';
 export type BlockStatus = 'loading' | 'partial' | 'ready' | 'error';
@@ -131,6 +140,62 @@ export interface CornellNotes {
   data: CornellNotesData;
 }
 
+export interface SourceList {
+  type: 'SourceList';
+  id: string;
+  meta: BlockMeta;
+  data: SourceListData;
+}
+
+export interface CitationPreview {
+  type: 'CitationPreview';
+  id: string;
+  meta: BlockMeta;
+  data: CitationPreviewData;
+}
+
+export interface BibliographyExport {
+  type: 'BibliographyExport';
+  id: string;
+  meta: BlockMeta;
+  data: BibliographyExportData;
+}
+
+export interface ConceptMap {
+  type: 'ConceptMap';
+  id: string;
+  meta: BlockMeta;
+  data: ConceptMapData;
+}
+
+export interface ComparisonChart {
+  type: 'ComparisonChart';
+  id: string;
+  meta: BlockMeta;
+  data: ComparisonChartData;
+}
+
+export interface Timeline {
+  type: 'Timeline';
+  id: string;
+  meta: BlockMeta;
+  data: TimelineData;
+}
+
+export interface DataTable {
+  type: 'DataTable';
+  id: string;
+  meta: BlockMeta;
+  data: DataTableData;
+}
+
+export interface ProgressDashboard {
+  type: 'ProgressDashboard';
+  id: string;
+  meta: BlockMeta;
+  data: ProgressDashboardData;
+}
+
 // Discriminated union: the `type` field is the discriminator.
 // Codegen emits Annotated[X | Y | Z, Field(discriminator='type')] in Python.
 export type UIBlock =
@@ -147,4 +212,12 @@ export type UIBlock =
   | DraftEditor
   | StudyPlanner
   | BlurtingPrompt
-  | CornellNotes;
+  | CornellNotes
+  | SourceList
+  | CitationPreview
+  | BibliographyExport
+  | ConceptMap
+  | ComparisonChart
+  | Timeline
+  | DataTable
+  | ProgressDashboard;

@@ -12,6 +12,28 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
 
+class BibEntry(BaseModel):
+    key: str
+    docId: str
+    docTitle: str
+    authors: list[str]
+    year: float | None
+    sourceType: Literal['article', 'book', 'misc']
+    bibtex: str
+
+
+class BibliographyExport(BaseModel):
+    type: Literal['BibliographyExport']
+    id: str
+    meta: BlockMeta
+    data: BibliographyExportData
+
+
+class BibliographyExportData(BaseModel):
+    entries: list[BibEntry]
+    bibtexAll: str
+
+
 class BlockMeta(BaseModel):
     panel: Panel
     order: float
@@ -30,6 +52,11 @@ class BlurtingPromptData(BaseModel):
     prompt: str
     sourcePassage: str
     citations: list[Citation]
+
+
+class ChartSeries(BaseModel):
+    name: str
+    values: list[float]
 
 
 class ChatMessage(BaseModel):
@@ -59,6 +86,23 @@ class Citation(BaseModel):
     quote: str
 
 
+class CitationPreview(BaseModel):
+    type: Literal['CitationPreview']
+    id: str
+    meta: BlockMeta
+    data: CitationPreviewData
+
+
+class CitationPreviewData(BaseModel):
+    docId: str
+    docTitle: str
+    authors: list[str]
+    year: float | None
+    sourceUri: str
+    formatted: str
+    style: CitationStyle
+
+
 class CitedSummary(BaseModel):
     type: Literal['CitedSummary']
     id: str
@@ -70,6 +114,49 @@ class CitedSummaryData(BaseModel):
     summary: str
     segments: list[SummarySegment]
     citations: list[Citation]
+
+
+class ComparisonChart(BaseModel):
+    type: Literal['ComparisonChart']
+    id: str
+    meta: BlockMeta
+    data: ComparisonChartData
+
+
+class ComparisonChartData(BaseModel):
+    title: str
+    chartType: ChartType
+    labels: list[str]
+    series: list[ChartSeries]
+    unit: str | None
+    citations: list[Citation]
+
+
+class ConceptLink(BaseModel):
+    source: str
+    target: str
+    label: str
+
+
+class ConceptMap(BaseModel):
+    type: Literal['ConceptMap']
+    id: str
+    meta: BlockMeta
+    data: ConceptMapData
+
+
+class ConceptMapData(BaseModel):
+    rootConcept: str
+    nodes: list[ConceptNode]
+    links: list[ConceptLink]
+    citations: list[Citation]
+
+
+class ConceptNode(BaseModel):
+    id: str
+    label: str
+    description: str
+    level: float
 
 
 class ContradictingClaim(BaseModel):
@@ -110,6 +197,24 @@ class CornellNotesData(BaseModel):
     notes: list[CornellNote]
     summary: str
     citations: list[Citation]
+
+
+class DataTable(BaseModel):
+    type: Literal['DataTable']
+    id: str
+    meta: BlockMeta
+    data: DataTableData
+
+
+class DataTableData(BaseModel):
+    title: str
+    columns: list[TableColumn]
+    rows: list[DataTableRow]
+    citations: list[Citation]
+
+
+class DataTableRow(BaseModel):
+    cells: list[str]
 
 
 class DocListResponse(BaseModel):
@@ -330,6 +435,22 @@ class NotebookListResponse(BaseModel):
     notebooks: list[NotebookItem]
 
 
+class ProgressDashboard(BaseModel):
+    type: Literal['ProgressDashboard']
+    id: str
+    meta: BlockMeta
+    data: ProgressDashboardData
+
+
+class ProgressDashboardData(BaseModel):
+    notebookId: str
+    totalCards: float
+    masteredCards: float
+    streakDays: float
+    topics: list[TopicProgress]
+    nextReviewAt: str | None
+
+
 class QuizCard(BaseModel):
     type: Literal['QuizCard']
     id: str
@@ -391,6 +512,30 @@ class SocraticTurn(BaseModel):
     text: str
 
 
+class SourceDocument(BaseModel):
+    docId: str
+    title: str
+    sourceUri: str
+    status: Literal['pending', 'parsing', 'embedding', 'ready', 'failed']
+    sizeBytes: float
+    chunkCount: float
+    createdAt: str
+    error: str | None
+
+
+class SourceList(BaseModel):
+    type: Literal['SourceList']
+    id: str
+    meta: BlockMeta
+    data: SourceListData
+
+
+class SourceListData(BaseModel):
+    notebookId: str
+    documents: list[SourceDocument]
+    totalCount: float
+
+
 class StudyPlanner(BaseModel):
     type: Literal['StudyPlanner']
     id: str
@@ -419,6 +564,41 @@ class SurveySubmission(BaseModel):
     responses: list[float]
     susScore: float
     taskDescription: str
+
+
+class TableColumn(BaseModel):
+    key: str
+    label: str
+    sortable: bool
+
+
+class Timeline(BaseModel):
+    type: Literal['Timeline']
+    id: str
+    meta: BlockMeta
+    data: TimelineData
+
+
+class TimelineData(BaseModel):
+    title: str
+    events: list[TimelineEvent]
+    citations: list[Citation]
+
+
+class TimelineEvent(BaseModel):
+    date: str
+    label: str
+    description: str
+    docId: str | None
+    citationId: str | None
+
+
+class TopicProgress(BaseModel):
+    topic: str
+    totalCards: float
+    masteredCards: float
+    dueCount: float
+    retentionRate: float
 
 
 class TurnEvent(BaseModel):
@@ -456,7 +636,11 @@ BlockStatus = Literal['loading', 'partial', 'ready', 'error']
 
 BloomLevel = Literal['recall', 'comprehension', 'application', 'analysis', 'synthesis', 'evaluation']
 
+ChartType = Literal['bar', 'radar', 'scatter']
+
 ChatRole = Literal['user', 'assistant']
+
+CitationStyle = Literal['apa', 'mla', 'chicago', 'ieee', 'harvard']
 
 GapSeverity = Literal['high', 'medium', 'low']
 
@@ -474,4 +658,4 @@ ReviewRating = float
 
 SocraticRole = Literal['tutor', 'learner']
 
-UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer | DraftEditor | StudyPlanner | BlurtingPrompt | CornellNotes, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer | DraftEditor | StudyPlanner | BlurtingPrompt | CornellNotes | SourceList | CitationPreview | BibliographyExport | ConceptMap | ComparisonChart | Timeline | DataTable | ProgressDashboard, Field(discriminator='type')]

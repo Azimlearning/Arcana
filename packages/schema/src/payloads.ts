@@ -264,3 +264,155 @@ export interface CornellNotesData {
   summary: string;       // bottom summary paragraph
   citations: Citation[];
 }
+
+// ── SourceList ────────────────────────────────────────────────────────────
+// Ingested-sources panel (sources panel, P0).
+
+export interface SourceDocument {
+  docId: string;
+  title: string;
+  sourceUri: string;
+  status: 'pending' | 'parsing' | 'embedding' | 'ready' | 'failed';
+  sizeBytes: number;
+  chunkCount: number;
+  createdAt: string;    // ISO 8601
+  error: string | null;
+}
+
+export interface SourceListData {
+  notebookId: string;
+  documents: SourceDocument[];
+  totalCount: number;
+}
+
+// ── CitationPreview ────────────────────────────────────────────────────────
+// Formatted single-document citation in a chosen style (Citation, chat).
+
+export type CitationStyle = 'apa' | 'mla' | 'chicago' | 'ieee' | 'harvard';
+
+export interface CitationPreviewData {
+  docId: string;
+  docTitle: string;
+  authors: string[];
+  year: number | null;
+  sourceUri: string;
+  formatted: string;    // pre-formatted citation string
+  style: CitationStyle;
+}
+
+// ── BibliographyExport ─────────────────────────────────────────────────────
+// BibTeX / RIS export panel (Citation, studio). FR-EXP-08.
+
+export interface BibEntry {
+  key: string;          // citation key e.g. "Smith2020"
+  docId: string;
+  docTitle: string;
+  authors: string[];
+  year: number | null;
+  sourceType: 'article' | 'book' | 'misc';
+  bibtex: string;       // full BibTeX entry string
+}
+
+export interface BibliographyExportData {
+  entries: BibEntry[];
+  bibtexAll: string;    // concatenated BibTeX for one-click copy
+}
+
+// ── ConceptMap ─────────────────────────────────────────────────────────────
+// Concept-relationship map for reasoning (Visual/Socratic, studio). P1.
+
+export interface ConceptNode {
+  id: string;
+  label: string;
+  description: string;
+  level: number;        // 0 = root, 1 = primary, 2 = secondary
+}
+
+export interface ConceptLink {
+  source: string;
+  target: string;
+  label: string;        // e.g. "influences", "contradicts"
+}
+
+export interface ConceptMapData {
+  rootConcept: string;
+  nodes: ConceptNode[];
+  links: ConceptLink[];
+  citations: Citation[];
+}
+
+// ── ComparisonChart ────────────────────────────────────────────────────────
+// Structured comparative data chart (Visual, chat/studio). P1.
+
+export interface ChartSeries {
+  name: string;
+  values: number[];
+}
+
+export type ChartType = 'bar' | 'radar' | 'scatter';
+
+export interface ComparisonChartData {
+  title: string;
+  chartType: ChartType;
+  labels: string[];     // x-axis / dimension labels
+  series: ChartSeries[];
+  unit: string | null;
+  citations: Citation[];
+}
+
+// ── Timeline ───────────────────────────────────────────────────────────────
+// Chronological event view (Visual/Research, studio). P1.
+
+export interface TimelineEvent {
+  date: string;         // ISO 8601 or plain year "1905"
+  label: string;
+  description: string;
+  docId: string | null;
+  citationId: string | null;
+}
+
+export interface TimelineData {
+  title: string;
+  events: TimelineEvent[];
+  citations: Citation[];
+}
+
+// ── DataTable ─────────────────────────────────────────────────────────────
+// Sortable structured data table (Visual/Research, chat). P1.
+
+export interface TableColumn {
+  key: string;
+  label: string;
+  sortable: boolean;
+}
+
+export interface DataTableRow {
+  cells: string[];   // ordered to match columns
+}
+
+export interface DataTableData {
+  title: string;
+  columns: TableColumn[];
+  rows: DataTableRow[];
+  citations: Citation[];
+}
+
+// ── ProgressDashboard ──────────────────────────────────────────────────────
+// Learning-progress and retention metrics (Analytics, studio). FR-LRN-10.
+
+export interface TopicProgress {
+  topic: string;
+  totalCards: number;
+  masteredCards: number;   // cards with interval >= 21 days
+  dueCount: number;
+  retentionRate: number;   // 0–1
+}
+
+export interface ProgressDashboardData {
+  notebookId: string;
+  totalCards: number;
+  masteredCards: number;
+  streakDays: number;
+  topics: TopicProgress[];
+  nextReviewAt: string | null;  // ISO 8601, null if queue empty
+}
