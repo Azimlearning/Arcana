@@ -6,6 +6,9 @@
 //   - 'partial' → render whatever segments are present so far
 //   - 'ready'   → final render
 //   - 'error'   → error state with the summary as the human message
+//
+// §7.4 degradation: when status is 'ready' but citations is empty, a subtle
+// amber note signals the answer wasn't grounded in the corpus (NFR-REL-01).
 
 import type { CitedSummary as CitedSummaryBlock } from '@arcana/schema';
 
@@ -34,7 +37,16 @@ export function CitedSummary({ block }: Props) {
     return <PartialState>{body}</PartialState>;
   }
 
-  return <Card>{body}</Card>;
+  return (
+    <Card>
+      {body}
+      {data.citations.length === 0 && (
+        <p className="mt-3 text-[11px] text-amber-600/70 italic">
+          No source citations found — answer may reflect general knowledge only.
+        </p>
+      )}
+    </Card>
+  );
 }
 
 function Body({ block }: { block: CitedSummaryBlock }) {

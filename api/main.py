@@ -13,6 +13,7 @@ Slice 9: auth (api/core/auth.py) and notebooks/review routes added.
 Slice 10: analytics event store + feedback/sus/export routes added.
 Slice 14: UserGraphRegistry replaces the single shared graph_store (FR-KG-02).
 Slice 15: UserProfileStore added — GET/PUT /profile (FR-USR-02).
+Slice 20: suggestions router added — GET /suggestions (§7.1 activation flow).
 CORS is open to localhost:3000 for local dev; tighten for deployment.
 """
 
@@ -37,6 +38,7 @@ from api.routes.ingest import router as ingest_router
 from api.routes.notebooks import router as notebooks_router
 from api.routes.profile import router as profile_router
 from api.routes.review import router as review_router
+from api.routes.suggestions import router as suggestions_router
 
 logger = get_logger(__name__)
 
@@ -56,10 +58,11 @@ def _build_shared_resources():
     from api.retrieval.graph import GraphRetriever
     from api.retrieval.vector import VectorRetriever
     from api.stores.filesystem_doc_store import FilesystemDocStore
-    from api.stores.in_memory_store import InMemoryMemoryStore
     from api.stores.jsonl_chunk_store import JsonlChunkStore
+    from api.stores.jsonl_memory_store import JsonlMemoryStore
     from api.stores.networkx_store import NetworkXGraphStore
     from api.stores.pinecone_store import PineconeVectorStore
+    from api.stores.review_store import JsonlReviewStore
     from api.stores.user_graph_registry import UserGraphRegistry
     from api.stores.user_profile_store import UserProfileStore
 
@@ -113,7 +116,8 @@ def _build_shared_resources():
         chunk_store=chunk_store,
         llm=llm,
     )
-    memory_store = InMemoryMemoryStore()
+    memory_store = JsonlMemoryStore(root=settings.local_storage_path / "memory")
+    review_store = JsonlReviewStore(root=settings.local_storage_path / "reviews")
 
     from api.stores.notebook_store import JsonlNotebookStore
     notebook_store = JsonlNotebookStore(root=settings.local_storage_path / "notebooks")
@@ -141,6 +145,7 @@ def _build_shared_resources():
         "event_store": event_store,
         "graph_registry": graph_registry,
         "profile_store": profile_store,
+        "review_store": review_store,
     }
 
 
@@ -194,6 +199,7 @@ def build_orchestrator(shared: dict):
         doc_store=doc_store,
         **_retriever_kwargs,
     )
+
     memory_agent = MemoryAgent(store=memory_store)
 
     tier2_agents = [
@@ -290,6 +296,7 @@ def create_app() -> FastAPI:
     app.include_router(analytics_router)
     app.include_router(graph_router)
     app.include_router(profile_router)
+    app.include_router(suggestions_router)
     return app
 
 

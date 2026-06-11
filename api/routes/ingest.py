@@ -11,6 +11,9 @@ subsequent chat turns without a server restart.
 Slice 14 (FR-KG-02): IngestContext now carries a UserGraphRegistry. Each
 ingest call writes entities into the requesting user's personal graph
 (resolved from CurrentUser.uid) and saves it to disk after completion.
+
+Slice 20 (FR-ING-08): POST /ingest/retry/{doc_id} re-runs the pipeline
+using stored bytes for documents that previously failed ingestion.
 """
 
 from __future__ import annotations
@@ -31,7 +34,7 @@ from api.genui._generated import (
     IngestResponse,
     UrlIngestRequest,
 )
-from api.ingestion.pipeline import ingest_pdf, ingest_url
+from api.ingestion.pipeline import ingest_pdf, ingest_url, reextract_from_stored_chunks
 from api.ingestion.stores_bundle import Stores
 from api.llm.service import LLMService
 from api.stores.doc_store import DocMetadata
@@ -159,6 +162,38 @@ async def ingest(
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {e}") from e
 
 
+# ── Re-extract entities from existing chunks ─────────────────────────────────
+
+@router.post("/ingest/reextract")
+async def reextract(
+    ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+    user: CurrentUser = Depends(get_current_user),    # noqa: B008
+) -> dict:
+    """Re-run entity extraction on all chunks already in the chunk store.
+
+    Call this when documents were ingested without a working LLM key so
+    the knowledge graph was left empty. Reads from the existing chunk
+    store — no re-upload needed. Idempotent (merge semantics).
+    """
+    if ctx.graph_registry is None:
+        raise HTTPException(status_code=503, detail="Graph registry not available.")
+
+    all_chunks = await ctx.stores.chunks.list_all()
+    if not all_chunks:
+        return {"docs": 0, "nodes": 0, "message": "No chunks found — ingest documents first."}
+
+    user_graph = await ctx.graph_registry.get_or_create(user.uid)
+    result = await reextract_from_stored_chunks(
+        stored_chunks=all_chunks,
+        llm=ctx.llm,
+        graph=user_graph,
+    )
+    await ctx.graph_registry.save(user.uid)
+
+    logger.info("reextract.complete", user_id=user.uid, **result)
+    return {**result, "message": f"Re-extracted {result['nodes']} nodes from {result['docs']} documents."}
+
+
 # ── URL ingest ────────────────────────────────────────────────────────────────
 
 @router.post("/ingest/url", response_model=IngestResponse)
@@ -248,3 +283,80 @@ async def get_doc_status(
     except DocNotFound:
         raise HTTPException(status_code=404, detail=f"Document {doc_id!r} not found.") from None
     return _meta_to_status(meta)
+
+
+# ── Retry failed ingestion (FR-ING-08) ───────────────────────────────────────
+
+@router.post("/ingest/retry/{doc_id}", response_model=IngestResponse)
+async def retry_ingest(
+    doc_id: str,
+    ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+    user: CurrentUser = Depends(get_current_user),    # noqa: B008
+) -> IngestResponse:
+    """Retry a previously failed ingestion using stored document bytes.
+
+    Reads raw bytes saved by the original upload and re-runs the full
+    pipeline. Only allowed for documents with status 'failed' or 'pending'.
+    """
+    try:
+        meta = await ctx.stores.doc.get_metadata(doc_id)
+    except DocNotFound:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id!r} not found.") from None
+
+    if meta.ingest_status not in ("failed", "pending"):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Document {doc_id!r} has status {meta.ingest_status!r}; "
+                "only 'failed' or 'pending' documents can be retried."
+            ),
+        )
+
+    try:
+        raw = await ctx.stores.doc.get_bytes(doc_id)
+    except DocNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No stored bytes for {doc_id!r}. Please re-upload the file.",
+        ) from None
+
+    stores = ctx.stores
+    if ctx.graph_registry is not None:
+        user_graph = await ctx.graph_registry.get_or_create(user.uid)
+        from api.ingestion.stores_bundle import Stores as _Stores
+        stores = _Stores(
+            doc=ctx.stores.doc,
+            vector=ctx.stores.vector,
+            graph=user_graph,
+            chunks=ctx.stores.chunks,
+        )
+
+    logger.info("ingest_retry.start", doc_id=doc_id, user_id=user.uid)
+    try:
+        await ingest_pdf(
+            doc_id=doc_id,
+            raw=raw,
+            title=meta.title,
+            source_uri=meta.source_uri,
+            stores=stores,
+            embedder=ctx.embedder,
+            llm=ctx.llm,
+        )
+        if ctx.graph_registry is not None:
+            await ctx.graph_registry.save(user.uid)
+
+        all_chunks = await ctx.stores.chunks.list_all()
+        chunk_count = sum(1 for c in all_chunks if c.doc_id == doc_id)
+        logger.info("ingest_retry.done", doc_id=doc_id, chunk_count=chunk_count)
+        return IngestResponse(
+            docId=doc_id,
+            title=meta.title,
+            status="ready",
+            chunkCount=chunk_count,
+            error=None,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("ingest_retry.failed", doc_id=doc_id)
+        raise HTTPException(status_code=500, detail=f"Retry failed: {e}") from e
