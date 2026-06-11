@@ -145,7 +145,7 @@
 - [x] Ship **≥ 3 modes** (Research, Writing, Study); demonstrate 5 — **FR-UI-06 (M)**, §13.5, `uiux_plan.md` §4. *(Slice 5: 5-mode switcher → `activeMode` on the wire → `_MODE_TO_INTENT` routing. research/study/writing/socratic/exploration all reachable.)*
 - [x] Manual layout/mode override recorded in `uiStore` and respected — **FR-UI-07 (S)**. *(Slice 5: mode override — switcher writes `uiStore.activeMode`. Slice 6: PanelResizer drag writes `layoutOverride`; override wins for the session, cleared on mode switch.)* 
 - [ ] First-run/activation flow + error/degradation states (not in mockup yet) — `uiux_plan.md` §7.1, §7.4.
-- [ ] Agent-pipeline trace with A2A hop badges, tier-coloured — `uiux_plan.md` §8.
+- [x] Agent-pipeline trace with A2A hop badges, tier-coloured — `uiux_plan.md` §8.
 
 ### 1.7 Learning system
 - [x] Flashcards from doc/topic — **FR-LRN-01 (M)** *(Slice 3: LearningAgent → FlashcardDeck)*.
