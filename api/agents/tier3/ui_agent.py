@@ -47,11 +47,19 @@ from pydantic import ValidationError
 from api.agents.base import AgentResult, AgentState, BaseAgent
 from api.core.logging import get_logger
 from api.genui._generated import (
+    BibliographyExport,
+    BibliographyExportData,
     BlockMeta,
     BlurtingPrompt,
     BlurtingPromptData,
+    CitationPreview,
+    CitationPreviewData,
     CitedSummary,
     CitedSummaryData,
+    ComparisonChart,
+    ComparisonChartData,
+    ConceptMap,
+    ConceptMapData,
     ContradictionAlert,
     ContradictionAlertData,
     CornellNotes,
@@ -236,7 +244,28 @@ class UIAgent(BaseAgent):
             if block is not None:
                 return block
 
-        # 12. Research (CitedSummary, with Fact Check filter)
+        # 12. Citation agent (CitationPreview | BibliographyExport)
+        citation = state.agent_results.get("citation")
+        if citation is not None and citation.status == "ok":
+            block = self._build_from_citation(citation, order=order)
+            if block is not None:
+                return block
+
+        # 13. Visual agent (ConceptMap | ComparisonChart)
+        visual = state.agent_results.get("visual_agent")
+        if visual is not None and visual.status == "ok":
+            block = self._build_from_visual(visual, order=order)
+            if block is not None:
+                return block
+
+        # 14. Document agent (CornellNotes via document-focused retrieval)
+        document = state.agent_results.get("document")
+        if document is not None and document.status == "ok":
+            block = self._build_from_document(document, order=order)
+            if block is not None:
+                return block
+
+        # 15. Research (CitedSummary, with Fact Check filter)
         research = state.agent_results.get("research")
         fact_check = state.agent_results.get("fact_checker")
 
@@ -505,6 +534,89 @@ class UIAgent(BaseAgent):
                 )
             except ValidationError as e:
                 logger.warning("ui_agent.contradiction_alert_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_citation(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "CitationPreview":
+            try:
+                data = CitationPreviewData.model_validate(data_dict)
+                return CitationPreview(
+                    type="CitationPreview",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.citation_preview_invalid", error=str(e))
+                return None
+
+        if block_type == "BibliographyExport":
+            try:
+                data = BibliographyExportData.model_validate(data_dict)
+                return BibliographyExport(
+                    type="BibliographyExport",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.bibliography_export_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_visual(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "ConceptMap":
+            try:
+                data = ConceptMapData.model_validate(data_dict)
+                return ConceptMap(
+                    type="ConceptMap",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.concept_map_invalid", error=str(e))
+                return None
+
+        if block_type == "ComparisonChart":
+            try:
+                data = ComparisonChartData.model_validate(data_dict)
+                return ComparisonChart(
+                    type="ComparisonChart",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.comparison_chart_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_document(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "CornellNotes":
+            try:
+                data = CornellNotesData.model_validate(data_dict)
+                return CornellNotes(
+                    type="CornellNotes",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.document_cornell_invalid", error=str(e))
                 return None
 
         return None

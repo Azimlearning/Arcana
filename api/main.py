@@ -162,7 +162,10 @@ def build_orchestrator(shared: dict):
     from api.agents.tier2.socratic import SocraticAgent
     from api.agents.tier2.timeline_agent import TimelineAgent
     from api.agents.tier2.writing import WritingAgent
+    from api.agents.tier3.citation import CitationAgent
+    from api.agents.tier3.document import DocumentAgent
     from api.agents.tier3.ui_agent import UIAgent
+    from api.agents.tier3.visual import VisualAgent
     from api.agents.tier4.fact_checker import FactChecker
     from api.agents.tier4.memory import MemoryAgent
     from api.agents.tier4.study_planner import StudyPlannerAgent
@@ -214,13 +217,19 @@ def build_orchestrator(shared: dict):
 
     study_planner = StudyPlannerAgent(llm_service=llm_light)
 
+    tier3_agents = [
+        CitationAgent(doc_store=doc_store),
+        VisualAgent(llm_service=llm, **_retriever_kwargs),
+        DocumentAgent(llm_service=llm, **_retriever_kwargs),
+    ]
+
     return Orchestrator(
         research=research,
         ui_agent=UIAgent(),
         fact_checker=FactChecker(llm=llm_light),
         memory_agent=memory_agent,
         memory_store=memory_store,
-        extra_agents=[*tier2_agents, study_planner],
+        extra_agents=[*tier2_agents, study_planner, *tier3_agents],
     )
 
 
@@ -264,7 +273,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     """Standard FastAPI app for `uvicorn api.main:app`."""
-    app = FastAPI(title="Arcana", lifespan=lifespan)
+    app = FastAPI(title="Arcana", lifespan=lifespan, docs_url="/api/swagger", redoc_url="/api/redoc")
     app.add_exception_handler(ArcanaError, arcana_error_handler)
     # CORS: allow the Next.js dev server. Tighten `allow_origins` for prod.
     app.add_middleware(

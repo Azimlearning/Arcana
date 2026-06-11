@@ -192,6 +192,10 @@ _WIRED_INTENTS = frozenset({
     "compare",
     "timeline",
     "annotate",
+    # Slice 19 tier-3
+    "citation",
+    "visual",
+    "document",
 })
 
 
@@ -214,6 +218,17 @@ def _detect_intent_from_query(query: str) -> str:
     if any(kw in q for kw in ("timeline", "chronological", "history of",
                                "evolution of", "over time")):
         return "timeline"
+    if any(kw in q for kw in ("bibliography", "bibtex", "all references",
+                               "format citation", "apa format", "mla format",
+                               "cite all", "references list", "full bibliography")):
+        return "citation"
+    if any(kw in q for kw in ("concept map", "mind map", "visualize", "concept diagram",
+                               "comparison chart", "compare visually")):
+        return "visual"
+    if any(kw in q for kw in ("summarize document", "document overview", "document outline",
+                               "summarize this document", "overview of this paper",
+                               "sections of", "breakdown of this")):
+        return "document"
     return ""
 
 # Maps each non-default intent label to its primary registered agent name.
@@ -232,6 +247,10 @@ _INTENT_TO_AGENT: dict[str, str] = {
     "timeline": "timeline",
     "annotate": "annotate",
     "schedule": "study_planner",
+    # Slice 19 tier-3
+    "citation": "citation",
+    "visual": "visual_agent",
+    "document": "document",
 }
 
 
@@ -284,6 +303,10 @@ def build_graph() -> Any:
     has_writing = registry.get_agent("writing") is not None
     # Slice 9 agents
     has_study_planner = registry.get_agent("study_planner") is not None
+    # Slice 19 tier-3 agents
+    has_citation = registry.get_agent("citation") is not None
+    has_visual = registry.get_agent("visual_agent") is not None
+    has_document = registry.get_agent("document") is not None
     # Slice 7 agents
     has_graph_agent = registry.get_agent("graph_agent") is not None
     has_literature = registry.get_agent("literature") is not None
@@ -346,6 +369,16 @@ def build_graph() -> Any:
     if has_study_planner:
         graph.add_node("study_planner", make_node("study_planner"))
         conditional_map["schedule"] = "study_planner"
+    # Slice 19 tier-3
+    if has_citation:
+        graph.add_node("citation", make_node("citation"))
+        conditional_map["citation"] = "citation"
+    if has_visual:
+        graph.add_node("visual_agent", make_node("visual_agent"))
+        conditional_map["visual"] = "visual_agent"
+    if has_document:
+        graph.add_node("document", make_node("document"))
+        conditional_map["document"] = "document"
 
     graph.add_conditional_edges(
         "orchestrator",
@@ -388,6 +421,13 @@ def build_graph() -> Any:
     # Slice 9
     if has_study_planner:
         graph.add_edge("study_planner", "ui_agent")
+    # Slice 19 tier-3
+    if has_citation:
+        graph.add_edge("citation", "ui_agent")
+    if has_visual:
+        graph.add_edge("visual_agent", "ui_agent")
+    if has_document:
+        graph.add_edge("document", "ui_agent")
 
     graph.add_edge("ui_agent", END)
 

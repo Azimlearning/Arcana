@@ -44,6 +44,9 @@ _AGENT_TIERS: dict[str, int] = {
     "annotate": 2,
     # Tier 3 — Output
     "ui_agent": 3,
+    "citation": 3,
+    "visual_agent": 3,
+    "document": 3,
     # Tier 4 — Quality / Meta
     "fact_checker": 4,
     "memory": 4,
@@ -67,6 +70,9 @@ _INTENT_PRIMARY: dict[str, str] = {
     "timeline": "timeline",
     "annotate": "annotate",
     "schedule": "study_planner",
+    "citation": "citation",
+    "visual": "visual_agent",
+    "document": "document",
 }
 
 
