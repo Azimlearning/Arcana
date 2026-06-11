@@ -261,10 +261,15 @@ async def route_to_agent(
         )
     agent = registry.get_agent(agent_name)
     if agent is None:
-        return AgentResult(
+        result = AgentResult(
             agent_name=agent_name,
             payload={},
             status="failed",
             error=f"agent {agent_name!r} not registered",
         )
-    return await agent.run(query=query, state=state)
+        state.agent_results[agent_name] = result
+        return result
+    result = await agent.run(query=query, state=state)
+    # Write back to shared state so UIAgent sees sub-agent results from A2A hops.
+    state.agent_results[agent_name] = result
+    return result

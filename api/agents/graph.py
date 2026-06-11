@@ -88,6 +88,9 @@ def make_node(agent_name: str) -> NodeFn:
         ctx_before = len(state.retrieved_ctx)
         ui_before = len(state.ui_blocks)
         msgs_before = len(state.messages)
+        # Snapshot agent_results keys so we can capture any sub-agents written
+        # via route_to_agent A2A hops during this node's run.
+        agent_results_before = set(state.agent_results.keys())
 
         try:
             result = await agent.run(query=state.query, state=state)
@@ -104,7 +107,13 @@ def make_node(agent_name: str) -> NodeFn:
                 }
             }
 
-        updates: dict[str, Any] = {"agent_results": {agent.name: result}}
+        # Include any sub-agent results produced via route_to_agent A2A hops
+        # (written to state.agent_results by route_to_agent's writeback).
+        sub_results = {
+            k: v for k, v in state.agent_results.items()
+            if k not in agent_results_before
+        }
+        updates: dict[str, Any] = {"agent_results": {agent.name: result, **sub_results}}
 
         new_ctx = state.retrieved_ctx[ctx_before:]
         if new_ctx:
@@ -138,6 +147,7 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
     intent = (
         state.intent
         or _MODE_TO_INTENT.get(state.active_mode or "", "")
+        or _detect_intent_from_query(state.query)
         or _DEFAULT_INTENT
     )
     logger.info(
@@ -185,6 +195,46 @@ _WIRED_INTENTS = frozenset({
 })
 
 
+
+
+def _detect_intent_from_query(query: str) -> str:
+    """Keyword heuristic: map compare/contradiction/graph/timeline queries to
+    the matching intent so the orchestrator can route them without the frontend
+    having to set state.intent explicitly.  Returns '' when no rule matches."""
+    q = query.lower()
+    if any(kw in q for kw in ("compare", "comparison", "contrast", " vs ",
+                               "versus", "differences between", "similar")):
+        return "compare"
+    if any(kw in q for kw in ("contradict", "contradiction", "conflicting",
+                               "disagree", "inconsisten")):
+        return "contradiction"
+    if any(kw in q for kw in ("knowledge graph", "concept map", "related concepts",
+                               "graph of", "conceptually")):
+        return "graph"
+    if any(kw in q for kw in ("timeline", "chronological", "history of",
+                               "evolution of", "over time")):
+        return "timeline"
+    return ""
+
+# Maps each non-default intent label to its primary registered agent name.
+# Used by _route_after_orchestrator to fall back gracefully when the agent
+# for a detected intent is not registered in the current graph instance.
+_INTENT_TO_AGENT: dict[str, str] = {
+    "discovery": "discovery",
+    "study": "learning",
+    "socratic": "socratic",
+    "writing": "writing",
+    "graph": "graph_agent",
+    "literature": "literature",
+    "contradiction": "contradiction",
+    "cross_doc": "cross_doc",
+    "compare": "comparator",
+    "timeline": "timeline",
+    "annotate": "annotate",
+    "schedule": "study_planner",
+}
+
+
 def _route_after_orchestrator(state: AgentState) -> str:
     """Conditional edge after Orchestrator. Returns a label from
     `_WIRED_INTENTS`. Unknown intents fall back to the default rather
@@ -196,6 +246,18 @@ def _route_after_orchestrator(state: AgentState) -> str:
         logger.warning(
             "orchestrator.unknown_intent",
             intent=intent,
+            fallback=_DEFAULT_INTENT,
+        )
+        return _DEFAULT_INTENT
+    # Guard: intent detection may fire for an agent that isn't registered in
+    # this particular graph instance (e.g. tests that only wire research+ui).
+    # Fall back to the default so LangGraph never gets a KeyError on the edge.
+    agent_name = _INTENT_TO_AGENT.get(intent)
+    if agent_name and registry.get_agent(agent_name) is None:
+        logger.warning(
+            "orchestrator.intent_agent_not_registered",
+            intent=intent,
+            agent=agent_name,
             fallback=_DEFAULT_INTENT,
         )
         return _DEFAULT_INTENT

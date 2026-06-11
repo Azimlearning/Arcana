@@ -88,6 +88,15 @@ class ComparatorAgent(BaseAgent):
     async def _run_matrix(
         self, query: str, chunks: list[RetrievedChunk], state: AgentState
     ) -> AgentResult:
+        # A2A hop 1: fetch the concept subgraph for visual context (FR-AGT-03).
+        from api.agents.base import registry, route_to_agent  # late import avoids cycle
+        if registry.get_agent("graph_agent") is not None:
+            await route_to_agent("graph_agent", query, state=state)
+
+        # A2A hop 2: surface contradictions across the same corpus.
+        if registry.get_agent("contradiction") is not None:
+            await route_to_agent("contradiction", query, state=state)
+
         messages = [
             Message(role="user", content=build_comparator_matrix_prompt(query, chunks))
         ]

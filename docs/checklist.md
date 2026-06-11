@@ -121,7 +121,7 @@
 - [x] Graceful degradation on tool/agent failure — **FR-AGT-08 (M)**.
 - [x] Hop-budget recursion guard + terminal join — **FR-AGT-10 (M)**, §11.6.
 - [x] Reach **15+ agents across four tiers** (full vision 25) — **FR-AGT-06 (M)**.
-- [ ] **Verify the worked example** ("compare three papers" with 2 A2A hops + 3 streamed blocks) — *Listing 12.1*.
+- [x] **Verify the worked example** ("compare three papers" with 2 A2A hops + 3 streamed blocks) — *Listing 12.1*. *(Slice 17: intent detection in _orchestrator_node; ComparatorAgent calls route_to_agent(graph_agent) + route_to_agent(contradiction); UIAgent emits LiteratureMatrix + KnowledgeGraphView + ContradictionAlert.)*
 
 ### 1.5 Build out the agents (Tier 2/3/4, P1 set)
 - [x] Tier 2: `learning.py` ✓, `writing.py` ✓, `socratic.py` ✓, `discovery.py` ✓ *(Slice 3+4)*; `graph_agent.py` ✓, `literature.py` ✓, `contradiction.py` ✓, `cross_doc.py` ✓, `comparator.py` ✓, `timeline.py` ✓, `annotation.py` ✓ *(Slice 7)* — **11/12 P1 tier-2 done** *(methodology.py → P2)*.

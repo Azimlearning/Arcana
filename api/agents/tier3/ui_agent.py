@@ -90,6 +90,21 @@ class UIAgent(BaseAgent):
     tier = 3
 
     async def run(self, query: str, state: AgentState) -> AgentResult:
+        # Multi-block path: comparator with A2A hops emits up to 3 blocks
+        # (LiteratureMatrix + KnowledgeGraphView + ContradictionAlert — PRD Listing 12.1).
+        comparator = state.agent_results.get("comparator")
+        if (comparator is not None and comparator.status == "ok"
+                and comparator.payload.get("block_type") == "LiteratureMatrix"):
+            blocks = self._route_compare_multi_block(state)
+            for b in blocks:
+                state.ui_blocks.append(b)
+            return AgentResult(
+                agent_name=self.name,
+                payload={"block_ids": [b.id for b in blocks],
+                          "types": [b.type for b in blocks]},
+                status="ok",
+            )
+
         block = self._route_to_block(state)
         state.ui_blocks.append(block)
         return AgentResult(
@@ -99,6 +114,36 @@ class UIAgent(BaseAgent):
         )
 
     # -- Routing ---------------------------------------------------------
+
+    def _route_compare_multi_block(self, state: AgentState) -> list[UIBlock]:
+        """Emit LiteratureMatrix + KnowledgeGraphView + ContradictionAlert
+        when ComparatorAgent ran with A2A sub-hops (PRD Listing 12.1)."""
+        blocks: list[UIBlock] = []
+        order = len(state.ui_blocks)
+
+        # Block 1 — LiteratureMatrix (always present for multi-doc compare)
+        comparator = state.agent_results["comparator"]
+        matrix = self._build_from_literature(comparator, order=order)
+        if matrix is not None:
+            blocks.append(matrix)
+            order += 1
+
+        # Block 2 — KnowledgeGraphView from A2A hop 1 (graph_agent)
+        graph = state.agent_results.get("graph_agent")
+        if graph is not None and graph.status == "ok":
+            kg = self._build_from_graph(graph, order=order)
+            if kg is not None:
+                blocks.append(kg)
+                order += 1
+
+        # Block 3 — ContradictionAlert from A2A hop 2 (contradiction)
+        contradiction = state.agent_results.get("contradiction")
+        if contradiction is not None and contradiction.status == "ok":
+            ca = self._build_from_contradiction(contradiction, order=order)
+            if ca is not None:
+                blocks.append(ca)
+
+        return blocks or [self._error_block("Comparison failed to produce any components.")]
 
     def _route_to_block(self, state: AgentState) -> UIBlock:
         """Pick the best UIBlock variant given available agent results."""
