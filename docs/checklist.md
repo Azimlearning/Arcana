@@ -125,7 +125,7 @@
 
 ### 1.5 Build out the agents (Tier 2/3/4, P1 set)
 - [x] Tier 2: `learning.py` ✓, `writing.py` ✓, `socratic.py` ✓, `discovery.py` ✓ *(Slice 3+4)*; `graph_agent.py` ✓, `literature.py` ✓, `contradiction.py` ✓, `cross_doc.py` ✓, `comparator.py` ✓, `timeline.py` ✓, `annotation.py` ✓ *(Slice 7)* — **11/12 P1 tier-2 done** *(methodology.py → P2)*.
-- [ ] Tier 3: `ui_agent.py` ✓, `citation.py`, `visual.py`, `document.py`.
+- [x] Tier 3: `ui_agent.py` ✓, `citation.py` ✓, `visual.py` ✓, `document.py` ✓ *(Slice 19)*.
 - [ ] Tier 4: `fact_checker.py` ✓, `memory.py` ✓, `study_planner.py` ✓ *(Slice 9)*; `annotation.py` → moved to tier-2 in Slice 7; `ingestion_agent.py`, `web_search.py`, `analytics.py` → P2.
 - [x] Fact Checker verifies claims before output is finalised — **FR-AGT-09 (S)**.
 - [ ] Web Search Agent limited to academic discovery (Semantic Scholar / arXiv) — §12, scope non-goal respected.
