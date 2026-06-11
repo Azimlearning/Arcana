@@ -12,8 +12,24 @@
 
 import type { ChatRequest, UIBlock } from '@arcana/schema';
 
+/** One agent entry in the pipeline trace (mirrors api/genui/trace.py). */
+export interface TraceAgent {
+  name: string;
+  tier: 1 | 2 | 3 | 4;
+  status: 'ok' | 'partial' | 'failed';
+  is_hop: boolean;
+}
+
+/** Full trace payload emitted on `event: trace` before the first block. */
+export interface PipelineTrace {
+  agents: TraceAgent[];
+  hops_used: number;
+  intent: string;
+}
+
 export interface StreamCallbacks {
   onReady?: (data: { schema_version: number }) => void;
+  onTrace?: (trace: PipelineTrace) => void;
   onBlock?: (block: UIBlock) => void;
   onError?: (data: { error: string; code?: string; request_id?: string }) => void;
   onDone?: (data: { emitted: number }) => void;
@@ -149,6 +165,9 @@ function dispatchFrame(raw: string, callbacks: StreamCallbacks): void {
       callbacks.onError?.(
         payload as { error: string; code?: string; request_id?: string },
       );
+      break;
+    case 'trace':
+      callbacks.onTrace?.(payload as PipelineTrace);
       break;
     case 'done':
       callbacks.onDone?.(payload as { emitted: number });

@@ -15,6 +15,7 @@
 import { create } from 'zustand';
 
 import type { Mode } from '@arcana/schema';
+import type { PipelineTrace } from '@/lib/stream';
 
 export type { Mode };
 
@@ -44,6 +45,13 @@ interface UIStore {
   layoutOverride: PanelLayout | null;
   /** Persist a drag-resized layout for the session. FR-UI-07. */
   setLayoutOverride: (layout: PanelLayout) => void;
+  /** Pre-filled query set by Studio generator tiles; consumed by ChatPanel. */
+  queryDraft: string | null;
+  setQueryDraft: (q: string | null) => void;
+  /** Agent pipeline trace for the most recent completed turn. FR-UI (§1.6). */
+  trace: PipelineTrace | null;
+  setTrace: (t: PipelineTrace) => void;
+  clearTrace: () => void;
 }
 
 /** Selector: returns the active layout — override wins if set. */
@@ -56,4 +64,9 @@ export const useUIStore = create<UIStore>((set) => ({
   setActiveMode: (m) => set({ activeMode: m, layoutOverride: null }),
   layoutOverride: null,
   setLayoutOverride: (layout) => set({ layoutOverride: layout }),
+  queryDraft: null,
+  setQueryDraft: (q) => set({ queryDraft: q }),
+  trace: null,
+  setTrace: (t) => set({ trace: t }),
+  clearTrace: () => set({ trace: null }),
 }));

@@ -59,8 +59,15 @@ def format_sse_event(event: str, seq: int, data: dict[str, Any]) -> str:
     return f"event: {event}\nid: {seq}\ndata: {payload}\n\n"
 
 
-async def stream_blocks(blocks: list[UIBlock]) -> AsyncIterator[str]:
+async def stream_blocks(
+    blocks: list[UIBlock],
+    *,
+    trace: dict[str, Any] | None = None,
+) -> AsyncIterator[str]:
     """Yield SSE frames for each block, framed by `ready` and `done` events.
+
+    If `trace` is supplied, emits `event: trace` immediately after `ready` so
+    the frontend renders the agent pipeline strip before any block arrives.
 
     On a validation failure mid-stream, emits a final `event: error` and
     terminates - the client sees an explicit failure rather than a
@@ -68,6 +75,9 @@ async def stream_blocks(blocks: list[UIBlock]) -> AsyncIterator[str]:
     """
     seq = 0
     yield format_sse_event("ready", seq, {"schema_version": SCHEMA_VERSION})
+    if trace is not None:
+        seq += 1
+        yield format_sse_event("trace", seq, trace)
 
     emitted = 0
     for block in blocks:

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { CitedSummary as CitedSummaryBlock, UIBlock } from '@arcana/schema';
 
@@ -10,6 +10,8 @@ import { BlockFeedback } from '@/components/feedback/BlockFeedback';
 import { SUSModal } from '@/components/feedback/SUSModal';
 import { Button } from '@/components/ui/Button';
 import { streamChat } from '@/lib/stream';
+import type { PipelineTrace } from '@/lib/stream';
+import { PipelineTrace as PipelineTraceComponent } from '@/components/shell/PipelineTrace';
 import { useBlockStore } from '@/store/blockStore';
 import { useUIStore } from '@/store/uiStore';
 
@@ -20,6 +22,12 @@ interface Props {
 export function ChatPanel({ notebookId }: Props) {
   const blocks = useBlockStore((s) => s.blocks);
   const streaming = useBlockStore((s) => s.streaming);
+
+  // Only render blocks destined for the Chat panel. Studio-targeted blocks
+  // (LiteratureMatrix, KnowledgeGraphView, GapAnalysis, etc.) are routed to
+  // StudioPanel via meta.panel — they must not appear here. FR-UI-04.
+  const chatBlocks = blocks.filter((b) => b.meta?.panel !== 'studio');
+  const hasStudioBlocks = blocks.some((b) => b.meta?.panel === 'studio');
   const lastError = useBlockStore((s) => s.lastError);
   const startTurn = useBlockStore((s) => s.startTurn);
   const pushBlock = useBlockStore((s) => s.pushBlock);
@@ -27,6 +35,19 @@ export function ChatPanel({ notebookId }: Props) {
   const setError = useBlockStore((s) => s.setError);
   const finishTurn = useBlockStore((s) => s.finishTurn);
   const activeMode = useUIStore((s) => s.activeMode);
+  const queryDraft = useUIStore((s) => s.queryDraft);
+  const setQueryDraft = useUIStore((s) => s.setQueryDraft);
+  const setTrace = useUIStore((s) => s.setTrace);
+  const clearTrace = useUIStore((s) => s.clearTrace);
+
+  // When a generator tile fires a query, auto-fill the chat input and focus it.
+  useEffect(() => {
+    if (queryDraft) {
+      setInput(queryDraft);
+      setQueryDraft(null);
+      document.getElementById('chat-input')?.focus();
+    }
+  }, [queryDraft, setQueryDraft]);
 
   const [input, setInput] = useState('');
   const [turnCount, setTurnCount] = useState(0);
@@ -42,6 +63,7 @@ export function ChatPanel({ notebookId }: Props) {
     if (!message || streaming) return;
 
     setInput('');
+    clearTrace();
     startTurn();
 
     const optimisticId = `loading_${crypto.randomUUID()}`;
@@ -77,6 +99,9 @@ export function ChatPanel({ notebookId }: Props) {
             skeletonConsumed = true;
           }
         },
+        onTrace: (t: PipelineTrace) => {
+          setTrace(t);
+        },
         onDone: () => {
           finishTurn();
           setTurnCount((n) => {
@@ -102,14 +127,23 @@ export function ChatPanel({ notebookId }: Props) {
         <h2 className="font-display text-lg text-ink">Chat</h2>
       </div>
 
+      <PipelineTraceComponent />
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {blocks.length === 0 ? (
+        {chatBlocks.length === 0 && hasStudioBlocks ? (
+          <div className="py-12 text-center">
+            <p className="text-sm text-ink-soft">
+              {streaming
+                ? 'Working — response streaming to Studio →'
+                : 'Response generated in the Studio panel →'}
+            </p>
+          </div>
+        ) : chatBlocks.length === 0 ? (
           <EmptyState
             title="Ask a question"
             hint="The research agent will ground its answer in your ingested documents and cite each claim."
           />
         ) : (
-          blocks.map((block) => (
+          chatBlocks.map((block) => (
             <div key={block.id}>
               {renderBlock(block)}
               <BlockFeedback

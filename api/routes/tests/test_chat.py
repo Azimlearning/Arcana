@@ -103,9 +103,9 @@ def test_chat_streams_one_block():
 
     frames = _parse_sse(resp.text)
     events = [f["event"] for f in frames]
-    assert events == ["ready", "block", "done"]
-    assert frames[1]["data"]["type"] == "CitedSummary"
-    assert frames[1]["data"]["id"] == "block_test"
+    assert events == ["ready", "trace", "block", "done"]
+    assert frames[2]["data"]["type"] == "CitedSummary"
+    assert frames[2]["data"]["id"] == "block_test"
     assert orch.calls == ["what does my corpus say?"]
 
 
@@ -116,7 +116,7 @@ def test_chat_streams_done_even_with_no_blocks():
     resp = client.post("/chat", json={"notebookId": "nb1", "message": "x", "history": []})
     assert resp.status_code == 200
     frames = _parse_sse(resp.text)
-    assert [f["event"] for f in frames] == ["ready", "done"]
+    assert [f["event"] for f in frames] == ["ready", "trace", "done"]
 
 
 # ─── Mode routing (Slice 5, FR-UI-06) ─────────────────────────────

@@ -27,6 +27,7 @@ from api.core.auth import CurrentUser, get_current_user
 from api.core.logging import bind_request_context, clear_request_context, get_logger
 from api.genui._generated import ChatRequest
 from api.genui.streamer import format_sse_event, stream_blocks
+from api.genui.trace import build_trace
 
 logger = get_logger(__name__)
 
@@ -79,7 +80,8 @@ async def chat(
 
                 _fire_turn_event(http_request, user, request_id, state, latency_ms)
 
-                async for frame in stream_blocks(state.ui_blocks):
+                trace_payload = build_trace(state)
+                async for frame in stream_blocks(state.ui_blocks, trace=trace_payload):
                     yield frame
                 logger.info(
                     "chat.done",
