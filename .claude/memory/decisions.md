@@ -57,6 +57,131 @@
 
 <!-- New entries go below this line, newest first. -->
 
+### 2026-06-12 — Slice 20 complete: first-run/activation flow + §7.4 degradation
+
+- **Status:** DECIDED
+- **Context:** Slice 20 closed the first-run UX gap (empty-state seed questions) and the honest-degradation requirement (NFR-REL-01): when the pipeline returns a `CitedSummary` with no citations, the user should know the answer may not be grounded.
+- **Decision:**
+  - `GET /suggestions` — LLM-generated seed questions from corpus doc titles. Module-level `_cache` dict with `time.monotonic()` TTL (300 s) + doc_count invalidation so the cache refreshes when new docs are ingested. Falls back to `{"suggestions": []}` when no docs or LLM fails (never errors the user).
+  - `POST /ingest/retry/{doc_id}` (FR-ING-08) — re-runs `ingest_pdf()` using bytes stored at `{doc_id}.bin` by `FilesystemDocStore`. Returns 409 if already ready; 404 if no stored bytes.
+  - `CitedSummary.tsx` §7.4 degradation — amber italic note inline when `data.citations.length === 0 && meta.status === 'ready'`. No new schema needed; data was already present.
+  - `SourcesPanel.tsx` — Retry + Dismiss buttons for failed docs; Retry sets status to `embedding` and calls the retry route, falls back to `failed` on exception.
+- **Why:** All changes were additive — no schema change, no agent change. The cache invalidation condition (doc_count) was the key design decision: a pure TTL would show stale suggestions after ingest; a per-request LLM call would be too slow. The hybrid solved both.
+- **Revisit if:** The suggestions endpoint should be personalized per-user (requires passing uid to `/suggestions`) or the TTL is too coarse for rapid-ingest workflows.
+
+### 2026-06-12 — Slice 19 complete: tier-3 citation, visual, document agents
+
+- **Status:** DECIDED
+- **Context:** Slice 19 added three new tier-3 output agents. All target block types (`CitationPreview`, `BibliographyExport`, `ConceptMap`, `ComparisonChart`, `CornellNotes`) had schemas + renderers already from Slice 13, so no schema change was needed.
+- **Decision:**
+  - `CitationAgent` (tier-3): DocStore-backed citation formatting in APA/MLA/IEEE/Chicago/Harvard. Auto-detects export vs per-doc intent from query keyword ("bibliography", "all", "references") and title/url field presence. Produces `CitationPreview` or `BibliographyExport`.
+  - `VisualAgent` (tier-3): hybrid_retrieve → LLM → keyword detection ("concept map", "diagram", "compare") → `ConceptMap` (studio) or `ComparisonChart` (chat). Panel target embedded in payload metadata.
+  - `DocumentAgent` (tier-3): hybrid_retrieve → LLM → `CornellNotes` structured document overview (cue/notes/summary).
+  - All three wired in `api/agents/graph.py` with new intents "citation", "visual", "document". Registered in `api/main.py::build_orchestrator()`. `api/genui/trace.py` tier assignments added.
+  - UIAgent extended with routing slots 12–14.
+  - Agent count: 17 → 20.
+- **Why:** Block-type pre-existence eliminated the schema-first bottleneck; the slice was purely agent logic. All three agents use only `DocStore`/`VectorStore` ABCs (no concrete backends) and call no other agent directly.
+- **Revisit if:** CitationAgent needs multi-doc bibliography aggregation (currently produces one entry per doc_id). The DocStore ABC would need a `list_documents()` call scoped to the requesting user.
+
+### 2026-06-12 — Slice 18 complete: agent pipeline trace strip
+
+- **Status:** DECIDED
+- **Context:** Slice 18 added the pipeline-trace SSE frame and the trace strip UI, satisfying `uiux_plan.md §8` and closing §1.6 trace surface.
+- **Decision:**
+  - SSE protocol: `event: trace` emitted after `event: ready`, before `event: block`. If missing, consumer falls through gracefully (no `onTrace` callback = silent pass).
+  - `api/genui/trace.py` — `_AGENT_TIERS` + `_INTENT_PRIMARY` maps; `build_trace(state)` → `PipelineTrace` typed payload. Tier colours: T1=blue, T2=emerald, T3=violet, T4=amber.
+  - `PipelineTrace.tsx` — pill row in `ChatPanel.tsx` above the scroll area; dismissible. A2A hops flagged with `is_hop=True` and a `↗` arrow; regular pipeline steps get `→`.
+  - `uiStore.ts` — `trace` / `setTrace` / `clearTrace` slice. Cleared at turn start.
+  - A2A hop attribution: `build_trace` walks `state.agent_results` in order; an agent that appears after a different agent of same or lower tier is flagged as a hop. ASSUMED: this heuristic is correct for the current 3-agent compare path (graph → contradiction → comparator); may need revision for deeper A2A chains.
+- **Why:** Trace is "free" — it re-uses state that already existed in `AgentState.agent_results`; no agent logic changes needed. Emitting after `ready` ensures the primary content streams unblocked.
+- **Revisit if:** Deeper A2A chains (4+ hops) make the hop-detection heuristic ambiguous. At that point `AgentState` should carry explicit `hop_chain: list[str]` field.
+
+### 2026-06-12 — Slice 17 complete: intent detection + A2A hops + 3-block compare path
+
+- **Status:** DECIDED
+- **Context:** Slice 17 replaced the always-research fallback with a real intent classifier and demonstrated A2A hops for the "compare" intent.
+- **Decision:**
+  - `_detect_intent_from_query()` — 11-intent keyword classifier in `api/agents/graph.py`. Runs inside `_orchestrator_node` when `state.intent == ""`. Q-03 (full intent detection) remains deferred — keyword heuristic covers the demo set deterministically.
+  - A2A hops — `ComparatorAgent.run()` calls `route_to_agent("graph_agent", ...)` + `route_to_agent("contradiction", ...)` within its body; both calls stay within hop budget. Demonstrates invariant #5 compliance for inter-agent communication.
+  - 3-block compare path — `UIAgent` slots 0–14; compare intent triggers `LiteratureMatrix` + `ContradictionAlert` + `CitedSummary` terminal join.
+  - `_MODE_TO_INTENT` map extended so all 5 modes have deterministic intent defaults.
+- **Why:** The keyword classifier is fast, predictable, and testable — no LLM call needed for routing. This satisfies the intent-detection requirement for the FYP demo while deferring the ML-based approach (Q-03) to P2.
+- **Revisit if:** Corpus queries don't match keyword patterns (e.g. long paraphrased questions). At that point, add an LLM-based intent classifier as a pre-routing step before `_detect_intent_from_query`.
+
+### 2026-06-12 — Slice 16 complete: cross-document comparison matrix
+
+- **Status:** DECIDED
+- **Context:** FR-RET-05 requires cross-document evidence extraction for serendipitous connections. The existing `hybrid_retrieve` returns a merged result set with no per-document attribution.
+- **Decision:**
+  - `api/retrieval/cross_doc.py` — `cross_doc_retrieve(query, vector_store, graph_store, doc_ids)` retrieves independently per `doc_id`, then zips into `(doc_id, chunks)` pairs. Produces ranked `(doc_pair, evidence)` tuples.
+  - `CrossDocAgent` extended to call `cross_doc_retrieve` for structured serendipitous connection detection instead of merged hybrid retrieve.
+  - Per-doc top_k defaults to 5 (rather than global 8) to keep total latency bounded when many docs are present.
+- **Why:** The key insight is that merged retrieval loses the document boundary — you can't tell which chunks came from which doc. Per-doc retrieval + zip preserves that boundary so `CrossDocAgent` can produce true cross-document comparisons.
+- **Revisit if:** The corpus grows large enough that per-doc retrieval becomes noticeably slower than merged retrieval. At that point add a metadata filter in the vector query rather than splitting queries.
+
+### 2026-06-12 — Slice 15 complete: persistent user profile
+
+- **Status:** DECIDED
+- **Context:** FR-USR-02 requires a user profile (display_name, email, preferences, study_goals). Slice 9 added Firebase auth; the profile was not persisted.
+- **Decision:**
+  - `api/stores/user_profile_store.py` — `UserProfileStore`: per-user JSON files at `local_storage/profiles/{uid}.json`. Fields: `display_name`, `email`, `preferences: dict`, `study_goals: list[str]`.
+  - `PUT /profile` uses PATCH semantics: only provided fields are updated (missing keys retain existing values).
+  - `api/routes/profile.py` — `GET/PUT /profile`; auth-guarded; wired in `api/main.py`.
+- **Why:** Same JSON-sidecar pattern as `FilesystemDocStore` and `UserGraphRegistry` — consistent, testable, and replaceable via ABC seam for Firestore swap.
+- **Revisit if:** P1 §1.8 (Firestore persistence) lands. The swap is a one-line `Settings.profile_backend` change once the `UserProfileStore` ABC has a Firestore implementation.
+
+### 2026-06-12 — Slice 14 complete: per-user graph persistence
+
+- **Status:** DECIDED
+- **Context:** FR-KG-02 requires per-user knowledge graphs. The existing `NetworkXGraphStore` was a single shared in-memory instance — all users wrote to the same graph.
+- **Decision:**
+  - `api/stores/user_graph_registry.py` — `UserGraphRegistry`: lazy-loads and in-memory-caches per-user `NetworkXGraphStore` instances from `local_storage/graphs/{uid}.json`. Exposes `get_or_create(uid)`, `save(uid)`, `save_all()` (called on `app.on_event("shutdown")`).
+  - `POST /ingest` and `POST /ingest/url` resolve the requesting user's graph via `graph_registry.get_or_create(user.uid)` and save after completion.
+  - `GET /graph` — returns the calling user's graph as `{nodes: [...], edges: [...]}` for `KnowledgeGraphView` live data.
+  - `api/main.py` — `graph_registry` built at startup and injected into `IngestContext` and `GraphAgent` constructor.
+- **Why:** Registry pattern (lazy-load + cache) keeps per-request overhead low. JSON serialization via NetworkX's `node_link_data` is sufficient for FYP scale (< 10K nodes per user). The seam (GraphStore ABC) is already in place for a Neo4j swap.
+- **Revisit if:** A user's graph exceeds ~50K nodes (NetworkX JSON export starts to noticeably slow). At that point switch `graph_backend=neo4j` in Settings.
+
+### 2026-06-12 — Slice 13 complete: 8 new P1 renderers (GenUI catalog 14→22)
+
+- **Status:** DECIDED
+- **Context:** After Slice 11 (14 components), 10 catalog entries in `uiux_plan.md §4` still had no schema variant, renderer, or producing agent. The tier-3 agents planned for Slice 19 (citation, visual, document) could not be built without their target block types. A bulk schema + renderer pass unblocks them.
+- **Decision:**
+  - 8 new `UIBlock` variants added to `packages/schema/src/blocks.ts` + payload types in `payloads.ts`. Codegen re-run → `api/genui/_generated.py` updated. Variants: `ConceptMap`, `ComparisonChart`, `CitationPreview`, `BibliographyExport`, `Timeline`, `WritingPrompt`, `AnnotationView`, `PipelineTraceBlock`.
+  - 8 TSX renderers in `web/components/genui/` with all four states (Empty/Loading/Partial/Error).
+  - 8 registry rows added to `web/components/genui/registry.tsx`.
+  - `api/genui/validate.py` TypeAdapter updated to cover all 22 variants.
+  - `number → float` fix applied in codegen for `confidence` fields; `int` retained for counts.
+  - Producing agents for the new variants deliberately left for Slice 19 — this is a schema + renderer unblocking pass, not a full agent slice.
+- **Why:** Schema-first ordering: renderers must exist before producing agents can be written (otherwise validate.py will reject the payload in tests). Batching all 8 into one slice was cheaper than 8 separate genui-component skill runs — the schema / registry / validate.py changes are highly parallel.
+- **Revisit if:** A producing agent for `Timeline` or `WritingPrompt` is needed — these have renderers but no tier-2 agent output path yet. Timeline → extend TimelineAgent; WritingPrompt → extend WritingAgent.
+
+### 2026-06-10 — Slice 12 scope: URL ingestion + document status API
+- Status: DECIDED
+- Decision: (1) api/ingestion/parsers/web.py using httpx+bs4 (both already installed);
+  page numbers simulated as ~1500-char logical sections. (2) DocStore.update_status()
+  extended with optional extra_update dict to persist error causes. (3) New routes:
+  POST /ingest/url (JSON body), GET /docs (list), GET /docs/{doc_id} (status+error).
+- Out of scope this slice: DOCX parser (FR-ING-03), OCR (FR-ING-04), YouTube (FR-ING-03),
+  trafilatura (not installed — bs4 is sufficient for MVP).
+- doc_id strategy for URLs: "url_" + sha256(url)[:16] — stable, same URL = same doc_id.
+
+### 2026-06-10 — StudyPlannerAgent exemption from hybrid_retrieve (invariant #1)
+- Status: ASSUMED
+- Decision: StudyPlannerAgent (Tier-4) is exempt from calling hybrid_retrieve because it performs
+  pure deterministic scheduling — no content generation, no LLM call, no synthesis. It only
+  re-filters Flashcard objects that were already grounded by LearningAgent earlier in the same turn.
+  Calling hybrid_retrieve(top_k=1) would add latency/cost with zero semantic benefit and would
+  require wiring three retriever dependencies into a utility agent whose contract is stateless
+  post-processing.
+- Deferred: Add reviewedCount field to StudyPlannerData (packages/schema/src/payloads.ts) once
+  the frontend session-tracking flow is implemented. Progress bar removed from StudyPlanner.tsx
+  until that field exists (WARNING #3 from Slice-11 code review).
+- Note: state.retrieved_ctx is intentionally not extended by this agent. The traceability gap
+  is acceptable because the agent emits no new knowledge claims — all cards originated from
+  LearningAgent which DID extend retrieved_ctx. Surface this at FYP-2 checkpoint for reviewer
+  sign-off.
+
 ### 2026-06-10 — Slice 11 scope: three new GenUI catalog components
 
 - **Status:** DECIDED
@@ -261,28 +386,3 @@
 - **Decision:** Created `.claude/` with a trimmed `CLAUDE.md`, path-scoped rule files, three subagents (schema-guardian, code-reviewer, qa-runner), four Skills, and three hooks (secret-literal block, dependency-direction block, post-write format + check).
 - **Why:** Spec invariants enforced in review only are spec invariants honoured maybe. Hooks turn them into mechanism.
 - **Revisit if:** Claude Code hook/agent schema changes (track release notes); new invariants emerge from PRD updates.
-### 2026-06-10 — StudyPlannerAgent exemption from hybrid_retrieve (invariant #1)
-- Status: ASSUMED
-- Decision: StudyPlannerAgent (Tier-4) is exempt from calling hybrid_retrieve because it performs
-  pure deterministic scheduling — no content generation, no LLM call, no synthesis. It only
-  re-filters Flashcard objects that were already grounded by LearningAgent earlier in the same turn.
-  Calling hybrid_retrieve(top_k=1) would add latency/cost with zero semantic benefit and would
-  require wiring three retriever dependencies into a utility agent whose contract is stateless
-  post-processing.
-- Deferred: Add reviewedCount field to StudyPlannerData (packages/schema/src/payloads.ts) once
-  the frontend session-tracking flow is implemented. Progress bar removed from StudyPlanner.tsx
-  until that field exists (WARNING #3 from Slice-11 code review).
-- Note: state.retrieved_ctx is intentionally not extended by this agent. The traceability gap
-  is acceptable because the agent emits no new knowledge claims — all cards originated from
-  LearningAgent which DID extend retrieved_ctx. Surface this at FYP-2 checkpoint for reviewer
-  sign-off.
-### 2026-06-10 — Slice 12 scope: URL ingestion + document status API
-- Status: DECIDED
-- Decision: (1) api/ingestion/parsers/web.py using httpx+bs4 (both already installed);
-  page numbers simulated as ~1500-char logical sections. (2) DocStore.update_status()
-  extended with optional extra_update dict to persist error causes. (3) New routes:
-  POST /ingest/url (JSON body), GET /docs (list), GET /docs/{doc_id} (status+error).
-- Out of scope this slice: DOCX parser (FR-ING-03), OCR (FR-ING-04), YouTube (FR-ING-03),
-  trafilatura (not installed — bs4 is sufficient for MVP).
-- doc_id strategy for URLs: "url_" + sha256(url)[:16] — stable, same URL = same doc_id.
-

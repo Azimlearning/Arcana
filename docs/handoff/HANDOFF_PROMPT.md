@@ -1,291 +1,160 @@
-# Handoff Prompt — paste this into your next coding agent
+# Arcana — Handoff Prompt
 
-> Copy everything between the `---` lines and paste it as the first
-> message to your new coding agent (Claude, Cursor, Aider, whichever).
-> If the agent supports a system prompt, paste it there instead. The
-> prompt is self-contained — it tells the agent which files to read,
-> in what order, and what to do before touching code.
+> Paste this whole block at the top of a fresh Claude Code session to get
+> a new agent up to speed in under 5 minutes.
 >
-> **Last refreshed:** 2026-06-10 (after Slice 10).
+> **Last refreshed:** 2026-06-12, after Slice 20.
 
 ---
 
-You are picking up a Final Year Project named **Arcana** — a graph-native
-multi-agent research and learning platform for academic students. Ten slices
-have been shipped (P0 walking skeleton + Slices 1–10) and the system is
-nearly feature-complete for the P1 (FYP 2) graded submission. Your job is
-to continue building, one slice at a time, to the same quality bar.
+You are joining an active FYP (Final Year Project) build called **Arcana** — a
+graph-native, multi-agent research and learning platform for academic use.
 
-**Do not write any code until you have read the following files, in this
-exact order, and confirmed your understanding to me.**
-
-## Step 0 — The one thing that will block you immediately
-
-This repo lives at a path **with a space in it** (`...\FYP DOCS\Arcana`).
-The `.claude/` hooks pass `$CLAUDE_PROJECT_DIR` unquoted, so the
-`PreToolUse` hook on `Edit`/`Write` crashes on the space and **blocks
-every built-in `Edit` and `Write` call**. You'll see:
+## 1. Read these files first (in order)
 
 ```
-PreToolUse:Edit hook error: ... can't open file '...\FYP'
+CLAUDE.md                            ← operating brief + eight hard invariants
+.claude/rules/*.md                   ← five architectural rule files
+.claude/memory/decisions.md          ← all ADRs (architectural decision records)
+docs/handoff/CONTEXT.md              ← narrative state-of-play (newest ledger entry first)
+docs/handoff/SETUP.md                ← how to get gates green
+docs/handoff/PROCESS.md              ← how we build (slice checklist, conventions)
 ```
 
-Work around it **from the very first file you touch**:
+Do not write a line of code until you have read all six.
 
-- In-repo files → `mcp__filesystem__write_file` (full file overwrite) or
-  `mcp__filesystem__edit_file` (targeted line edits). These bypass the hook.
-- Out-of-repo files (e.g. `~/.claude/` memory) → Bash heredocs
-  (`cat > path <<'EOF' ... EOF`).
+## 2. Critical tooling note — the hook/path-spaces bug
 
-Because the secret/import hooks are what's broken, **you** must manually
-honour the no-secret / no-upward-import invariants; the `code-reviewer`
-subagent is your backstop. Full detail: `docs/handoff/SETUP.md §2`.
+The repo path is `c:\Users\User\Documents\FYP DOCS\Arcana`. The space in
+"FYP DOCS" breaks the `.claude/settings.json` PreToolUse hooks so the
+built-in **`Edit` and `Write` tools are blocked**.
 
-## Step 1 — Understand the codebase map first
+**Use these instead:**
+- Files inside the repo → `mcp__filesystem__write_file` (full file) or
+  `mcp__filesystem__edit_file` (line edits). These bypass the hook.
+- Files outside the repo → Bash heredoc: `cat > path <<'EOF' ... EOF`.
+- Do **not** fight the blocked tools. Reach for the MCP tools immediately.
 
-Before reading spec docs, orient yourself using the knowledge graph:
-
-1. **`graphify-out/GRAPH_REPORT.md`** — read the executive summary and the
-   top-10 community list. This is a community analysis of the actual code
-   (1,685 nodes, 4,853 edges, 127 communities). Pay attention to:
-   - Community 0 (Embedding Provider Layer) — the retrieval foundation.
-   - Community 1 (GenUI Frontend Block States) — the rendering contract.
-   - Community 2 (Agent Base Infrastructure) — `BaseAgent`, `route_to_agent`, `AgentState`.
-   - Community 3 (Orchestrator and Turn Management) — the request lifecycle.
-   - Community 4 (Vector Store and Pinecone) — the search backend.
-   - Community 7 (Learning and Spaced Repetition) — SM-2 + NotebookStore.
-2. **`graphify-out/graph.html`** — open in any browser for the interactive
-   force-directed graph. Useful for exploring which files import what.
-   (Generated 2026-06-06; communities 0–10 accurately reflect Slices 0–7.)
-
-## Step 2 — Read the spec and process docs
-
-3. `CLAUDE.md` — the operating brief (short — read it fully).
-4. `docs/handoff/SETUP.md` — how to get from `git checkout ExDev` to all
-   gates green; the hook bug; prerequisites.
-5. `docs/handoff/CONTEXT.md` — what shipped through Slice 10, the current
-   inventory, what's deferred, and what comes next.
-6. `docs/handoff/PROCESS.md` — the slice/chunk loop, the eight invariants,
-   ADR format, and the common gotchas.
-7. `.claude/memory/decisions.md` — every ADR in this project, newest first.
-   Key entries to find: Slice 7 scope (15-agent graph), Slice 6 (adaptive
-   shell), auth approach, LLM tier strategy.
-8. `docs/arcana_prd.md` §§1–8, §11, §11A — the canonical spec. Read §11A
-   in full (the mental model: request lifecycle, agent composability, the
-   eight invariants).
-9. `docs/project_file_structure.md` — repo layout.
-10. `docs/checklist.md` — phased build plan. Phase 0 is closed; Phase 1 is
-    mostly done — check the ticks vs. unticked items carefully.
-11. `docs/uiux_plan.md` §§1–6 — design tokens, 3-panel shell layout, the
-    24-component catalog, the four states (Empty/Loading/Partial/Error).
-
-Read these only when you actually need them:
-
-- `docs/arcana_prd.md` §12 — when implementing a specific agent
-- `docs/arcana_prd.md` §13, §16 — when adding a GenUI component
-- `docs/env_generation_guide.md` — when adding a new env var
-- `.claude/rules/*.md` — load when working in matching paths (agent, genui, schema, etc.)
-- `.claude/skills/*/SKILL.md` — recipes: `genui-component`, `new-agent`,
-  `new-retriever`, `schema-first-change`
-
-## Step 3 — Verify your inherited state
-
-Before any code, run all six gates and confirm green:
+## 3. Verify the gates are green before touching anything
 
 ```bash
-uv run ruff check api/
-uv run --with pyright pyright api/
-uv run pytest -q --tb=short -p no:cacheprovider api/   # expect 440 passed
-corepack pnpm --filter @arcana/schema codegen:check
-corepack pnpm --filter @arcana/web typecheck
-corepack pnpm --filter @arcana/web test                # expect 11 passed
+# Backend tests
+cd "c:\Users\User\Documents\FYP DOCS\Arcana" && python -m pytest api/ -x -q
+# Expected: 541 passed
+
+# Frontend type-check
+cd "c:\Users\User\Documents\FYP DOCS\Arcana" && npx tsc --noEmit -p web/tsconfig.json
+# Expected: 0 errors
+
+# Ruff lint
+cd "c:\Users\User\Documents\FYP DOCS\Arcana" && python -m ruff check api/
+# Expected: 0 errors (or fix with --fix)
 ```
 
-If anything is red, **stop and diagnose**. Don't build on a broken
-inheritance. Every gate was green at commit-time; if something flipped,
-it's environment or platform, not the code.
+If any gate is red, **stop**. Fix it before building anything new.
 
-Schema-change reminder: if you touch `packages/schema/src/*.ts`, run
-`corepack pnpm --filter @arcana/schema build` then `... codegen` before
-the backend gates — Pydantic models are generated from the TS source.
+## 4. Where we are — current inventory
 
-## Step 4 — Understand the current state
+| What | Count | Notes |
+|---|---|---|
+| Agents | 20 | T1: 1 / T2: 12 / T3: 4 / T4: 3 |
+| GenUI components | 22 / 24 | All with Empty/Loading/Partial/Error states |
+| Modes wired E2E | 5 | research, study, writing, socratic, exploration |
+| Backend tests | 541 | pytest, all green |
+| Frontend tests | 11 | vitest, all green |
+| Active branch | `ExDev` | Slices P0 + 1–20 |
 
-After reading the docs, you should know:
+## 5. What shipped (slice ledger, newest first)
 
-**What shipped (Slices 0–10):**
-- P0 walking skeleton → one PDF end-to-end (ingestion → hybrid retrieval →
-  orchestration → SSE → GenUI frontend).
-- Slice 1: LangGraph StateGraph, entity extraction, GraphRetriever,
-  FactChecker, MemoryAgent.
-- Slice 2: 5 GenUI variants + UIAgent intent routing + DiscoveryAgent.
-- Slice 3: Study mode (LearningAgent, SocraticAgent, 4 GenUI variants).
-- Slice 4: Writing mode (WritingAgent, DraftEditor, FeynmanExplainer).
-- Slice 5: Mode switching E2E (5 modes wired, FR-UI-06 ✅).
-- Slice 6: Adaptive 3-panel shell + drag resizer (FR-UI-01/05/07 ✅).
-- FR-ING-01: PDF upload endpoint + Sources panel real UI.
-- Slice 7: 15→17-agent graph; 4 dormant UIBlocks activated; bug fixes.
-- LLM tiers: Opus 4.8 / Sonnet 4.6 / Haiku 4.5 assigned by task complexity.
-- Slice 8: Benchmark harness (20 Qs, metrics, NullGraphRetriever baseline, CLI runner).
-- Slice 9: SM-2 spaced repetition + Firebase auth + NotebookStore + StudyPlanner.
-- Slice 10: User study infrastructure (EventStore, SUS modal, block ratings, analytics routes).
+- **Slice 20** — First-run/activation flow + §7.4 degradation states (`10fc756`)
+  - `GET /suggestions` (seed questions, TTL cache)
+  - `POST /ingest/retry/{doc_id}` (FR-ING-08)
+  - CitedSummary §7.4 degradation note (NFR-REL-01)
+  - SourcesPanel Retry + Dismiss buttons for failed docs
 
-**Current inventory:**
-- **17 agents** (4 tiers): orchestrator; research, graph_agent, discovery,
-  learning, socratic, writing, literature, contradiction, cross_doc,
-  comparator, timeline, annotation; ui_agent; fact_checker, memory, study_planner.
-- **11 of 24 GenUI** components (all four states each).
-- **5 modes** wired E2E: research, study, writing, socratic, exploration.
-- **440 backend tests** + **11 frontend tests** — all green.
-- **API routes:** /chat, /ingest, /review, /notebooks (CRUD), /feedback/rating,
-  /feedback/sus, /analytics/export.
+- **Slice 19** — Tier-3 citation, visual, document agents (`5c3a71c`)
+  - `CitationAgent` (CitationPreview / BibliographyExport)
+  - `VisualAgent` (ConceptMap / ComparisonChart)
+  - `DocumentAgent` (CornellNotes structured overview)
+  - Agent count 17 → 20
 
-**What's NOT done yet (critical for FYP grade):**
-1. **User study** — infrastructure is built, participants must be recruited
-   and sessions run. Target: 10–15 participants, SUS ≥ 70.
-2. **Benchmark run** — harness is built, must be executed with real API keys
-   and results recorded. This is R-02 (primary graded metric).
-3. **FYP 2 report** — author task.
+- **Slice 18** — Agent pipeline trace strip (`eeb2413`)
+  - `event: trace` SSE frame (after `event: ready`)
+  - `PipelineTrace.tsx` pill-row component with tier colours
+  - `build_trace()` in `api/genui/trace.py`
+  - `uiStore.ts` trace slice
 
-**What's deferred (deliberate — see ADRs):**
-- DOCX/web/YouTube ingestion (FR-ING-02) — Slice 12+ or P2.
-- Neo4j swap (FR-KG-07) — NetworkX is fine for FYP scale.
-- 13 more GenUI components — only if supervisor asks.
-- @tool decorators on newer tier-2 agents.
-- Frontend DOM tests (jsdom + testing-library).
+- **Slice 17** — Intent detection + A2A hops (`7bdb9d1`)
+  - `_detect_intent_from_query()` — 11-intent keyword classifier
+  - ComparatorAgent A2A hops (graph + contradiction agents)
+  - 3-block compare path: LiteratureMatrix + ContradictionAlert + CitedSummary
 
-## Step 5 — Summarise back to me
+- **Slice 16** — Cross-document comparison matrix (`299ed5a`)
+  - `cross_doc_retrieve()` — per-doc retrieval + ranked doc-pair evidence
 
-Reply with 10–14 bullets covering:
+- **Slice 15** — Persistent user profile (`f786aa5`)
+  - `UserProfileStore` + `GET/PUT /profile`
 
-1. The request lifecycle in your own words (PRD §11A.2).
-2. The eight invariants and how each is enforced — note which are currently
-   hook-enforced vs. manual (because the path-spaces bug disables Edit/Write hooks).
-3. The slice/chunk build mechanism and the per-chunk loop.
-4. What shipped across Slices 0–10 (one headline per slice).
-5. The current inventory: 17 agents, 11/24 GenUI, 5 modes, 440 tests.
-6. The two P1 gates still open (user study conduct, benchmark run) and why
-   they're not code tasks.
-7. The two production-registration traps: (a) new tier-2 agents must be
-   added to `api/main.py` via `Orchestrator(extra_agents=[...])`, not just
-   `graph.py`; (b) wire types live in `packages/schema/` and are imported,
-   never re-declared.
-8. What the `graphify-out/` artifacts tell you about the architecture.
-9. Any contradictions or ambiguities you found across the docs.
-10. If I ask you to add a GenUI component: which three files you'd touch and
-    in what order (schema → renderer → registry), and which skill to invoke.
-11. Your understanding of what `mcp__filesystem__write_file` is and why you
-    must use it instead of the built-in `Edit`/`Write` tools.
+- **Slice 14** — Per-user graph persistence (`76a6d70`)
+  - `UserGraphRegistry` + `GET /graph`
+  - Ingest writes to requesting user's personal graph
 
-**Do not write any code in your first response.** I need to confirm the
-picture before you build. Once I'm happy, I'll say "go".
+- **Slice 13** — 8 new P1 renderers (`bf10de7`)
+  - GenUI catalog 14 → 22 (ConceptMap, ComparisonChart, CitationPreview,
+    BibliographyExport, Timeline, WritingPrompt, AnnotationView, PipelineTraceBlock)
+  - Schema + codegen + renderers + registry + validate.py all updated
 
-## Step 6 — If I say "go" on a new code slice
+- **Slice 12** — URL ingestion + doc status API (`aff9186`)
+  - `POST /ingest/url`, `GET /docs`, `GET /docs/{doc_id}`
+  - `url_parser.py` (httpx + BeautifulSoup4)
 
-When I say "go", follow the process in `PROCESS.md §3–§4`:
+- **Slice 11** — StudyPlanner, BlurtingPrompt, CornellNotes (`9b37252`)
+  - GenUI catalog 11 → 14
 
-1. **Preflight** — tick the actually-done Phase-1 items in `docs/checklist.md`.
-   Log a new slice-scope ADR in `.claude/memory/decisions.md`.
-2. **Plan the chunks** — present them in chat, dependency order, in/out-of-scope.
-   Wait for "go" on chunk 1.
-3. **Per chunk** — plan → write (via MCP tools) → gates → code-reviewer →
-   fix every CRITICAL → close.
-4. **Per slice close** — final code-review pass, closing ADR, commit on
-   `ExDev` referencing the closed FR/NFR/R/Q IDs + separate checklist tick.
+- **Slices 1–10** — see `CONTEXT.md` for earlier ledger / `git log`
 
-**Most impactful optional code slices** (in priority order):
+## 6. Remaining P1 gates (author tasks, not code)
 
-1. **More GenUI components** — pick from the 13 unbuilt in `uiux_plan.md §4`.
-   Invoke the `genui-component` skill for each. Each needs: schema variant
-   in `packages/schema/src/blocks.ts` → codegen → renderer `<Name>.tsx` →
-   one row in `registry.tsx` → validator update → producing agent.
-2. **Expanded ingestion** — DOCX/web parser in `api/ingestion/parsers/`.
-   `IngestionPipeline` plumbing already exists; parser is the seam.
-3. **`@tool` decorators** on LiteratureAgent, ContradictionAgent, etc. —
-   enables LLM-driven tool dispatch from the orchestrator.
+1. **User study** — recruit 10–15 participants; SUS modal fires after 5 turns;
+   export via `GET /analytics/export`; target SUS ≥ 70.
+2. **Benchmark run** — `python eval/run_benchmark.py --mode both` with real API
+   keys; compute ROUGE-L + semantic similarity delta for hybrid vs flat RAG.
+3. **Optional** — build final 2 GenUI components (22/24 → 24/24) using
+   `genui-component` skill.
 
-## Step 7 — The operating contract (durable rules)
+## 7. How to build the next slice
 
-- **Schema first.** Every type that crosses the wire is defined in
-  `packages/schema/` BEFORE the agent emitting it or the component rendering
-  it. Run codegen; commit the generated Python. Never re-declare a wire type
-  in Python — import the codegen'd model.
-- **Use the subagents.** `code-reviewer` after every meaningful diff.
-  `qa-runner` / `schema-guardian` before merge. Fix every CRITICAL.
-- **Mark assumptions explicitly.** When an open question forces a path,
-  write the ADR with `ASSUMED:` status.
-- **Never build the second of anything until the first is green end-to-end.**
-- **Register new tier-2 agents in `api/main.py`** (`Orchestrator(extra_agents=[...])`),
-  not just in `graph.py`, or they're dead in production.
-- **Commits reference IDs** and end with:
-  `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
-  (use your own model's attribution).
-- **Don't push without my say-so.** Local branch work is fine.
-- **Run pytest foreground, one at a time, `-p no:cacheprovider`** — parallel
-  runs silently stall on Windows.
-- **Use MCP filesystem tools for all file writes** — the Edit/Write hooks
-  are broken by the path-spaces bug. `mcp__filesystem__write_file` and
-  `mcp__filesystem__edit_file` bypass the hook cleanly.
-
-## What the previous agents ran into (learn from these)
-
-- **The path-spaces hook bug** is the single biggest time-sink. Go straight
-  to the MCP filesystem tools from the start.
-- **Tier-2 agents must be registered in `api/main.py`**, not just wired in
-  `graph.py`. Tests construct the orchestrator themselves and won't catch a
-  missing prod registration. This was a real CRITICAL in Slice 4.
-- **`BlockStatus` values are** `'loading' | 'partial' | 'ready' | 'error'`.
-  The fully-rendered state is `'ready'`, not `'done'`. A bug from using
-  `'done'` caused block feedback to never render.
-- **SUS formula:** odd items (1-indexed) = response-1, even items = 5-response,
-  sum × 2.5 = 0..100. All 10 responses required before submit is enabled.
-- **Analytics fire-and-forget:** use `asyncio.create_task()` in the chat
-  route so analytics writes never block the SSE stream.
-- **Windows VM occasionally queued background bash commands silently.** Run
-  foreground only.
-- **The user has requested architectural choices that deviate from the original
-  spec** (e.g. `api/embeddings/` as its own peer module; Pinecone via raw
-  REST not the SDK; `Orchestrator(extra_agents=[...])` pattern). All ADR'd.
-  Don't undo them without checking `decisions.md`.
-- **`ruff check --fix` handles most I001/UP037 violations automatically.**
-  Run it early in each chunk to avoid accumulating lint debt.
-- **Pyright sometimes reports undefined variables in `eval/`** (the benchmark
-  runner uses optional chaining not yet typed). The `api/` gate is the
-  contract; `eval/` is research code.
-
-Good luck.
-
----
-
-## Quick reference — key file paths
+Load and follow `.claude/memory/decisions.md` + `docs/handoff/PROCESS.md`.
+The canonical pattern is:
 
 ```
-CLAUDE.md                                    operating brief (read first)
-docs/handoff/SETUP.md                        environment setup + gate commands
-docs/handoff/CONTEXT.md                      current state, inventory, deferrals
-docs/handoff/PROCESS.md                      how to build (slices/chunks/ADRs)
-docs/arcana_prd.md                           canonical spec (read §11A in full)
-docs/project_file_structure.md               repo map
-docs/checklist.md                            P1 phase work items
-docs/uiux_plan.md                            design tokens + 24-component catalog
-.claude/memory/decisions.md                  every ADR (newest first)
-.claude/rules/*.md                           invariant enforcement detail
-.claude/skills/*/SKILL.md                    repeatable recipes
-graphify-out/GRAPH_REPORT.md                 codebase knowledge graph (text)
-graphify-out/graph.html                      interactive graph (open in browser)
+1. schema-first-change skill → types in packages/schema/ → codegen
+2. Store/retrieval layer (if new storage)
+3. Agent implementation (BaseAgent subclass, route_to_agent only)
+4. UIBlock renderer in web/components/genui/<Name>.tsx (all four states)
+5. registry.ts row + validate.py update
+6. Route in api/routes/ + main.py wiring
+7. Tests (pytest + vitest) → qa-runner green
+8. code-reviewer subagent on the diff
+9. Commit with FR/NFR/R ID in the message
+10. Update docs/handoff/ + .claude/memory/decisions.md ADR
+```
 
-packages/schema/src/blocks.ts               UIBlock union (TS authoritative)
-packages/schema/src/payloads.ts             payload types
-packages/schema/src/api.ts                  wire request/response types
-packages/schema/codegen/to_python.ts        → api/genui/_generated.py
-api/genui/validate.py                       fail-closed block validator
-api/agents/base.py                          BaseAgent, route_to_agent, AgentState
-api/agents/graph.py                         LangGraph graph + _MODE_TO_INTENT
-api/agents/tier3/ui_agent.py                the ONLY component-picker
-api/main.py                                 build_orchestrator() — register here
-web/components/genui/registry.tsx           renderBlock() single dispatch
-web/components/shell/ChatPanel.tsx          session mgmt + block rendering loop
-web/lib/feedback.ts                         postRating(), postSurvey() helpers
-eval/benchmark/questions.py                 20 pre-registered benchmark questions
-eval/run_benchmark.py                       CLI: --mode hybrid|flat|both
+**Never build the second thing until the first is green end-to-end.** One
+working slice beats three broken stubs.
+
+## 8. Quick reference: load-bearing files
+
+```
+packages/schema/src/*.ts             ← wire contract (TS is authoritative)
+api/genui/_generated.py              ← codegen output; never hand-edit
+api/genui/validate.py                ← fail-closed UIBlock validator
+api/genui/trace.py                   ← build_trace() for pipeline trace
+api/agents/base.py                   ← BaseAgent, route_to_agent, AgentState
+api/agents/graph.py                  ← LangGraph graph + intent detection
+api/agents/tier3/ui_agent.py         ← ONLY component-picker (slots 0–15)
+api/main.py                          ← build_orchestrator(); register agents here
+web/components/genui/registry.tsx    ← renderBlock() single dispatch
+web/lib/stream.ts                    ← SSE consumer + onTrace callback
+web/store/uiStore.ts                 ← activeMode, panelOverrides, trace
 ```

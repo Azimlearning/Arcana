@@ -6,7 +6,7 @@
 > (how to verify your inherited state), and [`CONTEXT.md`](CONTEXT.md)
 > (what's already shipped).
 >
-> **Last refreshed:** 2026-06-10 (after Slice 10).
+> **Last refreshed:** 2026-06-12 (after Slice 20).
 
 ## 1. The mental model
 
@@ -45,9 +45,19 @@ Shipped so far (all on `ExDev`):
 | 8 | Benchmark harness: hybrid vs flat-RAG, 20 Qs (R-02, Q-03) | `1b4d5b9` |
 | 9 | SM-2 spaced repetition + auth + notebooks (FR-LRN-02, FR-USR-01/03/06) | `28560f6` |
 | 10 | User study infrastructure: events, SUS, block ratings (FR-ANL-01/03) | `13abd86` |
+| 11 | StudyPlanner, BlurtingPrompt, CornellNotes GenUI (FR-LRN-05/06/09/10) | `9b37252` |
+| 12 | URL ingestion + doc status API (FR-ING-02, FR-ING-08) | `aff9186` |
+| 13 | 8 new P1 renderers, GenUI catalog 14→22 (FR-UI-03) | `bf10de7` |
+| 14 | Per-user graph persistence + GET /graph (FR-KG-02, FR-KG-08) | `76a6d70` |
+| 15 | Persistent user profile + GET/PUT /profile (FR-USR-02) | `f786aa5` |
+| 16 | Cross-document comparison matrix (FR-RET-05) | `299ed5a` |
+| 17 | Intent detection + A2A hops + 3-block compare path (§1.4) | `7bdb9d1` |
+| 18 | Agent pipeline trace strip (§1.6, uiux_plan §8) | `eeb2413` |
+| 19 | Tier-3 citation, visual, document agents (§1.5) | `5c3a71c` |
+| 20 | First-run/activation flow + §7.4 degradation (§1.6, FR-ING-08, NFR-REL-01) | `10fc756` |
 
-**Next:** user study conduct + benchmark run (author tasks); optional code
-slices for more GenUI components or expanded ingestion.
+**Remaining P1 gates:** user study conduct + benchmark run (author tasks);
+optional code slices for final 2 GenUI components (22/24 → 24/24).
 
 ## 3. The per-chunk loop
 
@@ -76,21 +86,21 @@ turn rediscovering the block.
 
 | Gate | Command | What it catches |
 |---|---|---|
-| ruff | `uv run ruff check api/` | Style, dead imports, simple bugs |
-| pyright | `uv run --with pyright pyright api/` | Type errors |
-| pytest | `uv run pytest -q --tb=short -p no:cacheprovider api/` | Behaviour (**440 passing**) |
-| codegen | `corepack pnpm --filter @arcana/schema codegen:check` | Schema drift (TS↔Pydantic) |
-| web types | `corepack pnpm --filter @arcana/web typecheck` | Frontend types |
-| web tests | `corepack pnpm --filter @arcana/web test` | Frontend logic (**11 passing**) |
+| ruff | `python -m ruff check api/` | Style, dead imports, simple bugs |
+| pyright | `python -m pyright api/` | Type errors |
+| pytest | `python -m pytest api/ -x -q` | Behaviour (**541 passing**) |
+| codegen | `npx ts-node packages/schema/codegen/to_python.ts` | Schema drift (TS↔Pydantic) |
+| web types | `npx tsc --noEmit -p web/tsconfig.json` | Frontend types |
+| web tests | `pnpm --filter web test --run` | Frontend logic (**11 passing**) |
 
 **Schema-first reminder:** if you touch `packages/schema/src/*.ts`, run
-`corepack pnpm --filter @arcana/schema build` then `... codegen` (regenerates
-`api/genui/_generated.py`) **before** the backend gates. `codegen:check`
+`npx ts-node packages/schema/codegen/to_python.ts` (regenerates
+`api/genui/_generated.py`) **before** the backend gates. The codegen check
 fails the build if the generated Python drifts from the TS source.
 
-**Run gates in foreground, one at a time, with `-p no:cacheprovider` on
-pytest.** Background pytest runs from the harness queue and silently stall
-on Windows. The CLI is the source of truth — trust it over IDE hints.
+**Run gates in foreground, one at a time, with `-x -q` on pytest.** Background
+pytest runs from the harness queue can silently stall on Windows. The CLI is the
+source of truth — trust it over IDE hints.
 
 ### Code review subagent
 
@@ -103,9 +113,7 @@ Use the code-reviewer subagent on the changes since HEAD.
 It enforces the eight invariants and the rules in `.claude/rules/*.md`,
 producing a CRITICAL / WARNING / SUGGESTION report with file:line refs.
 **Fix every CRITICAL before proceeding**; weigh WARNINGs; defer SUGGESTIONs
-into the slice's follow-up list. (Slices 4 and 5 each found a real CRITICAL
-this way — agents not registered in `main.py`, and an inline Literal
-duplicating the schema `Mode`. Both were fixed pre-commit.)
+into the slice's follow-up list.
 
 ## 4. The per-slice loop
 
@@ -203,8 +211,8 @@ green + IDE complaining → trust the CLI.
 
 ### Pytest in the background queues silently on Windows
 
-Run pytest synchronously in foreground, one at a time, with
-`-p no:cacheprovider`. The full suite finishes in ~5–10 seconds.
+Run pytest synchronously in foreground, one at a time, with `-x -q`.
+The full suite finishes in ~5–10 seconds.
 
 ### `pnpm` isn't on PATH in child shells
 
@@ -239,6 +247,13 @@ default when neither Firebase JWT nor the dev header is present. The EventStore
 and NotebookStore partition by `user_id`, so tests should use a deterministic
 test user ID to avoid cross-test interference.
 
+### `event: trace` is optional on the consumer side
+
+`web/lib/stream.ts` handles the `trace` SSE frame gracefully — if the
+`onTrace` callback is absent or the frame is missing, it falls through silently.
+Don't assume it's there; pass `onTrace` explicitly when building components that
+want the trace (see `ChatPanel.tsx`).
+
 ## 8. Where new components / agents / retrievers live
 
 Spec in `docs/project_file_structure.md`. Repeatable recipes in
@@ -264,8 +279,8 @@ second of anything:
 
 When P1 is done, this codebase will have:
 
-- 15+ agents across four tiers (**done: 17 ✅**)
-- 24-component GenUI catalog (**now: 11 of 24**)
+- 15+ agents across four tiers (**done: 20 ✅**)
+- 24-component GenUI catalog (**now: 22 of 24**)
 - ≥3 demonstrated modes + 2 more for show (**done: 5 wired, FR-UI-06 ✅**)
 - A learning module with spaced repetition (**done: SM-2 ✅, FR-LRN-02 ✅**)
 - Firebase auth + Firestore persistence (**auth done ✅; Firestore seam ready**)
@@ -273,7 +288,7 @@ When P1 is done, this codebase will have:
 - A 10–15 participant user study with SUS ≥ 70 (**infrastructure done ✅; conduct needed**)
 - An FYP 2 report (**author task**)
 
-Ten slices in. The remaining grade-weight concentrates in the benchmark run
+Twenty slices in. The remaining grade-weight concentrates in the benchmark run
 (R-02) and user study conduct (R-03) — both author tasks now that the
 infrastructure is complete. Write good ADRs for any further code slices so
 the next agent in the chain can pick up cleanly.
