@@ -6,7 +6,7 @@
 > (how to verify your inherited state), and [`CONTEXT.md`](CONTEXT.md)
 > (what's already shipped).
 >
-> **Last refreshed:** 2026-06-08 (after Slice 5).
+> **Last refreshed:** 2026-06-10 (after Slice 10).
 
 ## 1. The mental model
 
@@ -38,8 +38,16 @@ Shipped so far (all on `ExDev`):
 | 3 | Study mode (Learning + Socratic agents, 4 GenUI variants) | `307bbe2` |
 | 4 | Writing mode (WritingAgent + DraftEditor + Feynman production) | `9e5a78a` |
 | 5 | Mode switching end-to-end (5 modes, FR-UI-06) | `e73e830` |
+| 6 | Adaptive 3-panel shell with drag resizer (FR-UI-01/05/07) | `3e2e430` |
+| — | PDF upload endpoint + Sources panel UI (FR-ING-01) | `e4100f3` |
+| 7 | 15-agent graph, activate 4 dormant UIBlocks (FR-AGT-06) | `837404e` |
+| — | Three-tier LLM strategy Opus/Sonnet/Haiku (NFR-COST-01) | `25ab104` |
+| 8 | Benchmark harness: hybrid vs flat-RAG, 20 Qs (R-02, Q-03) | `1b4d5b9` |
+| 9 | SM-2 spaced repetition + auth + notebooks (FR-LRN-02, FR-USR-01/03/06) | `28560f6` |
+| 10 | User study infrastructure: events, SUS, block ratings (FR-ANL-01/03) | `13abd86` |
 
-**Next:** Slice 6 (adaptive 3-panel shell). Outline in CONTEXT.md.
+**Next:** user study conduct + benchmark run (author tasks); optional code
+slices for more GenUI components or expanded ingestion.
 
 ## 3. The per-chunk loop
 
@@ -70,7 +78,7 @@ turn rediscovering the block.
 |---|---|---|
 | ruff | `uv run ruff check api/` | Style, dead imports, simple bugs |
 | pyright | `uv run --with pyright pyright api/` | Type errors |
-| pytest | `uv run pytest -q --tb=short -p no:cacheprovider api/` | Behaviour (**335 passing**) |
+| pytest | `uv run pytest -q --tb=short -p no:cacheprovider api/` | Behaviour (**440 passing**) |
 | codegen | `corepack pnpm --filter @arcana/schema codegen:check` | Schema drift (TS↔Pydantic) |
 | web types | `corepack pnpm --filter @arcana/web typecheck` | Frontend types |
 | web tests | `corepack pnpm --filter @arcana/web test` | Frontend logic (**11 passing**) |
@@ -122,7 +130,7 @@ A slice is closed by:
    ```
    feat(slice-N): <name> — <highlights> — closes FR-XXX-YY
 
-   Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+   Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
    ```
 
    Use the attribution for whatever model you actually are (the system
@@ -147,7 +155,7 @@ PRD §11A.3 is authoritative. Paraphrased:
 |---|---|
 | #1 | Tests + code review |
 | #2 | `api/genui/validate.py` fail-closes before SSE |
-| #3 | `web/components/genui/registry.tsx` single dispatch; renderer never `switch`es on type |
+| #3 | `web/components/genui/registry.tsx` single dispatch |
 | #4 | LangGraph reducers (`Annotated[..., add]`) |
 | #5 | `.claude/hooks/check_imports.py` blocks agent→agent imports |
 | #6 | `Orchestrator` graph + SSE error-frame terminator |
@@ -196,7 +204,7 @@ green + IDE complaining → trust the CLI.
 ### Pytest in the background queues silently on Windows
 
 Run pytest synchronously in foreground, one at a time, with
-`-p no:cacheprovider`. The full suite finishes in a few seconds.
+`-p no:cacheprovider`. The full suite finishes in ~5–10 seconds.
 
 ### `pnpm` isn't on PATH in child shells
 
@@ -215,12 +223,6 @@ preserved (Python aliasing); mutation ACROSS nodes is NOT (langgraph
 snapshots list lengths and returns only deltas so `add` reducers don't
 double-count.
 
-### `make_node` only emits agent_results for the current agent
-
-If an agent mutates `state.agent_results[OTHER_NAME]`, the change is LOST
-across the node boundary (the wrapper returns only `{agent.name: result}`).
-No agent does this today; if you need it, return both entries explicitly.
-
 ### New tier-2 agents must be registered in `api/main.py`
 
 Adding a node in `graph.py` is not enough — the production orchestrator is
@@ -228,6 +230,14 @@ built in `api/main.py::build_orchestrator()`. Pass new tier-2 agents via
 `Orchestrator(extra_agents=[...])` or they're unreachable at runtime (this
 was a real Slice-4 CRITICAL). Tests construct the orchestrator themselves,
 so a passing test suite won't catch a missing prod registration.
+
+### Auth in tests
+
+Tests that hit auth-guarded routes need the `X-Dev-User-Id: test-user` header
+(or a mock of `get_current_user`). The anonymous fallback (`"anon"`) is the
+default when neither Firebase JWT nor the dev header is present. The EventStore
+and NotebookStore partition by `user_id`, so tests should use a deterministic
+test user ID to avoid cross-test interference.
 
 ## 8. Where new components / agents / retrievers live
 
@@ -254,17 +264,16 @@ second of anything:
 
 When P1 is done, this codebase will have:
 
-- 15+ agents across four tiers (**now: 10**)
-- 24-component GenUI catalog (**now: 11**)
+- 15+ agents across four tiers (**done: 17 ✅**)
+- 24-component GenUI catalog (**now: 11 of 24**)
 - ≥3 demonstrated modes + 2 more for show (**done: 5 wired, FR-UI-06 ✅**)
-- A learning module with spaced repetition (**flashcards/quizzes done;
-  FR-LRN-02 scheduling deferred**)
-- Firebase auth + Firestore persistence (**deferred, §1.8**)
-- A 20-question hybrid-vs-flat benchmark with stat-sig result (**deferred,
-  §1.12 — Slice 8, the primary graded metric**)
-- A 10–15 participant user study with SUS ≥ 70 (**author task**)
+- A learning module with spaced repetition (**done: SM-2 ✅, FR-LRN-02 ✅**)
+- Firebase auth + Firestore persistence (**auth done ✅; Firestore seam ready**)
+- A 20-question hybrid-vs-flat benchmark (**harness done ✅; run needed**)
+- A 10–15 participant user study with SUS ≥ 70 (**infrastructure done ✅; conduct needed**)
 - An FYP 2 report (**author task**)
 
-Six slices in. The remaining grade-weight concentrates in Slice 7 (agents
-→ 15+) and Slice 8 (the benchmark). Slow down, write good ADRs, and the
-next agent in the chain will thank you.
+Ten slices in. The remaining grade-weight concentrates in the benchmark run
+(R-02) and user study conduct (R-03) — both author tasks now that the
+infrastructure is complete. Write good ADRs for any further code slices so
+the next agent in the chain can pick up cleanly.
