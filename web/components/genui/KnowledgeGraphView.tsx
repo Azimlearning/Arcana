@@ -2,11 +2,33 @@
 // uiux_plan.md §4 catalog entry; PRD §16 payload KnowledgeGraphViewData.
 // Interactive D3 graph deferred to P2; this renders a text node/edge summary
 // with all four states (invariant #2 compliant).
+// FR-KG-04: community id drives node colour. FR-KG-05: pagerank drives font weight.
 
 import type { KnowledgeGraphView as KnowledgeGraphViewBlock } from '@arcana/schema';
 
 import { Card } from '@/components/ui/Card';
 import { EmptyState, ErrorState, LoadingState, PartialState } from '@/components/genui/BlockStates';
+
+// 8 distinct community colours cycling from the design token palette.
+const COMMUNITY_COLORS: string[] = [
+  'border-accent/60 bg-accent/8 text-accent',
+  'border-green/60 bg-green-bg/30 text-green',
+  'border-violet/60 bg-violet-bg/30 text-violet',
+  'border-amber/60 bg-amber-bg/30 text-amber',
+  'border-red/40 bg-red-bg/20 text-red',
+  'border-blue-400/60 bg-blue-50/30 text-blue-700',
+  'border-teal-400/60 bg-teal-50/30 text-teal-700',
+  'border-line bg-card text-ink-soft',
+];
+
+function nodeClass(community?: number | null, pagerank?: number | null): string {
+  const colorClass = community != null
+    ? (COMMUNITY_COLORS[community % COMMUNITY_COLORS.length] ?? COMMUNITY_COLORS[0])
+    : 'border-line/50 bg-card text-ink-soft';
+  // PageRank > 0.1 → bold; > 0.05 → medium; otherwise normal
+  const weightClass = (pagerank ?? 0) > 0.1 ? 'font-bold' : (pagerank ?? 0) > 0.05 ? 'font-medium' : 'font-normal';
+  return `px-2 py-0.5 text-xs font-mono rounded border ${colorClass} ${weightClass}`;
+}
 
 interface Props {
   block: KnowledgeGraphViewBlock;
@@ -68,9 +90,10 @@ function Body({ block }: { block: KnowledgeGraphViewBlock }) {
           {data.nodes.map((node) => (
             <span
               key={node.id}
+              title={node.pagerank != null ? `PageRank: ${node.pagerank.toFixed(3)}` : undefined}
               className={node.id === data.focusNodeId
-                ? 'px-2 py-0.5 text-xs font-mono rounded border text-green border-green/60 bg-green-bg/20'
-                : 'px-2 py-0.5 text-xs font-mono rounded border text-ink-soft border-line/50 bg-surface-2'}
+                ? 'px-2 py-0.5 text-xs font-mono rounded border text-green border-green/60 bg-green-bg/20 font-bold'
+                : nodeClass(node.community, node.pagerank)}
             >
               {node.label}
             </span>

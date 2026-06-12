@@ -101,6 +101,8 @@ export interface GraphNode {
   id: string;
   label: string;
   nodeType: string;
+  community?: number;   // Louvain community id for colour-coding (FR-KG-04)
+  pagerank?: number;    // PageRank score 0..1 for node sizing (FR-KG-05)
 }
 
 export interface GraphEdge {

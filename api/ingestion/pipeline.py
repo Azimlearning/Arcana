@@ -234,6 +234,50 @@ async def _merge_extraction(extraction: ExtractionResult, *, graph: GraphStore) 
             )
 
 
+async def reextract_from_stored_chunks(
+    *,
+    stored_chunks: list,
+    llm: LLMService,
+    graph: GraphStore,
+) -> dict[str, int]:
+    """Re-run entity extraction on already-ingested chunks.
+
+    Used by POST /ingest/reextract when prior ingests ran without a
+    working LLM key. Groups StoredChunk by doc_id and calls the same
+    merge logic as the normal ingest path.
+
+    Returns {"docs": N, "nodes": M} for the response body.
+    """
+    from collections import defaultdict
+
+    by_doc: dict[str, list[Chunk]] = defaultdict(list)
+    for sc in stored_chunks:
+        by_doc[sc.doc_id].append(
+            Chunk(
+                id=sc.id,
+                doc_id=sc.doc_id,
+                text=sc.text,
+                page=sc.page,
+                char_offset=sc.char_offset,
+            )
+        )
+
+    total_nodes = 0
+    for doc_id, chunks in by_doc.items():
+        nodes_this_doc = await _extract_and_upsert_graph(
+            chunks=chunks, doc_id=doc_id, llm=llm, graph=graph
+        )
+        total_nodes += nodes_this_doc
+        logger.info(
+            "reextract.doc_done",
+            doc_id=doc_id,
+            chunks=len(chunks),
+            nodes=nodes_this_doc,
+        )
+
+    return {"docs": len(by_doc), "nodes": total_nodes}
+
+
 async def ingest_url(
     *,
     url: str,

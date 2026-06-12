@@ -113,6 +113,79 @@ async def chat(
     )
 
 
+_DEFAULT_SUGGESTIONS = [
+    "What are the main themes across my documents?",
+    "Compare and contrast the key arguments in my sources.",
+    "What gaps or contradictions exist in my corpus?",
+]
+
+
+@router.get("/suggestions")
+async def get_suggestions(
+    http_request: Request,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict:
+    """Return 3 suggested cross-document questions for the empty-chat state.
+
+    Uses the light LLM tier (haiku) with doc titles for fast, relevant
+    suggestions. Falls back to generic questions on failure or if no docs.
+    """
+    shared = getattr(http_request.app.state, "shared", {})
+    doc_store = shared.get("doc_store")
+    llm = shared.get("llm_light")
+
+    if doc_store is None:
+        return {"suggestions": _DEFAULT_SUGGESTIONS}
+
+    try:
+        all_docs = await doc_store.list_documents()
+    except Exception:
+        return {"suggestions": _DEFAULT_SUGGESTIONS}
+
+    ready = [d for d in all_docs if d.ingest_status == "ready"]
+    if not ready:
+        return {"suggestions": _DEFAULT_SUGGESTIONS}
+
+    titles = [d.title for d in ready[:6]]
+
+    if llm is None:
+        return {"suggestions": _fallback_suggestions(titles)}
+
+    try:
+        from api.llm.types import Message
+
+        titles_str = "\n".join(f"- {t}" for t in titles)
+        prompt = (
+            f"A researcher has these documents in their knowledge base:\n{titles_str}\n\n"
+            "Generate exactly 3 short, specific, cross-document research questions "
+            "they could ask about this corpus. Each question should require comparing "
+            "or connecting ideas across at least two documents. "
+            "Output ONLY the 3 questions, one per line, no numbering, no markdown."
+        )
+        completion = await llm.complete(
+            messages=[Message(role="user", content=prompt)],
+            max_tokens=200,
+        )
+        lines = [ln.strip() for ln in completion.text.strip().splitlines() if ln.strip()]
+        questions = lines[:3] if len(lines) >= 3 else lines
+        # Pad with defaults if LLM returned fewer than 3
+        while len(questions) < 3:
+            questions.append(_DEFAULT_SUGGESTIONS[len(questions)])
+        return {"suggestions": questions}
+    except Exception:
+        return {"suggestions": _fallback_suggestions(titles)}
+
+
+def _fallback_suggestions(titles: list[str]) -> list[str]:
+    if len(titles) >= 2:
+        return [
+            f"What are the key differences between {titles[0]!r} and {titles[1]!r}?",
+            "What common themes appear across my documents?",
+            "What contradictions or disagreements exist in my corpus?",
+        ]
+    return _DEFAULT_SUGGESTIONS
+
+
 def _fire_turn_event(
     http_request: Request,
     user: CurrentUser,

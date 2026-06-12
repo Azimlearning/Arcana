@@ -352,8 +352,10 @@ async def main(argv: list[str] | None = None) -> int:
         api_key=settings.pinecone_api_key.get_secret_value(),
         index_name=settings.pinecone_index,
     )
+    # Benchmark reads the shared (anon) graph that gets populated by
+    # POST /ingest/reextract or by re-ingesting docs via the API.
     graph_store = NetworkXGraphStore(
-        persist_path=settings.local_storage_path / "graph.json",
+        persist_path=settings.local_storage_path / "graphs" / "anon.json",
     )
     chunk_store = JsonlChunkStore(root=settings.local_storage_path)
 

@@ -23,7 +23,7 @@ const BLOOM_STYLES: Record<string, string> = {
 export function SocraticDialog({ block }: Props) {
   const { meta, data } = block;
 
-  if (data.turns.length === 0 && meta.status === 'ready') {
+  if (data.turns.length === 0 && !data.nextQuestion && meta.status === 'ready') {
     return (
       <EmptyState
         title="Start the dialogue"

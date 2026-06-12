@@ -38,12 +38,27 @@ async def get_graph(
     store = await registry.get_or_create(user.uid)
     g: nx.MultiDiGraph = store._g
 
+    # Compute analytics lazily — empty graphs skip the nx calls.
+    communities: dict[str, int] = {}
+    ranks: dict[str, float] = {}
+    if len(g) > 0:
+        try:
+            communities = await store.communities()
+        except Exception:
+            pass
+        try:
+            ranks = await store.pagerank()
+        except Exception:
+            pass
+
     nodes: list[GraphViewNode] = [
         GraphViewNode(
             id=nid,
             label=attrs.get("label", nid),
             nodeType=attrs.get("type", "Concept"),
             properties={k: v for k, v in attrs.items() if k not in ("label", "type")},
+            community=communities.get(nid),
+            pagerank=ranks.get(nid),
         )
         for nid, attrs in g.nodes(data=True)
     ]

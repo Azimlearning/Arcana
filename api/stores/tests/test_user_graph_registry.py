@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from api.stores.graph_store import GraphNode
 from api.stores.networkx_store import NetworkXGraphStore
 from api.stores.user_graph_registry import UserGraphRegistry
-from api.stores.graph_store import GraphNode
 
 
 @pytest.fixture

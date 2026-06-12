@@ -53,6 +53,17 @@ export function ChatPanel({ notebookId }: Props) {
   const [turnCount, setTurnCount] = useState(0);
   const [showSUS, setShowSUS] = useState(false);
   const [susShownOnce, setSusShownOnce] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  // Fetch suggested questions once — used in the empty-chat activation state.
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000'}/suggestions`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { suggestions: string[] } | null) => {
+        if (d?.suggestions?.length) setSuggestions(d.suggestions);
+      })
+      .catch(() => {});
+  }, []);
 
   // Stable session ID for the lifetime of this component mount.
   const sessionId = useRef(crypto.randomUUID()).current;
@@ -138,10 +149,31 @@ export function ChatPanel({ notebookId }: Props) {
             </p>
           </div>
         ) : chatBlocks.length === 0 ? (
-          <EmptyState
-            title="Ask a question"
-            hint="The research agent will ground its answer in your ingested documents and cite each claim."
-          />
+          <div className="flex flex-col items-center gap-6 py-10 px-4">
+            <EmptyState
+              title="Ask a question"
+              hint="The research agent will ground its answer in your ingested documents and cite each claim."
+            />
+            {suggestions.length > 0 && (
+              <div className="w-full max-w-lg flex flex-col gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-ink-softer text-center mb-1">
+                  Suggested questions
+                </p>
+                {suggestions.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setInput(q);
+                      document.getElementById('chat-input')?.focus();
+                    }}
+                    className="text-left px-4 py-2.5 rounded-ctl border border-line bg-card hover:border-accent/60 hover:bg-accent/5 text-sm text-ink transition-colors"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           chatBlocks.map((block) => (
             <div key={block.id}>

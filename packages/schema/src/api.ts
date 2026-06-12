@@ -138,6 +138,8 @@ export interface GraphViewNode {
   label: string;
   nodeType: string;             // 'Concept' | 'Person' | 'Document' | 'Topic' | …
   properties: Record<string, unknown>;
+  community?: number;           // Louvain community id (FR-KG-04)
+  pagerank?: number;            // PageRank score 0..1 (FR-KG-05)
 }
 
 export interface GraphViewEdge {

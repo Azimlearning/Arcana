@@ -104,7 +104,7 @@
 ### 1.2 Knowledge graph maturity
 - [x] Graph persists per user across sessions — **FR-KG-02 (M)**. *(Slice 14: UserGraphRegistry; per-user graphs at {storage}/graphs/{uid}.json; ingest + chat routes resolve per-user graph.)*
 - [ ] Incremental update on new document (no full reprocess) — **FR-KG-03 (S)**.
-- [ ] Louvain communities — **FR-KG-04 (S)**; PageRank — **FR-KG-05 (S)**; betweenness bridges — **FR-KG-06 (C)**.
+- [x] Louvain communities — **FR-KG-04 (S)**; PageRank — **FR-KG-05 (S)**. *(ExDev: `community` + `pagerank` fields in schema + codegen; GET /graph computes both; KnowledgeGraphView renders community-coloured pills with PageRank font-weight. Betweenness bridges → P2.)* Betweenness bridges — **FR-KG-06 (C)** — P2.
 - [x] Interactive graph view endpoint — **FR-KG-08 (M)**. *(Slice 14: GET /graph returns GraphViewResponse; GraphViewNode/Edge types in schema + codegen.)*
 - [ ] Migrate to `neo4j_store.py`; flip `graph_backend=neo4j` — **R-06**; verify no regressions vs NetworkX.
 
@@ -154,13 +154,14 @@
 - [x] Feynman explanations + gap flags — **FR-LRN-04 (S)** *(Slice 4: LearningAgent._generate_feynman() → FeynmanExplainer)*.
 - [x] Cornell notes — **FR-LRN-05 (C)**; blurting — **FR-LRN-06 (C)**. *(Slice 11: CornellNotes + BlurtingPrompt GenUI components; LearningAgent generates both.)*
 - [x] Socratic tutor never gives direct answers — **FR-LRN-08 (S)** *(Slice 3: SocraticAgent with _is_answer_shaped() guard)*.
-- [ ] Pomodoro + study schedules — **FR-LRN-09 (C)**; per-topic progress tracking — **FR-LRN-10 (S)**.
+- [ ] Pomodoro + study schedules — **FR-LRN-09 (C)**.
+- [x] Per-topic progress tracking — **FR-LRN-10 (S)**. *(ExDev: JsonlReviewStore persists review events per-user; GET /review/progress returns ProgressDashboard-shaped stats — totalCards, masteredCards, streakDays, per-topic breakdown, nextReviewAt.)*
 
 ### 1.8 Accounts & persistence
 - [x] `core/auth.py` guards routes — **FR-USR-01 (M), NFR-SEC-01**. *(get_current_user dep: Firebase token verify when firebase_project_id set; X-Dev-User-Id header in local dev.)*
 - [x] Persistent profile (preferences, context) — **FR-USR-02 (M)**. *(Slice 15: UserProfileStore at {storage}/profiles/{uid}.json; GET /profile + PUT /profile; UserPreferences with defaultMode, theme, citationStyle, studyContext.)*
 - [x] Notebook workspaces (CRUD) — **FR-USR-03 (M)**; per-user isolation — **FR-USR-06 (M)** / **NFR-SEC-02**. *(JsonlNotebookStore + POST/GET/DELETE /notebooks routes.)*
-- [ ] Interaction history persists + informs adaptation — **FR-USR-04 (S)**.
+- [x] Interaction history persists + informs adaptation — **FR-USR-04 (S)**. *(ExDev: JsonlMemoryStore replaces InMemoryMemoryStore; per-notebook JSONL at {storage}/memory/{notebook_id}.jsonl; survives backend restart.)*
 - [ ] User highlights/notes ingested back into the graph — **FR-USR-05 (S)**.
 
 ### 1.9 Export & interoperability

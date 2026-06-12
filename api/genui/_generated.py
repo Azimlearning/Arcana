@@ -334,6 +334,8 @@ class GraphNode(BaseModel):
     id: str
     label: str
     nodeType: str
+    community: float | None = None
+    pagerank: float | None = None
 
 
 class GraphViewEdge(BaseModel):
@@ -348,6 +350,8 @@ class GraphViewNode(BaseModel):
     label: str
     nodeType: str
     properties: dict[str, Any]
+    community: float | None = None
+    pagerank: float | None = None
 
 
 class GraphViewResponse(BaseModel):
