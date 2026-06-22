@@ -98,6 +98,49 @@ class Orchestrator(BaseAgent):
             status="ok",
         )
 
+    async def astream_run(self, query: str, state: AgentState):
+        """Streaming variant of `run` (FR-AGT-07): drive the StateGraph with
+        `astream` and yield a per-agent progress event the moment each node's
+        result lands, so a long multi-agent turn surfaces incremental
+        progress instead of a single end-of-pipeline payload. After the
+        stream drains, the final accumulated state is written back into the
+        caller's `state` (same contract as `run`) so the route can build the
+        trace, fire analytics, and stream the typed blocks.
+
+        Yields dicts: ``{"agent": <name>, "status": "done"}``.
+        """
+        state.query = query
+        logger.info("orchestrator.astream", query_len=len(query))
+        seen: set[str] = set()
+        final: Any = None
+        async for snapshot in self._graph.astream(state, stream_mode="values"):
+            final = snapshot
+            if isinstance(snapshot, AgentState):
+                results = snapshot.agent_results
+            elif isinstance(snapshot, dict):
+                results = snapshot.get("agent_results", {})
+            else:
+                results = {}
+            for name in results:
+                if name not in seen:
+                    seen.add(name)
+                    yield {"agent": name, "status": "done"}
+
+        if isinstance(final, AgentState):
+            for field_name in AgentState.model_fields:
+                setattr(state, field_name, getattr(final, field_name))
+        elif isinstance(final, dict):
+            for k, v in final.items():
+                if k in AgentState.model_fields:
+                    setattr(state, k, v)
+
+        await self._persist_turn_to_memory(query=query, state=state)
+        logger.info(
+            "orchestrator.astream_done",
+            ui_blocks=len(state.ui_blocks),
+            agents_run=list(state.agent_results.keys()),
+        )
+
     async def _persist_turn_to_memory(self, *, query: str, state: AgentState) -> None:
         """Append (user_query, assistant_summary) to the memory store
         for this notebook. Silent no-op when no store is wired.

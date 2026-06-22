@@ -31,8 +31,10 @@ from api.core.logging import configure_logging, get_logger
 from api.routes.analytics import router as analytics_router
 from api.routes.chat import get_orchestrator
 from api.routes.chat import router as chat_router
+from api.routes.export import router as export_router
 from api.routes.feedback import router as feedback_router
 from api.routes.graph import router as graph_router
+from api.routes.highlights import router as highlights_router
 from api.routes.ingest import IngestContext, get_ingest_context
 from api.routes.ingest import router as ingest_router
 from api.routes.notebooks import router as notebooks_router
@@ -174,6 +176,7 @@ def build_orchestrator(shared: dict):
     from api.agents.tier4.fact_checker import FactChecker
     from api.agents.tier4.memory import MemoryAgent
     from api.agents.tier4.study_planner import StudyPlannerAgent
+    from api.agents.tier4.web_search import WebSearchAgent
 
     llm = shared["llm"]              # sonnet-4.6: standard
     llm_heavy = shared["llm_heavy"]  # opus-4.8 → sonnet fallback
@@ -222,6 +225,7 @@ def build_orchestrator(shared: dict):
     ]
 
     study_planner = StudyPlannerAgent(llm_service=llm_light)
+    web_search = WebSearchAgent()  # academic discovery (Semantic Scholar / arXiv)
 
     tier3_agents = [
         CitationAgent(doc_store=doc_store),
@@ -235,7 +239,7 @@ def build_orchestrator(shared: dict):
         fact_checker=FactChecker(llm=llm_light),
         memory_agent=memory_agent,
         memory_store=memory_store,
-        extra_agents=[*tier2_agents, study_planner, *tier3_agents],
+        extra_agents=[*tier2_agents, study_planner, web_search, *tier3_agents],
     )
 
 
@@ -268,6 +272,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         embedder=shared["embedder"],
         llm=shared["llm"],
         graph_registry=shared["graph_registry"],
+        event_store=shared["event_store"],
     )
     # Expose shared resources on app.state so routes can resolve them.
     app.state.shared = shared
@@ -295,6 +300,8 @@ def create_app() -> FastAPI:
     app.include_router(feedback_router)
     app.include_router(analytics_router)
     app.include_router(graph_router)
+    app.include_router(highlights_router)
+    app.include_router(export_router)
     app.include_router(profile_router)
     app.include_router(suggestions_router)
     return app

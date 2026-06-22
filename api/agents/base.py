@@ -87,6 +87,9 @@ class AgentState(BaseModel):
     # schema can't drift from the agent state (R-10).
     active_mode: Mode = "research"
     intent: str = ""   # set by Orchestrator; consumed by conditional routing
+    # FR-RET-07: local/global/hybrid/auto retrieval scope; set by chat route
+    # from ChatRequest.retrievalMode (defaults to auto). Read by grounded agents.
+    retrieval_mode: str = "auto"
     messages: Annotated[list[Message], add] = Field(default_factory=list)
     retrieved_ctx: Annotated[list[RetrievedChunk], add] = Field(default_factory=list)
     agent_results: Annotated[
@@ -131,6 +134,26 @@ class AgentRegistry:
 
     def tools_for(self, agent_name: str) -> list[ToolSpec]:
         return list(self._tools[agent_name])
+
+    def select_tools(self, agent_names: list[str], *, limit: int) -> list[ToolSpec]:
+        """Intent-scoped tool selection (FR-AGT-05, PRD §11.5).
+
+        Gathers the tools registered for `agent_names` (the specialist an
+        intent routes to, plus any always-on base agents), dedupes by name,
+        orders deterministically by (tier, name), and caps the result at
+        `limit` — the `max_tools_per_prompt` budget (NFR-AGT-05). Only the
+        scoped, capped set is ever injected into a prompt, never the full
+        catalogue."""
+        seen: set[str] = set()
+        specs: list[ToolSpec] = []
+        for agent_name in agent_names:
+            for spec in self._tools.get(agent_name, []):
+                if spec.name in seen:
+                    continue
+                seen.add(spec.name)
+                specs.append(spec)
+        specs.sort(key=lambda s: (s.tier, s.name))
+        return specs[:limit]
 
     def reset(self) -> None:
         """Clear all registrations. Test-only — production never calls this."""

@@ -230,6 +230,15 @@ export interface DueCard {
   overdue: boolean;
 }
 
+// Pomodoro focus/break plan sized to the due-card queue (FR-LRN-09).
+export interface PomodoroPlan {
+  focusMinutes: number;
+  breakMinutes: number;
+  longBreakMinutes: number;
+  cycles: number;          // focus blocks needed to clear the session goal
+  cardsPerCycle: number;
+}
+
 export interface StudyPlannerData {
   notebookId: string;
   dueCards: DueCard[];
@@ -237,6 +246,7 @@ export interface StudyPlannerData {
   overdueCount: number;
   nextSessionAt: string | null; // ISO date of the next card not yet due, null if queue empty
   sessionGoal: number;          // target cards to review this session (default 10)
+  pomodoro?: PomodoroPlan;      // FR-LRN-09; omitted when the queue is empty
 }
 
 // ── BlurtingPrompt ────────────────────────────────────────────────────

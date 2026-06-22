@@ -26,7 +26,7 @@ from api.agents.orchestrator import Orchestrator
 from api.core.auth import CurrentUser, get_current_user
 from api.core.logging import bind_request_context, clear_request_context, get_logger
 from api.genui._generated import ChatRequest
-from api.genui.streamer import format_sse_event, stream_blocks
+from api.genui.streamer import SCHEMA_VERSION, format_sse_event, stream_blocks
 from api.genui.trace import build_trace
 
 logger = get_logger(__name__)
@@ -61,6 +61,7 @@ async def chat(
         # A missing mode coalesces to the safe default; the orchestrator
         # maps active_mode → intent (graph.py:_MODE_TO_INTENT). FR-UI-06.
         active_mode=body.activeMode or "research",
+        retrieval_mode=body.retrievalMode or "auto",  # FR-RET-07
     )
 
     async def gen() -> AsyncIterator[str]:
@@ -75,13 +76,27 @@ async def chat(
         try:
             try:
                 t0 = time.perf_counter()
-                await orchestrator.run(query=body.message, state=state)
-                latency_ms = (time.perf_counter() - t0) * 1000
 
+                # FR-AGT-07: stream partial progress while the multi-agent graph
+                # runs, so long turns surface activity instead of a silent wait.
+                # `ready` is emitted up front; each completed node yields a
+                # `progress` frame; the typed blocks + trace + done follow.
+                seq = 0
+                yield format_sse_event("ready", seq, {"schema_version": SCHEMA_VERSION})
+                async for prog in orchestrator.astream_run(query=body.message, state=state):
+                    seq += 1
+                    yield format_sse_event("progress", seq, prog)
+
+                latency_ms = (time.perf_counter() - t0) * 1000
                 _fire_turn_event(http_request, user, request_id, state, latency_ms)
 
                 trace_payload = build_trace(state)
-                async for frame in stream_blocks(state.ui_blocks, trace=trace_payload):
+                async for frame in stream_blocks(
+                    state.ui_blocks,
+                    trace=trace_payload,
+                    emit_ready=False,
+                    start_seq=seq + 1,
+                ):
                     yield frame
                 logger.info(
                     "chat.done",

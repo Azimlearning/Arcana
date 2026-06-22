@@ -17,6 +17,9 @@ when API keys aren't available.
 
 from __future__ import annotations
 
+from hashlib import sha256
+from typing import Any
+
 from api.core.errors import IngestFailed
 from api.core.logging import get_logger
 from api.embeddings.service import EmbedderProtocol
@@ -24,6 +27,7 @@ from api.ingestion.chunker import chunk as chunk_pages
 from api.ingestion.extractor import ExtractionResult, extract_entities
 from api.ingestion.parsers import pdf
 from api.ingestion.parsers import web as web_parser
+from api.ingestion.parsers import youtube as youtube_parser
 from api.ingestion.stores_bundle import Stores
 from api.ingestion.types import Chunk
 from api.llm.service import LLMService
@@ -376,3 +380,136 @@ async def ingest_url(
         await _mark_failed(stores, doc_id, cause=str(e))
         logger.exception("ingest_url.unhandled", doc_id=doc_id)
         raise IngestFailed(f"unhandled error during URL ingest: {e}") from e
+
+
+
+async def ingest_youtube(
+    *,
+    url: str,
+    stores: Stores,
+    embedder: EmbedderProtocol,
+    llm: LLMService | None = None,
+) -> DocMetadata:
+    """Fetch a YouTube video transcript and ingest it (FR-ING-03).
+
+    Mirrors ingest_url but uses the youtube transcript parser. Returns
+    final DocMetadata on success; raises IngestFailed on error.
+    """
+    doc_id = youtube_parser.doc_id_for_url(url)
+
+    # Placeholder first so _mark_failed can always record the cause even if
+    # transcript fetch raises before we have real content.
+    await stores.doc.put(
+        doc_id,
+        b"",
+        content_type="text/plain",
+        title=url[:256],
+        source_uri=url,
+        ingest_status="parsing",
+    )
+    logger.info("ingest_youtube.start", doc_id=doc_id, url=url)
+
+    try:
+        title, pages = await youtube_parser.fetch_and_parse(url)
+
+        raw = '\n\n'.join(p.text for p in pages).encode("utf-8")
+        await stores.doc.put(
+            doc_id,
+            raw,
+            content_type="text/plain",
+            title=title,
+            source_uri=url,
+            ingest_status="parsing",
+        )
+
+        chunks: list[Chunk] = chunk_pages(pages, doc_id=doc_id)
+        if not chunks:
+            raise IngestFailed(
+                "chunker produced zero chunks", details={"doc_id": doc_id, "url": url}
+            )
+
+        await stores.doc.update_status(doc_id, "embedding")
+
+        vectors = await embedder.embed([c.text for c in chunks])
+        if len(vectors) != len(chunks):
+            raise IngestFailed(
+                f"embedder returned {len(vectors)} vectors for {len(chunks)} chunks",
+                details={"doc_id": doc_id},
+            )
+
+        await stores.vector.upsert(
+            [
+                VectorItem(
+                    id=c.id,
+                    vector=v,
+                    metadata={
+                        "doc_id": c.doc_id,
+                        "page": c.page,
+                        "char_offset": c.char_offset,
+                        "text": c.text,
+                    },
+                )
+                for c, v in zip(chunks, vectors, strict=True)
+            ]
+        )
+        await stores.chunks.upsert_many([
+            StoredChunk(
+                id=c.id,
+                doc_id=c.doc_id,
+                text=c.text,
+                page=c.page,
+                char_offset=c.char_offset,
+            )
+            for c in chunks
+        ])
+
+        if llm is not None:
+            await _extract_and_upsert_graph(
+                chunks=chunks,
+                doc_id=doc_id,
+                llm=llm,
+                graph=stores.graph,
+            )
+
+        meta = await stores.doc.update_status(doc_id, "ready")
+        logger.info("ingest_youtube.ready", doc_id=doc_id, chunks=len(chunks))
+        return meta
+
+    except IngestFailed as exc:
+        await _mark_failed(stores, doc_id, cause=str(exc))
+        raise
+    except Exception as e:
+        await _mark_failed(stores, doc_id, cause=str(e))
+        logger.exception("ingest_youtube.unhandled", doc_id=doc_id)
+        raise IngestFailed(f"unhandled error during YouTube ingest: {e}") from e
+
+
+async def ingest_highlight(
+    *,
+    text: str,
+    doc_id: str,
+    graph: GraphStore,
+    llm: LLMService,
+) -> dict[str, Any]:
+    """Ingest a user highlight/note back into the knowledge graph (FR-USR-05).
+
+    Runs the same entity/relationship extraction used for documents over the
+    highlighted text, then merges the result into the user's graph attributed
+    to the source `doc_id` — so a reader's own notes enrich the graph the same
+    way ingested documents do. Returns counts + the concept slugs added.
+    """
+    digest = sha256(text.encode("utf-8")).hexdigest()[:12]
+    chunk_id = f"hl_{doc_id}_{digest}"
+    extraction = await extract_entities(text=text, chunk_id=chunk_id, doc_id=doc_id, llm=llm)
+    await _merge_extraction(extraction, graph=graph)
+    logger.info(
+        "ingest_highlight.merged",
+        doc_id=doc_id,
+        nodes=len(extraction.nodes),
+        edges=len(extraction.edges),
+    )
+    return {
+        "nodes": len(extraction.nodes),
+        "edges": len(extraction.edges),
+        "concepts": [n.id for n in extraction.nodes],
+    }

@@ -63,6 +63,8 @@ async def stream_blocks(
     blocks: list[UIBlock],
     *,
     trace: dict[str, Any] | None = None,
+    emit_ready: bool = True,
+    start_seq: int = 0,
 ) -> AsyncIterator[str]:
     """Yield SSE frames for each block, framed by `ready` and `done` events.
 
@@ -73,11 +75,13 @@ async def stream_blocks(
     terminates - the client sees an explicit failure rather than a
     silently truncated stream.
     """
-    seq = 0
-    yield format_sse_event("ready", seq, {"schema_version": SCHEMA_VERSION})
-    if trace is not None:
+    seq = start_seq
+    if emit_ready:
+        yield format_sse_event("ready", seq, {"schema_version": SCHEMA_VERSION})
         seq += 1
+    if trace is not None:
         yield format_sse_event("trace", seq, trace)
+        seq += 1
 
     emitted = 0
     for block in blocks:

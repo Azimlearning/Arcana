@@ -38,6 +38,13 @@ _ACRONYM_BOUNDARY_RE = re.compile(r"(?<=[A-Z])(?=[A-Z][a-z])")
 _VALID_TYPES = {"Concept", "Person", "Document", "Topic"}
 _VALID_RELATION_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
+# Common non-plural or irregular "-s" words that must NOT be singularised
+# (FR-ING-09 plural folding is heuristic; these are the frequent traps).
+_PLURAL_EXCEPTIONS = frozenset({
+    "bias", "lens", "series", "species", "news",
+    "physics", "mathematics", "statistics", "kudos", "data",
+})
+
 
 @dataclass(frozen=True)
 class ExtractionResult:
@@ -66,7 +73,35 @@ def _slug(label: str) -> str:
     s = _CAMEL_BOUNDARY_RE.sub("_", s)
     s = _ACRONYM_BOUNDARY_RE.sub("_", s)
     s = _SLUG_RE.sub("_", s.lower()).strip("_")
-    return s or "unknown"
+    if not s:
+        return "unknown"
+    # FR-ING-09: fold the head (final) token to singular so "knowledge
+    # graphs" and "knowledge graph" collapse to one node id.
+    parts = s.split("_")
+    parts[-1] = _singularise(parts[-1])
+    return "_".join(parts) or "unknown"
+
+
+def _singularise(token: str) -> str:
+    """Best-effort singular of a head token (FR-ING-09).
+
+    Deliberately conservative: guarded against common non-plural "-s"
+    words (process, corpus, analysis, bias, ...) and irregulars. Handles
+    the frequent academic cases — "graphs"->"graph", "ontologies"->
+    "ontology", "classes"->"class". Embedding-similarity merging of true
+    synonyms remains future work (§1.2)."""
+    t = token
+    if len(t) < 4 or t in _PLURAL_EXCEPTIONS:
+        return t
+    if t.endswith(("ss", "us", "is", "os")):        # process, corpus, analysis, chaos
+        return t
+    if t.endswith("ies") and len(t) > 4:            # ontologies -> ontology
+        return t[:-3] + "y"
+    if t.endswith(("sses", "shes", "ches", "xes", "zzes")):  # classes->class, boxes->box
+        return t[:-2]
+    if t.endswith("s"):                             # graphs->graph, databases->database
+        return t[:-1]
+    return t
 
 
 async def extract_entities(

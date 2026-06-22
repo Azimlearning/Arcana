@@ -14,13 +14,14 @@ interface IngestedDoc {
   docId: string;
   title: string;
   chunkCount: number;
-  status: 'parsing' | 'embedding' | 'ready' | 'failed';
+  status: 'pending' | 'parsing' | 'embedding' | 'ready' | 'failed';
   error?: string | null;
 }
 
 type UploadPhase = 'idle' | 'uploading' | 'error';
 
 const STATUS_LABEL: Record<IngestedDoc['status'], string> = {
+  pending: 'Queued…',
   parsing: 'Parsing…',
   embedding: 'Embedding…',
   ready: 'Ready',
@@ -28,10 +29,20 @@ const STATUS_LABEL: Record<IngestedDoc['status'], string> = {
 };
 
 const STATUS_COLOR: Record<IngestedDoc['status'], string> = {
+  pending:   'text-ink-softer',
   parsing:   'text-amber-600',
   embedding: 'text-blue-600',
   ready:     'text-ink-softer',
   failed:    'text-red-500',
+};
+
+// FR-ING-07: how far through the parse→embed→ready pipeline a doc is.
+const STATUS_PROGRESS: Record<IngestedDoc['status'], number> = {
+  pending: 10,
+  parsing: 40,
+  embedding: 75,
+  ready: 100,
+  failed: 100,
 };
 
 export function SourcesPanel() {
@@ -129,7 +140,9 @@ export function SourcesPanel() {
 
   // While a doc is in-progress, poll every 2 s until it reaches a terminal state.
   useEffect(() => {
-    const inProgress = docs.filter((d) => d.status === 'parsing' || d.status === 'embedding');
+    const inProgress = docs.filter(
+      (d) => d.status === 'pending' || d.status === 'parsing' || d.status === 'embedding',
+    );
     if (inProgress.length === 0) return;
 
     const timer = setInterval(async () => {
@@ -245,6 +258,24 @@ export function SourcesPanel() {
                       : STATUS_LABEL[doc.status]}
                   </span>
                 </div>
+                {doc.status !== 'failed' && (
+                  <div
+                    className="mt-1.5 h-1 w-full rounded-full bg-line overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={STATUS_PROGRESS[doc.status]}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Ingestion ${STATUS_LABEL[doc.status]}`}
+                  >
+                    <div
+                      className={[
+                        'h-full rounded-full transition-all duration-500',
+                        doc.status === 'ready' ? 'bg-accent' : 'bg-blue-500 animate-pulse',
+                      ].join(' ')}
+                      style={{ width: `${STATUS_PROGRESS[doc.status]}%` }}
+                    />
+                  </div>
+                )}
                 {doc.status === 'failed' && doc.error && (
                   <p className="text-xs text-red-500 mt-1 leading-snug">{doc.error}</p>
                 )}

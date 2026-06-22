@@ -130,3 +130,52 @@ async def test_agent_state_defaults_are_safe():
     assert s.budget.tokens_used == 0
     assert s.budget.hops_used == 0
     assert s.active_mode == "research"
+
+
+# ─── Intent-scoped tool selection (FR-AGT-05, §11.5) ───────────────
+
+
+def test_select_tools_caps_at_limit_and_scopes_by_agent():
+    """select_tools returns only the named agents' tools, deduped and
+    capped at the max_tools_per_prompt budget (NFR-AGT-05)."""
+
+    @tool(agent="research", tier=2)
+    async def search_docs(query: str) -> list[str]:
+        """Search the corpus."""
+        return []
+
+    @tool(agent="research", tier=2)
+    async def cite_sources(ids: list[str]) -> list[str]:
+        """Attach citations."""
+        return []
+
+    @tool(agent="graph_agent", tier=2)
+    async def graph_expand(concept: str) -> list[str]:
+        """Expand a concept in the graph."""
+        return []
+
+    @tool(agent="learning", tier=2)
+    async def make_flashcards(topic: str) -> list[str]:
+        """Generate flashcards."""
+        return []
+
+    # Scope to graph_agent + research only — learning's tool must be excluded.
+    scoped = registry.select_tools(["graph_agent", "research"], limit=12)
+    names = {s.name for s in scoped}
+    assert names == {"graph_expand", "search_docs", "cite_sources"}
+    assert "make_flashcards" not in names
+
+    # Cap is enforced.
+    capped = registry.select_tools(["graph_agent", "research"], limit=2)
+    assert len(capped) == 2
+
+
+def test_select_tools_dedupes_by_name():
+    @tool(agent="research", tier=2)
+    async def shared_tool(q: str) -> list[str]:
+        """A tool."""
+        return []
+
+    # Same agent listed twice must not duplicate the tool.
+    scoped = registry.select_tools(["research", "research"], limit=12)
+    assert len(scoped) == 1

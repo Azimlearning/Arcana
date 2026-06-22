@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from api.analytics.event_store import ActivityEvent, EventStore
 from api.core.auth import CurrentUser, get_current_user
 from api.core.errors import IngestFailed
 from api.core.logging import get_logger
@@ -33,8 +34,14 @@ from api.genui._generated import (
     DocStatusResponse,
     IngestResponse,
     UrlIngestRequest,
+    YoutubeIngestRequest,
 )
-from api.ingestion.pipeline import ingest_pdf, ingest_url, reextract_from_stored_chunks
+from api.ingestion.pipeline import (
+    ingest_pdf,
+    ingest_url,
+    ingest_youtube,
+    reextract_from_stored_chunks,
+)
 from api.ingestion.stores_bundle import Stores
 from api.llm.service import LLMService
 from api.stores.doc_store import DocMetadata
@@ -78,6 +85,7 @@ class IngestContext:
     embedder: EmbedderProtocol
     llm: LLMService
     graph_registry: UserGraphRegistry | None = field(default=None)
+    event_store: EventStore | None = field(default=None)
 
 
 def get_ingest_context() -> IngestContext:
@@ -89,6 +97,28 @@ def get_ingest_context() -> IngestContext:
             "api.main.create_app() wires this at startup."
         ),
     )
+
+
+async def _fire_ingest_event(
+    ctx: IngestContext, user_id: str, *, doc_id: str, action: str, source: str
+) -> None:
+    """§20 instrumentation (FR-ANL): record an ingestion event. Best-effort —
+    analytics failures never affect the ingest result."""
+    if ctx.event_store is None:
+        return
+    from datetime import UTC, datetime
+    try:
+        await ctx.event_store.append_event(
+            ActivityEvent(
+                user_id=user_id,
+                timestamp=datetime.now(UTC).isoformat(),
+                category="ingestion",
+                action=action,
+                payload={"doc_id": doc_id, "source": source},
+            )
+        )
+    except Exception:
+        logger.warning("ingest.event_failed", doc_id=doc_id)
 
 
 # ── route ─────────────────────────────────────────────────────────────────────
@@ -148,6 +178,7 @@ async def ingest(
         chunk_count = sum(1 for c in all_chunks if c.doc_id == doc_id)
 
         logger.info("ingest.done", doc_id=doc_id, chunk_count=chunk_count)
+        await _fire_ingest_event(ctx, user.uid, doc_id=doc_id, action="document_added", source="pdf")
         return IngestResponse(
             docId=doc_id,
             title=title,
@@ -232,6 +263,10 @@ async def ingest_url_route(
 
         all_chunks = await ctx.stores.chunks.list_all()
         chunk_count = sum(1 for c in all_chunks if c.doc_id == meta.id)
+        await _fire_ingest_event(
+            ctx, user.uid, doc_id=meta.id, action="document_added",
+            source="youtube" if meta.id.startswith("yt_") else "url",
+        )
         return IngestResponse(
             docId=meta.id,
             title=meta.title,
@@ -246,6 +281,64 @@ async def ingest_url_route(
     except Exception as e:
         logger.exception("ingest_url.failed")
         raise HTTPException(status_code=500, detail=f"URL ingestion failed: {e}") from e
+
+
+# ── YouTube ingest ────────────────────────────────────────────────────────────
+
+@router.post("/ingest/youtube", response_model=IngestResponse)
+async def ingest_youtube_route(
+    body: YoutubeIngestRequest,
+    ctx: IngestContext = Depends(get_ingest_context),  # noqa: B008
+    user: CurrentUser = Depends(get_current_user),    # noqa: B008
+) -> IngestResponse:
+    """Fetch a YouTube video transcript and ingest it (FR-ING-03)."""
+    url = body.url.strip()
+    if not url:
+        raise HTTPException(status_code=422, detail="url must not be empty.")
+
+    # FR-KG-02: same per-user graph resolution as the PDF/URL routes.
+    stores = ctx.stores
+    if ctx.graph_registry is not None:
+        user_graph = await ctx.graph_registry.get_or_create(user.uid)
+        from api.ingestion.stores_bundle import Stores as _Stores
+        stores = _Stores(
+            doc=ctx.stores.doc,
+            vector=ctx.stores.vector,
+            graph=user_graph,
+            chunks=ctx.stores.chunks,
+        )
+
+    logger.info("ingest_youtube.request", url=url, user_id=user.uid)
+    try:
+        meta = await ingest_youtube(
+            url=url,
+            stores=stores,
+            embedder=ctx.embedder,
+            llm=ctx.llm,
+        )
+        if ctx.graph_registry is not None:
+            await ctx.graph_registry.save(user.uid)
+
+        all_chunks = await ctx.stores.chunks.list_all()
+        chunk_count = sum(1 for c in all_chunks if c.doc_id == meta.id)
+        await _fire_ingest_event(
+            ctx, user.uid, doc_id=meta.id, action="document_added",
+            source="youtube" if meta.id.startswith("yt_") else "url",
+        )
+        return IngestResponse(
+            docId=meta.id,
+            title=meta.title,
+            status="ready",
+            chunkCount=chunk_count,
+            error=None,
+        )
+    except IngestFailed:
+        raise
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("ingest_youtube.failed")
+        raise HTTPException(status_code=500, detail=f"YouTube ingestion failed: {e}") from e
 
 
 # ── Document status ───────────────────────────────────────────────────────────

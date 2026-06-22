@@ -55,6 +55,7 @@ class ContradictionAgent(BaseAgent):
             vector_retriever=self._vector,
             bm25_retriever=self._bm25,
             graph_retriever=self._graph,
+            mode=state.retrieval_mode,  # type: ignore[arg-type]  # FR-RET-07
         )
         state.retrieved_ctx.extend(chunks)
 

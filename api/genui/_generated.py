@@ -69,6 +69,7 @@ class ChatRequest(BaseModel):
     message: str
     history: list[ChatMessage]
     activeMode: Mode | None = None
+    retrievalMode: RetrievalMode | None = None
 
 
 class Chunk(BaseModel):
@@ -361,6 +362,20 @@ class GraphViewResponse(BaseModel):
     edgeCount: float
 
 
+class HighlightRequest(BaseModel):
+    docId: str
+    text: str
+    note: str | None = None
+    notebookId: str | None = None
+
+
+class HighlightResponse(BaseModel):
+    docId: str
+    nodesAdded: float
+    edgesAdded: float
+    concepts: list[str]
+
+
 class IngestResponse(BaseModel):
     docId: str
     title: str
@@ -458,6 +473,14 @@ class NotebookItem(BaseModel):
 
 class NotebookListResponse(BaseModel):
     notebooks: list[NotebookItem]
+
+
+class PomodoroPlan(BaseModel):
+    focusMinutes: float
+    breakMinutes: float
+    longBreakMinutes: float
+    cycles: float
+    cardsPerCycle: float
 
 
 class ProgressDashboard(BaseModel):
@@ -575,6 +598,7 @@ class StudyPlannerData(BaseModel):
     overdueCount: float
     nextSessionAt: str | None
     sessionGoal: float
+    pomodoro: PomodoroPlan | None = None
 
 
 class SummarySegment(BaseModel):
@@ -668,6 +692,11 @@ class UserProfile(BaseModel):
     preferences: UserPreferences
 
 
+class YoutubeIngestRequest(BaseModel):
+    url: str
+    notebookId: str | None = None
+
+
 BlockStatus = Literal['loading', 'partial', 'ready', 'error']
 
 BloomLevel = Literal['recall', 'comprehension', 'application', 'analysis', 'synthesis', 'evaluation']
@@ -689,6 +718,8 @@ Panel = Literal['sources', 'chat', 'studio']
 QuizDifficulty = Literal['recall', 'comprehension', 'application', 'analysis']
 
 QuizType = Literal['mcq', 'short_answer']
+
+RetrievalMode = Literal['local', 'global', 'hybrid', 'auto']
 
 ReviewRating = float
 

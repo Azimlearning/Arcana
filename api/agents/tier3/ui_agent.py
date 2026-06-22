@@ -82,6 +82,8 @@ from api.genui._generated import (
     QuizCardData,
     SocraticDialog,
     SocraticDialogData,
+    SourceList,
+    SourceListData,
     StudyPlanner,
     StudyPlannerData,
     UIBlock,
@@ -217,6 +219,13 @@ class UIAgent(BaseAgent):
         contradiction = state.agent_results.get("contradiction")
         if contradiction is not None and contradiction.status == "ok":
             block = self._build_from_contradiction(contradiction, order=order)
+            if block is not None:
+                return block
+
+        # 8b. Web search (SourceList of discovered academic papers)
+        web_search = state.agent_results.get("web_search")
+        if web_search is not None and web_search.status == "ok":
+            block = self._build_from_web_search(web_search, order=order)
             if block is not None:
                 return block
 
@@ -534,6 +543,25 @@ class UIAgent(BaseAgent):
                 )
             except ValidationError as e:
                 logger.warning("ui_agent.contradiction_alert_invalid", error=str(e))
+                return None
+
+        return None
+
+    def _build_from_web_search(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
+        block_type = result.payload.get("block_type")
+        data_dict = result.payload.get("data", {}) or {}
+
+        if block_type == "SourceList":
+            try:
+                data = SourceListData.model_validate(data_dict)
+                return SourceList(
+                    type="SourceList",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="chat", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.source_list_invalid", error=str(e))
                 return None
 
         return None

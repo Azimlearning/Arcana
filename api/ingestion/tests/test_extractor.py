@@ -25,13 +25,31 @@ from api.llm.types import Completion, Usage
     ("graph_rag", "graph_rag"),
     ("vector retrieval", "vector_retrieval"),
     ("XMLParser", "xml_parser"),     # Acronym-then-Word boundary
-    ("  spaces  ", "spaces"),
+    ("  cohort  ", "cohort"),
     ("punc!tu@tion", "punc_tu_tion"),
     ("", "unknown"),
     ("___", "unknown"),
+    # FR-ING-09 plural folding: variants collapse to one node id.
+    ("knowledge graphs", "knowledge_graph"),
+    ("knowledge graph", "knowledge_graph"),
+    ("neural networks", "neural_network"),
+    ("transformers", "transformer"),
+    ("ontologies", "ontology"),
+    ("classes", "class"),
+    # guarded non-plurals must be left intact
+    ("bias", "bias"),
+    ("analysis", "analysis"),
+    ("corpus", "corpus"),
+    ("process", "process"),
 ])
 def test_slug_canonicalises_consistently(label, expected):
     assert _slug(label) == expected
+
+
+def test_slug_collapses_singular_and_plural_to_one_id():
+    """Same concept written singular vs plural -> identical node id (FR-ING-09)."""
+    assert _slug("Knowledge Graphs") == _slug("knowledge graph")
+    assert _slug("Vector Databases") == _slug("vector database")
 
 
 # ── JSON parser ──────────────────────────────────────────────────

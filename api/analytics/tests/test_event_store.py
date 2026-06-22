@@ -107,7 +107,7 @@ async def test_append_and_export_user(store):
 @pytest.mark.asyncio
 async def test_export_user_empty(store):
     result = await store.export_user("nobody")
-    assert result == {"turns": [], "feedback": [], "surveys": []}
+    assert result == {"turns": [], "feedback": [], "surveys": [], "events": []}
 
 
 @pytest.mark.asyncio
@@ -156,3 +156,35 @@ async def test_user_isolation(store):
     assert len(alice["feedback"]) == 0
     assert len(bob["turns"]) == 0
     assert len(bob["feedback"]) == 1
+
+
+# ── ActivityEvent (§20 generic capture, FR-ANL) ───────────────────────────────
+
+
+async def test_append_event_persists_and_exports(tmp_path):
+    from datetime import UTC, datetime
+
+    from api.analytics.event_store import ActivityEvent
+
+    store = JsonlEventStore(root=tmp_path)
+    await store.append_event(
+        ActivityEvent(
+            user_id="u1",
+            timestamp=datetime.now(UTC).isoformat(),
+            category="ingestion",
+            action="document_added",
+            payload={"doc_id": "doc_a", "source": "pdf"},
+        )
+    )
+
+    exported = await store.export_user("u1")
+    assert "events" in exported
+    assert len(exported["events"]) == 1
+    ev = exported["events"][0]
+    assert ev["category"] == "ingestion"
+    assert ev["action"] == "document_added"
+    assert ev["payload"]["doc_id"] == "doc_a"
+
+    # export_all also carries the new stream.
+    all_export = await store.export_all()
+    assert all_export["u1"]["events"][0]["action"] == "document_added"

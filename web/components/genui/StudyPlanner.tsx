@@ -80,6 +80,20 @@ function Body({ block }: { block: StudyPlannerBlock }) {
         )}
       </div>
 
+      {/* FR-LRN-09: Pomodoro focus plan sized to the session. */}
+      {data.pomodoro && (
+        <div className="flex items-center gap-2 rounded-md bg-accent/5 border border-line px-3 py-2 text-xs font-mono text-ink-soft">
+          <span aria-hidden>⏱</span>
+          <span>
+            {data.pomodoro.cycles}× {data.pomodoro.focusMinutes}m focus
+            {' / '}{data.pomodoro.breakMinutes}m break
+          </span>
+          <span className="ml-auto text-ink-softer">
+            ~{data.pomodoro.cardsPerCycle} cards / block
+          </span>
+        </div>
+      )}
+
       <div className="space-y-1.5 border-t border-line pt-3">
         {data.dueCards.slice(0, data.sessionGoal).map((card) => (
           <DueCardRow key={card.cardId} card={card} />

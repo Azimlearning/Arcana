@@ -72,6 +72,7 @@ class ResearchAgent(BaseAgent):
                 vector_retriever=self._vec,
                 bm25_retriever=self._bm25,
                 graph_retriever=self._graph,
+                mode=state.retrieval_mode,  # type: ignore[arg-type]  # FR-RET-07
             )
         except Exception as e:
             logger.exception("research_agent.retrieval_failed")

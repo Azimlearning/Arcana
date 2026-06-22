@@ -17,6 +17,7 @@ FR-LRN-10: session goal tracking.
 from __future__ import annotations
 
 from datetime import date
+from math import ceil
 from typing import Any
 
 from api.agents.base import AgentResult, AgentState, BaseAgent
@@ -75,6 +76,7 @@ class StudyPlannerAgent(BaseAgent):
                     "overdueCount": overdue_count,
                     "nextSessionAt": next_session_at,
                     "sessionGoal": _SESSION_GOAL,
+                    "pomodoro": _build_pomodoro(len(due_cards), _SESSION_GOAL),
                 },
             },
             status="ok",
@@ -82,6 +84,31 @@ class StudyPlannerAgent(BaseAgent):
 
 
 # -- Helpers ------------------------------------------------------------------
+
+
+_CARDS_PER_CYCLE = 5
+_FOCUS_MINUTES = 25
+_BREAK_MINUTES = 5
+_LONG_BREAK_MINUTES = 15
+
+
+def _build_pomodoro(total_due: int, session_goal: int) -> dict | None:
+    """Size a Pomodoro plan to this session's workload (FR-LRN-09).
+
+    Covers min(total_due, session_goal) cards in focus blocks of
+    `_CARDS_PER_CYCLE`; returns None for an empty queue so the schema's
+    optional `pomodoro` field is simply absent."""
+    workload = min(total_due, session_goal)
+    if workload <= 0:
+        return None
+    cycles = max(1, ceil(workload / _CARDS_PER_CYCLE))
+    return {
+        "focusMinutes": _FOCUS_MINUTES,
+        "breakMinutes": _BREAK_MINUTES,
+        "longBreakMinutes": _LONG_BREAK_MINUTES,
+        "cycles": cycles,
+        "cardsPerCycle": _CARDS_PER_CYCLE,
+    }
 
 
 def _extract_flashcard_payloads(state: AgentState) -> list[dict]:

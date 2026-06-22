@@ -47,6 +47,19 @@ class _StubOrchestrator:
             state.ui_blocks.append(self._block)
         return AgentResult(agent_name="orchestrator", payload={})
 
+    async def astream_run(self, *, query: str, state: AgentState):
+        """Streaming entry the route now calls. No real graph here, so it
+        yields no progress frames — the stub path stays ready/trace/block/done.
+        Mirrors run()'s state effects."""
+        self.calls.append(query)
+        self.modes.append(state.active_mode)
+        if self._raise:
+            raise self._raise
+        if self._block:
+            state.ui_blocks.append(self._block)
+        return
+        yield  # pragma: no cover - makes this an async generator
+
 
 def _sample_block() -> CitedSummary:
     return CitedSummary(

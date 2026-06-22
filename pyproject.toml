@@ -2,7 +2,7 @@
 #
 # Lives at the repo root rather than api/pyproject.toml so that the
 # top-level package `api` is resolvable (the dependency-direction hook
-# matches `api.<layer>.*` imports). See decisions.md (2026-05-21).
+# matches `api.<layer>.*` imports). See DECISIONS.md ADR-005.
 #
 # uv is the package manager — `uv sync --dev` installs runtime + dev deps,
 # `uv run pytest -q` runs the suite.
@@ -30,6 +30,7 @@ dependencies = [
     "pymupdf>=1.24",  # PDF parsing (api/ingestion/parsers/pdf.py)
     "rank-bm25>=0.2.2",  # BM25 keyword retriever (api/retrieval/bm25.py)
     "langgraph>=0.2.50,<0.3",  # StateGraph (slice 1 agent maturity) - PRD Listing 11.1
+    "youtube-transcript-api>=0.6",  # YouTube transcript ingest (api/ingestion/parsers/youtube.py) - FR-ING-03
 ]
 
 [dependency-groups]

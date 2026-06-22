@@ -150,18 +150,36 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
         or _detect_intent_from_query(state.query)
         or _DEFAULT_INTENT
     )
+    # FR-AGT-05 / §11.5: inject only the tools relevant to this intent, capped
+    # at max_tools_per_prompt (NFR-AGT-05). The specialist the intent routes to,
+    # plus the always-on research base, define the scoped set.
+    from api.core.settings import get_settings
+
+    specialist = _INTENT_TO_AGENT.get(intent, "research")
+    scoped = registry.select_tools(
+        [specialist, "research"],
+        limit=get_settings().max_tools_per_prompt,
+    )
+    scoped_tools = [spec.name for spec in scoped]
+
     logger.info(
         "orchestrator.plan",
         intent=intent,
         mode=state.active_mode,
         query_len=len(state.query),
+        scoped_tools=len(scoped_tools),
     )
     return {
         "intent": intent,
         "agent_results": {
             "orchestrator": AgentResult(
                 agent_name="orchestrator",
-                payload={"intent": intent, "mode": state.active_mode},
+                payload={
+                    "intent": intent,
+                    "mode": state.active_mode,
+                    "scoped_tools": scoped_tools,
+                    "scoped_tool_count": len(scoped_tools),
+                },
                 status="ok",
             )
         },
@@ -196,6 +214,8 @@ _WIRED_INTENTS = frozenset({
     "citation",
     "visual",
     "document",
+    # B2 tier-4
+    "websearch",
 })
 
 
@@ -229,6 +249,11 @@ def _detect_intent_from_query(query: str) -> str:
                                "summarize this document", "overview of this paper",
                                "sections of", "breakdown of this")):
         return "document"
+    if any(kw in q for kw in ("find papers", "search for papers", "papers about",
+                               "papers on", "literature on", "recent work on",
+                               "related papers", "find sources", "arxiv",
+                               "semantic scholar", "search the literature")):
+        return "websearch"
     return ""
 
 # Maps each non-default intent label to its primary registered agent name.
@@ -251,6 +276,7 @@ _INTENT_TO_AGENT: dict[str, str] = {
     "citation": "citation",
     "visual": "visual_agent",
     "document": "document",
+    "websearch": "web_search",
 }
 
 
@@ -307,6 +333,7 @@ def build_graph() -> Any:
     has_citation = registry.get_agent("citation") is not None
     has_visual = registry.get_agent("visual_agent") is not None
     has_document = registry.get_agent("document") is not None
+    has_web_search = registry.get_agent("web_search") is not None
     # Slice 7 agents
     has_graph_agent = registry.get_agent("graph_agent") is not None
     has_literature = registry.get_agent("literature") is not None
@@ -379,6 +406,9 @@ def build_graph() -> Any:
     if has_document:
         graph.add_node("document", make_node("document"))
         conditional_map["document"] = "document"
+    if has_web_search:
+        graph.add_node("web_search", make_node("web_search"))
+        conditional_map["websearch"] = "web_search"
 
     graph.add_conditional_edges(
         "orchestrator",
@@ -428,6 +458,8 @@ def build_graph() -> Any:
         graph.add_edge("visual_agent", "ui_agent")
     if has_document:
         graph.add_edge("document", "ui_agent")
+    if has_web_search:
+        graph.add_edge("web_search", "ui_agent")
 
     graph.add_edge("ui_agent", END)
 

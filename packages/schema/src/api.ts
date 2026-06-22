@@ -8,6 +8,10 @@ export type ChatRole = 'user' | 'assistant';
 // to agent intents (api/agents/graph.py:_MODE_TO_INTENT). FR-UI-06.
 export type Mode = 'research' | 'study' | 'writing' | 'socratic' | 'exploration';
 
+// Retrieval scope for grounded agents (FR-RET-07). 'auto' lets the backend
+// pick local/global/hybrid from the query shape.
+export type RetrievalMode = 'local' | 'global' | 'hybrid' | 'auto';
+
 export interface ChatMessage {
   role: ChatRole;
   content: string;
@@ -20,6 +24,8 @@ export interface ChatRequest {
   // Optional so older clients (and tests) that omit it still validate; the
   // backend coalesces a missing mode to 'research'. FR-UI-06.
   activeMode?: Mode;
+  // Optional retrieval scope; backend defaults to 'auto'. FR-RET-07.
+  retrievalMode?: RetrievalMode;
 }
 
 // Response from POST /ingest (FR-ING-01). The request is multipart/form-data
@@ -36,6 +42,28 @@ export interface IngestResponse {
 export interface UrlIngestRequest {
   url: string;
   notebookId?: string;
+}
+
+// POST /ingest/youtube request body (FR-ING-03).
+export interface YoutubeIngestRequest {
+  url: string;
+  notebookId?: string;
+}
+
+// POST /highlights request body (FR-USR-05) — a user highlight/note to fold
+// back into the knowledge graph, attributed to its source document.
+export interface HighlightRequest {
+  docId: string;
+  text: string;
+  note?: string;
+  notebookId?: string;
+}
+
+export interface HighlightResponse {
+  docId: string;
+  nodesAdded: number;
+  edgesAdded: number;
+  concepts: string[];
 }
 
 // GET /docs and GET /docs/{docId} (FR-ING-08).

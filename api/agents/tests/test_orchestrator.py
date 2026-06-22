@@ -140,3 +140,23 @@ async def test_llm_failure_still_terminates_at_ui_agent():
     await orch.run("x", state=state)
     assert len(state.ui_blocks) == 1
     assert state.ui_blocks[0].meta.status == "error"
+
+
+async def test_astream_run_emits_progress_per_node():
+    """FR-AGT-07: astream_run yields a progress event as each node completes
+    and writes the final blocks back into the caller's state."""
+    chunks = [_chunk("ch1", "doc_a", "GraphRAG wins multi-hop.", page=2)]
+    orch, vec = _build_orchestrator(chunks=chunks, llm_text="GraphRAG wins [c1].")
+    state = AgentState(query="compare them")
+
+    progress = [p async for p in orch.astream_run("compare them", state=state)]
+    agents = [p["agent"] for p in progress]
+
+    # Orchestrator, the research specialist, and the terminal UI agent report.
+    assert "orchestrator" in agents
+    assert "research" in agents
+    assert "ui_agent" in agents
+    assert all(p["status"] == "done" for p in progress)
+    # Final state written back: one typed block, retrieval ran once.
+    assert len(state.ui_blocks) == 1
+    assert vec.call_count == 1

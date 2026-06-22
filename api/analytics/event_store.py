@@ -56,6 +56,20 @@ class SurveySubmission:
     task_description: str = ""
 
 
+@dataclass
+class ActivityEvent:
+    """Generic §20 instrumentation event (FR-ANL). Captures the categories
+    not already covered per-turn — ingestion, learning, UI overrides — as a
+    flat (category, action, payload) row so new event kinds need no schema
+    change."""
+
+    user_id: str
+    timestamp: str          # ISO 8601
+    category: str           # 'ingestion' | 'retrieval' | 'learning' | 'ui' | 'agent'
+    action: str             # e.g. 'document_added', 'mode_override'
+    payload: dict[str, Any] = field(default_factory=dict)
+
+
 def compute_sus(responses: list[int]) -> float:
     """Standard SUS formula: odd items (1-indexed) subtract 1; even items: 5 minus.
     Sum x 2.5 -> 0-100 scale.  Expects exactly 10 Likert 1-5 responses.
@@ -83,6 +97,9 @@ class EventStore(ABC):
 
     @abstractmethod
     async def append_survey(self, submission: SurveySubmission) -> None: ...
+
+    @abstractmethod
+    async def append_event(self, event: ActivityEvent) -> None: ...
 
     @abstractmethod
     async def export_user(self, user_id: str) -> dict[str, list[dict[str, Any]]]: ...
@@ -135,12 +152,16 @@ class JsonlEventStore(EventStore):
             asdict(submission),
         )
 
+    async def append_event(self, event: ActivityEvent) -> None:
+        self._append(self._user_dir(event.user_id) / "events.jsonl", asdict(event))
+
     async def export_user(self, user_id: str) -> dict[str, list[dict[str, Any]]]:
         d = self._root / user_id
         return {
             "turns": self._read(d / "turns.jsonl"),
             "feedback": self._read(d / "feedback.jsonl"),
             "surveys": self._read(d / "surveys.jsonl"),
+            "events": self._read(d / "events.jsonl"),
         }
 
     async def export_all(self) -> dict[str, Any]:
@@ -153,5 +174,6 @@ class JsonlEventStore(EventStore):
                     "turns": self._read(user_dir / "turns.jsonl"),
                     "feedback": self._read(user_dir / "feedback.jsonl"),
                     "surveys": self._read(user_dir / "surveys.jsonl"),
+                    "events": self._read(user_dir / "events.jsonl"),
                 }
         return result

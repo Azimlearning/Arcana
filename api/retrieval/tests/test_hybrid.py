@@ -91,3 +91,30 @@ async def test_top_k_respected():
         graph_retriever=graph,
     )
     assert len(out) == 3
+
+
+# ─── Retrieval mode select-or-auto (FR-RET-07) ─────────────────────
+
+import pytest  # noqa: E402
+
+from api.retrieval.hybrid import resolve_retrieval_mode  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ("Give me an overview of the corpus themes", "global"),
+        ("What are the main ideas across all papers", "global"),
+        ("What is RRF", "local"),
+        ("define hybrid retrieval", "local"),
+        ("transformers", "local"),  # short query -> local
+        ("How does graph traversal improve retrieval quality in practice", "hybrid"),
+    ],
+)
+def test_resolve_auto_mode_from_query(query, expected):
+    assert resolve_retrieval_mode(query, "auto") == expected
+
+
+@pytest.mark.parametrize("explicit", ["local", "global", "hybrid"])
+def test_explicit_mode_passes_through(explicit):
+    assert resolve_retrieval_mode("any query at all here", explicit) == explicit
