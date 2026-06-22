@@ -4,10 +4,10 @@
 > next agent picks up. Companion to [`SETUP.md`](SETUP.md) (how to get
 > the gates green) and [`PROCESS.md`](PROCESS.md) (how we build).
 >
-> If anything here disagrees with `.claude/memory/decisions.md` or the
-> code itself, those win. This file is a guide, not the spec.
+> If anything here disagrees with `.claude/memory/CHANGELOG.md` /
+> `DECISIONS.md` or the code itself, those win. This file is a guide, not the spec.
 >
-> **Last refreshed:** 2026-06-12, after Slice 20 (first-run/activation flow + §7.4 degradation).
+> **Last refreshed:** 2026-06-22, after Phase-1 finish-plan batches B1–B4 (checklist §1.13).
 
 ## The 60-second pitch
 
@@ -20,10 +20,13 @@ over shared state, and the interface itself is an agent output (the GenUI
 catalog).
 
 The author is building this as their FYP at Universiti Teknologi PETRONAS.
-The graded build (P1) ships a 20-agent MVP with a 22/24-component GenUI,
+The graded build (P1) ships a 21-agent MVP with a 22/24-component GenUI,
 five demonstrated modes, a learning system with SM-2 spaced repetition,
 Firebase auth, a hybrid-vs-flat RAG benchmark (20 questions), and a user
-study infrastructure (SUS modal, block ratings, JSONL event store).
+study infrastructure (SUS modal, block ratings, JSONL event store). All
+three ML Engines (Re-Rank/Mastery/Document Classifier) are now scoped P2 —
+see DECISIONS.md ADR-013 — so the P1 release gate does not depend on any
+trained model.
 
 The post-FYP roadmap (P2) completes the 25-agent suite, audio/video,
 real-time collaboration, and mobile.
@@ -57,19 +60,54 @@ fight the `Edit`/`Write` tools — reach for the MCP tools immediately.
 | | |
 |---|---|
 | **Branch** | `ExDev` (parent of all the work) |
-| **Phase** | P1 (FYP 2 MVP, graded) — feature-complete; pending author tasks |
-| **Latest commit** | `10fc756` — Slice 20 first-run/activation flow + §7.4 degradation |
-| **Tests** | **541 backend** (pytest) + **11 frontend** (vitest) — all green |
-| **Agents** | **20** across four tiers |
+| **Phase** | P1 (FYP 2 MVP, graded) — feature-complete except B5 (NFR verification + benchmark run) |
+| **Latest commit** | `9b425f6` — docs(p1): defer ML Engines to P2, batch the Phase-1 finish plan, add /resume |
+| **Tests** | **602 backend** (pytest) + **11 frontend** (vitest) — all green |
+| **Agents** | **21** across four tiers (added `web_search`, batch B2) |
 | **GenUI catalog** | **22 of 24** components, all four states each |
 | **Modes** | **5 wired end-to-end** (FR-UI-06 ✅) |
 
-Slices shipped: **P0 + Slices 1–20**.
+Slices shipped: **P0 + Slices 1–20 + Phase-1 finish-plan batches B1–B4** (checklist §1.13).
+Remaining before the P1 gate closes: **B5** (NFR verification + the hybrid-vs-flat
+benchmark run, §1.11/§1.12) and the author-side user study.
 
 ## Slice ledger (newest first)
 
-Each slice closed with code-review + all gates green + a closing ADR in
-`.claude/memory/decisions.md`.
+Each slice closed with code-review + all gates green + a closing entry in
+`.claude/memory/CHANGELOG.md` (plus an ADR in `DECISIONS.md` where a real
+point-decision was made).
+
+### Phase-1 finish-plan batches B1–B4 (`76a4ffc`, `9b425f6`, checklist §1.13)
+
+Four QA-gated batches closing out the remaining P1 checklist items (602
+backend tests green, up from 541). Full detail in CHANGELOG.md 2026-06-22.
+
+- **B1 Ingestion & Graph:** YouTube transcript ingest (`api/ingestion/parsers/youtube.py`,
+  `ingest_youtube()`, `POST /ingest/youtube` — FR-ING-03); per-document stage
+  progress bar in `SourcesPanel.tsx` (FR-ING-07); entity canonicalisation via
+  head-token singularisation in `extractor._slug` (FR-ING-09); incremental
+  graph merge locked in with `test_incremental_graph.py` (FR-KG-03).
+- **B2 Retrieval & Agents:** local/global/hybrid/auto retrieval mode
+  (`hybrid_retrieve(mode=)` + `resolve_retrieval_mode()` — FR-RET-07);
+  intent-scoped tool injection (`registry.select_tools()` + cap — FR-AGT-05);
+  partial-result streaming (`Orchestrator.astream_run()` + `progress` SSE
+  frames — FR-AGT-07); new tier-4 `WebSearchAgent` (Semantic Scholar/arXiv →
+  `SourceList`, intent `websearch` — see DECISIONS.md ADR-015). Agent count
+  20 → **21**.
+- **B3 Learning/Accounts/Analytics:** Pomodoro plan sized to the session
+  (`PomodoroPlan` + `StudyPlannerAgent` — FR-LRN-09); user highlights/notes
+  folded back into the graph (`ingest_highlight()`, `POST /highlights` —
+  FR-USR-05); generic `ActivityEvent` + `append_event()` fired from all
+  ingest routes (FR-ANL/§20).
+- **B4 Export & Interop:** stdlib-only generators, no new deps — hand-built
+  PDF + zip/OOXML DOCX in `api/export/document.py` (FR-EXP-01/02); BibTeX/RIS
+  in `api/export/bibliography.py` (FR-EXP-08); `GET /export/report`,
+  `GET /export/bibliography`. See DECISIONS.md ADR-016.
+- **Scope decisions:** all three ML Engines re-phased P1 → P2 (DECISIONS.md
+  ADR-013); Neo4j/OCR/Obsidian deferred to P2, YouTube ingest kept in P1
+  (ADR-014).
+- **Remaining:** B5 — NFR verification (§1.11) + the hybrid-vs-flat benchmark
+  run (§1.12) — not yet executed.
 
 ### Slice 20 — First-run/activation flow + §7.4 degradation (`10fc756`, §7.1, §7.4, FR-ING-08, NFR-REL-01)
 
@@ -249,14 +287,14 @@ See `git log --oneline 267b035..13abd86` for the full chain. Key milestones:
 
 ## Current inventory
 
-### Agents (20)
+### Agents (21)
 
 | Tier | Agents |
 |---|---|
 | 1 | `orchestrator` |
 | 2 | `research`, `graph_agent`, `discovery`, `learning`, `socratic`, `writing`, `literature`, `contradiction`, `cross_doc`, `comparator`, `timeline`, `annotation` |
 | 3 | `ui_agent` (the ONLY component-picker), `citation`, `visual_agent`, `document` |
-| 4 | `fact_checker`, `memory`, `study_planner` |
+| 4 | `fact_checker`, `memory`, `study_planner`, `web_search` (new, batch B2 — academic discovery only, Semantic Scholar/arXiv) |
 
 ### GenUI catalog (22 of 24)
 
@@ -282,6 +320,7 @@ Per-mode panel layouts applied by `Shell.tsx` from `MODE_LAYOUT` map.
 | `POST /chat` | P0 | SSE orchestrator turn (with `event: trace` frame) |
 | `POST /ingest` | 7–8 | PDF upload → Pinecone + graph |
 | `POST /ingest/url` | 12 | URL fetch + text extraction → ingest |
+| `POST /ingest/youtube` | B1 | YouTube transcript fetch → ingest (FR-ING-03) |
 | `POST /ingest/retry/{doc_id}` | 20 | Retry failed ingest from stored bytes (FR-ING-08) |
 | `POST /ingest/reextract` | 14 | Re-run entity extraction on existing chunks |
 | `GET /docs` | 12 | List all ingested documents |
@@ -289,8 +328,12 @@ Per-mode panel layouts applied by `Shell.tsx` from `MODE_LAYOUT` map.
 | `GET /graph` | 14 | Calling user's knowledge graph (nodes + edges) |
 | `GET /suggestions` | 20 | 3 seed cross-document questions from corpus |
 | `POST /review` | 9 | SM-2 card rating update |
+| `GET /review/progress` | — | Learning progress API |
 | `GET/POST/PUT/DELETE /notebooks` | 9 | Notebook CRUD |
 | `GET/PUT /profile` | 15 | User profile read + update |
+| `POST /highlights` | B3 | User highlight/note folded back into the graph (FR-USR-05) |
+| `GET /export/report` | B4 | PDF/DOCX report export (FR-EXP-01/02) |
+| `GET /export/bibliography` | B4 | BibTeX/RIS bibliography export (FR-EXP-08) |
 | `POST /feedback/rating` | 10 | Per-block thumbs up/down |
 | `POST /feedback/sus` | 10 | SUS survey submission |
 | `GET /analytics/export` | 10 | Researcher data export |
@@ -324,7 +367,11 @@ api/agents/tier3/ui_agent.py   # the ONLY component-picker (slots 0–15)
 api/agents/tier3/citation.py   # CitationAgent — CitationPreview / BibliographyExport
 api/agents/tier3/visual.py     # VisualAgent — ConceptMap / ComparisonChart
 api/agents/tier3/document.py   # DocumentAgent — CornellNotes
-api/agents/tier4/*.py          # fact_checker, memory, study_planner
+api/agents/tier4/*.py          # fact_checker, memory, study_planner, web_search
+api/ingestion/parsers/youtube.py  # YouTube transcript parser (B1)
+api/export/document.py         # stdlib PDF + DOCX report writers (B4, no new deps)
+api/export/bibliography.py     # BibTeX / RIS generation (B4)
+api/routes/highlights.py       # POST /highlights — user highlights folded into graph (B3)
 api/analytics/event_store.py   # EventStore ABC + JsonlEventStore
 api/learning/sm2.py            # SM-2 algorithm + ReviewScheduler
 api/stores/notebook_store.py   # NotebookStore ABC + JsonlNotebookStore
@@ -352,15 +399,21 @@ graphify-out/GRAPH_REPORT.md   # community analysis of the graph
 
 ## What's deferred (and WHY)
 
-ADRs in `.claude/memory/decisions.md`. Don't rebuild these without reading
-the ADR — they're deliberate:
+ADRs in `.claude/memory/DECISIONS.md` (session narratives in `CHANGELOG.md`).
+Don't rebuild these without reading the ADR — they're deliberate:
 
-- **Expanded ingestion (FR-ING-02 remaining).** DOCX/OCR parsers + YouTube.
-  URL ingest (httpx + BeautifulSoup) is done. DOCX → P2.
-- **Neo4j swap (§1.2, FR-KG-07).** `GraphStore` ABC is the seam; flip
-  `graph_backend=neo4j` once the impl ships. NetworkX is fine for FYP scale.
+- **All three ML Engines (Re-Rank/Mastery/Document Classifier).** Re-phased
+  P1 → P2 on 2026-06-22 — see DECISIONS.md ADR-013. Phase-1 release gate no
+  longer depends on any trained model; the §23.1 hybrid-vs-flat ablation
+  stands alone as the retrieval-quality evidence.
+- **Neo4j swap, OCR ingestion, Obsidian import/export.** Explicitly deferred
+  to P2 as of the 2026-06-22 batch plan — see DECISIONS.md ADR-014.
+  `GraphStore` ABC is the seam for Neo4j; flip `graph_backend=neo4j` once the
+  impl ships. NetworkX is fine for FYP scale. PDF/URL/YouTube ingestion is
+  done; OCR and Obsidian import/export are not.
 - **Final 2 GenUI components (2 of 24 unbuilt).** The `CollaborationCard`
   and one more remain catalogued in `uiux_plan.md §4` but not built.
+  Unchanged by the 2026-06-22 batches — B1–B4 touched no GenUI schema/registry.
 - **User study recruitment + conduct (FR-ANL-02, R-03).** Infrastructure
   complete. **Author must recruit 10–15 participants** and run the study.
   Target SUS ≥ 70. Use `GET /analytics/export` to collect data.
@@ -368,21 +421,24 @@ the ADR — they're deliberate:
   are on-disk. The `NotebookStore` ABC is the seam for a Firestore swap.
   Firebase auth (JWT verify) is already wired in `api/core/auth.py`.
 - **`@tool` decorators on tier-2 agents.** `route_to_agent` calls `run()`
-  directly; tool registry is empty for most agents. Deferred (decisions.md).
+  directly; tool registry is empty for most agents. Deferred (DECISIONS.md ADR-010).
   Becomes load-bearing when LLM-driven tool dispatch lands.
 - **Frontend component DOM tests.** `vitest` is still `environment: 'node'`.
   jsdom + testing-library is a noted P1 TODO in `web/vitest.config.ts`.
-- **Benchmark result run (R-02).** Harness is built and green. Author must
-  **run it with real API keys** and record stat-sig results.
+- **B5 — NFR verification & benchmark run (checklist §1.13).** The only
+  remaining batch in the 2026-06-22 finish plan: §1.11 perf/scale/reliability/
+  cost targets need measuring and recording; §1.12's hybrid-vs-flat benchmark
+  harness (`eval/run_benchmark.py`) is built and green but has not been run
+  with real API keys yet (R-02). Author task, not gated by further code.
 
 ## Active architectural decisions (durable)
 
 | Decision | Where | Why |
 |---|---|---|
 | `Mode` owned by `packages/schema`, imported everywhere | `api.ts`, `base.py`, `uiStore.ts` | One wire type; no drift (R-10) |
-| Python `pyproject.toml` at repo root (not `api/`) | decisions.md 2026-05-21 | Dependency hook matches `api.<layer>.*` prefixes |
+| Python `pyproject.toml` at repo root (not `api/`) | DECISIONS.md ADR-005 | Dependency hook matches `api.<layer>.*` prefixes |
 | Pinecone via raw httpx (no SDK) | `pinecone_store.py` | Matches Anthropic pattern; cleaner respx tests |
-| LangGraph 0.2+ with Pydantic `AgentState` | decisions.md 2026-05-22 | Reducers via `Annotated`; mutation persists in-node |
+| LangGraph 0.2+ with Pydantic `AgentState` | CHANGELOG.md 2026-05-22 "Slice 1 scope" | Reducers via `Annotated`; mutation persists in-node |
 | Per-prompt `VERSION` constants | extraction/fact_checker/graph/learning/writing prompts | R-02 benchmark reproducibility |
 | Orchestrator takes `extra_agents` | `orchestrator.py`, `api/main.py` (Slice 4) | Keeps tier-2 wiring out of graph.py |
 | Three-tier LLM strategy (Opus/Sonnet/Haiku) | `api/core/settings.py`, `llm/` | NFR-COST-01; agents pick the right tier |
@@ -394,10 +450,15 @@ the ADR — they're deliberate:
 | Per-user graph registry | `api/stores/user_graph_registry.py` | FR-KG-02; isolates knowledge per user without schema change |
 | `event: trace` after `event: ready` in SSE | `api/genui/streamer.py` | Non-blocking; consumer falls through if missing (graceful) |
 | Suggestions TTL cache in module state | `api/routes/suggestions.py` | Simple; avoids per-request LLM call; invalidates on doc count change |
+| Retrieval mode (local/global/hybrid/auto) threaded via `AgentState` + `ChatRequest` | `api/retrieval/hybrid.py`, `packages/schema/src/api.ts` | FR-RET-07; auto-heuristic gates retriever fan-out per query |
+| Web Search agent scoped to academic discovery only (no general web) | `api/agents/tier4/web_search.py` | PRD §12 non-goal boundary; DECISIONS.md ADR-015 |
+| Export generators are hand-built stdlib, not reportlab/python-docx | `api/export/document.py` | Venv couldn't install those packages; DECISIONS.md ADR-016 |
 
 ## What's next — remaining P1 gates
 
-The remaining gates before the FYP 2 submission:
+The remaining gates before the FYP 2 submission, now tracked as checklist
+§1.13 batch **B5 — NFR verification & Benchmark** plus the author-side user
+study:
 
 ### 1. Conduct the user study (author task)
 
@@ -417,6 +478,9 @@ python eval/run_benchmark.py --mode both
 # Results saved to eval/results/ as JSON
 ```
 Compute ROUGE-L + semantic similarity delta (hybrid vs flat). This is R-02.
+This and the §1.11 perf/scale/reliability/cost measurement pass together
+make up batch B5 — the only unchecked item in checklist §1.13 as of
+2026-06-22.
 
 ### 3. Optional code slice — final 2 GenUI components
 
@@ -425,7 +489,8 @@ If supervisor requires FR-UI-02 fully closed (24/24):
 - Use the `genui-component` skill for each.
 - Schema → renderer → registry → validate.py → producing agent → tests.
 
-> **Slice numbering note.** Slices are P0 + 1–20. The *inline* `→ slice N`
-> annotations inside `docs/checklist.md` are from the original pre-build estimate
-> and do **not** map to realized slice numbers. When in doubt, this file's ledger
-> is truth.
+> **Slice numbering note.** Slices are P0 + 1–20, after which the work shifted
+> to named batches B1–B5 under checklist §1.13 (B1–B4 done as of 2026-06-22,
+> B5 open). The *inline* `→ slice N` annotations inside `docs/checklist.md`
+> are from the original pre-build estimate and do **not** map to realized
+> slice numbers. When in doubt, this file's ledger is truth.
