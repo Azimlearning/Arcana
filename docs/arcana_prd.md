@@ -169,7 +169,7 @@ Aisha uploads eighteen papers on GraphRAG. Arcana ingests them, extracts entitie
 
 ## 8. System Architecture Overview
 
-Arcana is organised as **six layers plus a cross-cutting LLM service**. A request flows down from the client through the API into agent orchestration, which draws on hybrid retrieval over the knowledge stores; documents enter through the ingestion pipeline; the LLM is used by ingestion (entity extraction), retrieval (synthesis), and every agent (reasoning).
+Arcana is organised as **six layers plus two cross-cutting services**: the LLM service and a small set of trained **ML Engines** (§12A). A request flows down from the client through the API into agent orchestration, which draws on hybrid retrieval over the knowledge stores; documents enter through the ingestion pipeline; the LLM is used by ingestion (entity extraction), retrieval (synthesis), and every agent (reasoning). Engines differ from the LLM service in kind, not just degree: they are small supervised models trained offline, not prompted at runtime, and each sits behind the same heuristic it can fall back to (RRF, SM-2, or no tag) if disabled.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -195,6 +195,7 @@ Arcana is organised as **six layers plus a cross-cutting LLM service**. A reques
 └──────────────────────────────────────────────────────────────┘
         ▲  INGESTION PIPELINE: parse → chunk → embed → extract
         │  LLM SERVICES (cross-cutting): Claude primary · OpenRouter fallback
+        │  ML ENGINES (cross-cutting): Re-Rank · Mastery · Document Classifier
 ```
 
 **Layer summary:**
@@ -205,6 +206,7 @@ Arcana is organised as **six layers plus a cross-cutting LLM service**. A reques
 - **Knowledge Stores.** Knowledge graph (Neo4j prod, NetworkX prototype), Pinecone vector store, Firestore metadata/user data.
 - **Ingestion Pipeline.** Parsing, chunking, embedding, LLM-based entity/relationship extraction.
 - **LLM Services.** Claude API primary; OpenRouter fallback.
+- **ML Engines.** Trained, narrow supervised models — Re-Rank, Mastery, Document Classifier — each optional and additive to an existing heuristic (§12A).
 
 ### Locked tech stack
 
@@ -222,6 +224,7 @@ Arcana is organised as **six layers plus a cross-cutting LLM service**. A reques
 | Auth | Firebase Auth | Email / Google OAuth |
 | Spaced repetition | FSRS / SM-2 | Scientifically optimised scheduling |
 | GenUI protocol | A2UI-inspired + Vercel AI SDK | Declarative component streaming |
+| ML Engines | TensorFlow (`tf.estimator.BoostedTreesClassifier` / Keras) trained in Google Colab | Free GPU/CPU compute; small-data-friendly model classes (§12A) |
 
 ---
 
@@ -248,6 +251,11 @@ arcana/
 │   ├── retrieval/               # hybrid retrieval
 │   │   ├── vector.py  bm25.py  graph.py
 │   │   └── fusion.py            # Reciprocal Rank Fusion
+│   ├── engines/                 # trained ML Engines (§12A) — leaf layer, like stores/llm
+│   │   ├── base.py              # Engine ABC: predict() + is_available()
+│   │   ├── rerank_engine.py      # post-RRF learned re-ranker
+│   │   ├── mastery_engine.py     # HLR-based recall/difficulty predictor
+│   │   └── classifier_engine.py  # ingestion-time subject/topic tagger
 │   ├── agents/                  # the 25-agent suite
 │   │   ├── base.py              # BaseAgent, @tool decorator, registry
 │   │   ├── orchestrator.py
@@ -271,7 +279,7 @@ arcana/
 
 ### 9.2 Layering and Dependency Rules
 
-Dependencies point in **one direction only**: `routes → agents → retrieval/stores → llm`. Agents never import a concrete store; they depend on the `GraphStore`, `VectorStore` and `DocStore` abstractions, which is what allows the NetworkX→Neo4j migration (FR-KG-07) to happen behind a single seam. The GenUI layer is the only place that knows `UIBlock` shapes, and those shapes are imported from `packages/schema` so the frontend renderer and backend producer share one definition.
+Dependencies point in **one direction only**: `routes → agents → retrieval/learning/ingestion → engines/stores/llm → core`. Agents never import a concrete store; they depend on the `GraphStore`, `VectorStore` and `DocStore` abstractions, which is what allows the NetworkX→Neo4j migration (FR-KG-07) to happen behind a single seam. `engines/` sits at the same leaf level as `stores/` and `llm/` — `retrieval/`, `learning/` and `ingestion/` call into an Engine the same way they call into a store, behind the shared `Engine` ABC (Listing 12A.0), and `engines/` itself depends only on `core`. The GenUI layer is the only place that knows `UIBlock` shapes, and those shapes are imported from `packages/schema` so the frontend renderer and backend producer share one definition.
 
 | Module | Responsibility | Key external dep |
 | --- | --- | --- |
@@ -279,6 +287,7 @@ Dependencies point in **one direction only**: `routes → agents → retrieval/s
 | `ingestion` | Turn raw files/URLs into chunks, embeddings, graph triples | PyMuPDF, Claude |
 | `stores` | Persist/query graph, vectors, metadata, raw files | Neo4j/NetworkX, Pinecone, Firestore |
 | `retrieval` | Three retrievers + RRF fusion behind one `hybrid_retrieve` | — |
+| `engines` | Trained ML Engines — Re-Rank, Mastery, Document Classifier (§12A) | TensorFlow |
 | `agents` | 25 agents, tool registry, LangGraph assembly | LangGraph |
 | `genui` | Validate and stream typed `UIBlock`s to the client | SSE |
 | `llm` | Provider-agnostic completion + tool-calling with fallback | Anthropic, OpenRouter |
@@ -287,6 +296,7 @@ Dependencies point in **one direction only**: `routes → agents → retrieval/s
 1. An agent file in `agents/` must not `import` from `stores/neo4j_*` or `stores/networkx_*` — only the abstract base.
 2. Any `UIBlock` type must be defined in `packages/schema` first, then imported by both `api/genui/blocks.py` and `web/components/genui`.
 3. No secret literal in source — everything via `Settings` (§9.3).
+4. A consumer of an Engine (`retrieval/`, `learning/`, `ingestion/`) must not `import` a concrete Engine class — only the `Engine` ABC — and must handle `is_available() == False` by falling back to the pre-existing heuristic (RRF-only / SM-2 / no tag).
 
 ### 9.3 Configuration and Environments
 
@@ -1006,6 +1016,84 @@ STREAM → 3 typed UIBlocks rendered as they arrive
 
 ---
 
+## 12A. ML Engines — Trained Model Components
+
+> **Phase note (scope sign-off 2026-06-22).** All three Engines are **post-Phase-1 (P2)** — including the Re-Rank Engine, which was previously P1. Phase 1's release gate (§24) does **not** depend on any trained model; the §23.1 graph-vs-flat ablation stands on its own. Engines remain fully specified here so the P2 work is ready to pick up, and are tracked under Phase 2 in `checklist.md`. See Q-11.
+
+**Why this section exists.** Everything in §12 is an *Agent* — an LLM-driven module reasoned into existence by a prompt. Arcana also includes a small number of **Engines**: narrow, supervised models trained offline on labelled data and loaded for fast inference at runtime. Engines exist because reasoning-only agents can't be benchmarked the way a trained model can (loss curves, held-out accuracy, feature importances), and because a supervisor's request to "add a machine learning component" is best answered with an actual trained model, not another LLM call wrapped in a new prompt.
+
+**Design invariant — additive, never substitutive.** Every Engine sits **downstream** of an existing heuristic (RRF fusion, SM-2/FSRS, or "no tag") and can be disabled with the pipeline falling back to that heuristic unchanged. This matters specifically for the Re-Rank Engine: §10.4 already states that RRF fusion is *"the single most important piece of evidence in the FYP"* (R-02, FR-RET-04) — the graph-vs-no-graph ablation must remain comparable with or without any Engine attached. Engines are evaluated as **additional, clearly-labelled benchmark arms** (§23.4), never as a replacement for that primary comparison.
+
+**Common shape.** All three Engines share one interface so they are swappable and individually disable-able, mirroring the `GraphStore`/`VectorStore`/`DocStore` abstraction pattern (NFR-MNT-01) applied to algorithms instead of storage:
+
+```python
+class Engine(ABC):
+    @abstractmethod
+    def predict(self, features: dict) -> EngineResult: ...
+    @abstractmethod
+    def is_available(self) -> bool: ...   # False until trained weights are loaded
+```
+> *Listing 12A.0 — Shared Engine interface; each concrete Engine lives in `api/engines/`.*
+
+### Re-Rank Engine — `P2`
+
+**Purpose.** Reorders the top-k chunks RRF already fused, using learned signal RRF can't see (e.g. graph centrality combined with lexical overlap). Runs strictly *after* `reciprocal_rank_fusion` (Listing 10.4); never changes what RRF itself does.
+
+**Model & approach.** Gradient-boosted trees (`tf.estimator.BoostedTreesClassifier`, or LightGBM if TensorFlow's estimator API proves too heavy for a small feature set) over hand-engineered features per (query, chunk) pair: BM25 score, vector cosine similarity, graph-hop distance, RRF rank/score, passage length, query–passage term overlap. Chosen over a neural cross-encoder because it trains reliably on the small dataset realistically available to a solo FYP build, runs in single-digit milliseconds (protects NFR-PERF-01), and yields feature importances that are directly reportable evidence ("the model weights graph-hop distance at X%").
+
+**Data sources.**
+1. **MS MARCO Passage Ranking** (public IR benchmark, ~8.8M passages with relevance judgments; via Hugging Face `datasets` or the official MS MARCO release) — used to pretrain/sanity-check the feature-based ranker's general behaviour before any domain-specific adaptation.
+2. **Synthetic in-domain triples**, generated from Arcana's own corpus: for each §23.1 benchmark question (plus additional queries generated doc2query-style by prompting an LLM over passages), run `hybrid_retrieve`, then have an LLM-as-judge assign a graded relevance score (0–3) to each retrieved chunk. This produces (query, chunk, features, label) rows specific to Arcana's actual domain.
+3. A **hand-checked validation subset** (30–50 triples labelled by the author directly) to sanity-check the LLM judge isn't merely agreeing with itself — directly mitigates R-11 below.
+
+**Training & evaluation.** Trained in Colab (free GPU/CPU, disposable scratchpad notebooks); exported model artifact (`.json`/`.pb`) committed to `infra/` or pulled from storage per `env_generation_guide.md`. Evaluated per §23.4: NDCG@k / precision@k for "RRF-only" vs "RRF + Re-Rank Engine" on the same fixed §23.1 question set — an additional column on the existing benchmark table, not a new table.
+
+**Integration point.**
+```python
+async def hybrid_retrieve(query: str, top_k: int = 12) -> list[Chunk]:
+    fused = reciprocal_rank_fusion([vec, kw, graph], k=settings.rrf_k)   # unchanged (Listing 10.4)
+    if settings.rerank_engine_enabled and rerank_engine.is_available():
+        fused = rerank_engine.predict({"query": query, "candidates": fused})
+    return fused[:top_k]
+```
+> *Listing 12A.1 — Re-Rank Engine as an optional post-fusion step; RRF's own output is untouched.*
+
+**Satisfies.** FR-ENG-01, FR-ENG-02, FR-ENG-06.
+
+### Mastery Engine — `P2`
+
+**Purpose.** Predicts recall probability / next-review difficulty per topic, feeding FR-LRN-10 and offering the swappable alternative to SM-2 that the PRD's own build note for the Learning Agent already anticipates: *"Pick FSRS or SM-2 early (Q-04) and keep the scheduler isolated so the choice is swappable"* (§12, Learning Agent build notes).
+
+**Model & approach.** Half-Life Regression (HLR) — a log-linear or small Keras regression model predicting memory half-life from review features (repetitions, correct count, lag time since last review), following Settles & Meeder (2016).
+
+**Data sources.**
+1. **Duolingo HLR dataset** (Settles & Meeder, 2016, *"A Trainable Spaced Repetition Model for Language Learning"*) — ~13M public flashcard review logs; the canonical academic dataset for exactly this task, freely downloadable from Duolingo's research page. Gives a citable, externally-validated starting model.
+2. **FSRS open benchmark dataset** (`github.com/open-spaced-repetition`) — a large, anonymised collection of real Anki review logs maintained by the open-spaced-repetition community; doubles as direct evidence for resolving Q-04 (FSRS vs SM-2) since it's the same dataset that benchmark compares against.
+3. **Cold-start fallback:** until a user's own review history (accumulated through the FYP user study, §23.2) crosses a minimum threshold, the Mastery Engine runs on public-data-pretrained weights only; SM-2 remains the default scheduler below that threshold.
+
+**Training & evaluation.** Per §23.4: prediction accuracy on held-out review outcomes vs SM-2's fixed-interval heuristic — reported as exploratory given the realistically small in-study sample, with the public-dataset result reported as the primary, more statistically meaningful figure.
+
+**Known limitation (see R-12).** The public datasets are language-learning flashcards, not academic study material — a domain gap that must be stated plainly in the FYP report, not glossed over.
+
+**Satisfies.** FR-ENG-03, FR-ENG-04, FR-ENG-06.
+
+### Document Classifier Engine — `P2`
+
+**Purpose.** Tags ingested documents with subject/topic/difficulty metadata during ingestion (`api/ingestion/`), feeding UI filtering/badges and the Mastery Engine's per-topic grouping.
+
+**Model & approach.** A lightweight classifier (TF-IDF + linear model, or a small Keras dense head) on top of the `text-embedding-3-large` vectors ingestion already computes (§10, no extra embedding cost) — predicts a subject/topic category per document.
+
+**Data sources.**
+1. **arXiv Dataset** (Cornell University's arXiv metadata dump, via Kaggle; ~1.7M+ paper records with category labels such as `cs.AI`, `math.ST`) — public and domain-appropriate, since Arcana's target corpus is academic/research material.
+2. **20 Newsgroups** (classic public benchmark) as an optional generic out-of-domain sanity check.
+3. **Self-bootstrap fine-tuning:** once the author's own documents are ingested, a small labelled subset (hand-labelled, or weak-labelled by the zero-shot LLM baseline below) adapts the public-pretrained classifier to Arcana's actual corpus distribution.
+
+**Training & evaluation.** Per §23.4: accuracy/F1 on a held-out arXiv test split, **plus** an accuracy/latency/cost comparison against a zero-shot LLM-prompt classifier run over the same ingested documents — mirroring the baseline-comparison pattern §23.1 already uses for hybrid retrieval vs flat-RAG.
+
+**Satisfies.** FR-ENG-05, FR-ENG-06.
+
+---
+
 ## 13. Generative UI — Protocol and Component Catalog
 
 > Sections 13–15 are the conceptual spec. For implementation — exact design-token values, the full per-component catalog with phases and panels, the four interface states per component, the agent-trace surface, accessibility rules, and what the reference mockup already proves — see the consolidated **`uiux_plan.md`** (the design authority). This section defines intent; `uiux_plan.md` makes it buildable.
@@ -1400,6 +1488,18 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | FR-ANL-02 | A study-effectiveness dashboard summarises learning progress. | C | P2 |
 | FR-ANL-03 | Usage events are instrumented to support the FYP user study. | S | P1 |
 
+### 17.10 ML Engines (FR-ENG)
+
+| ID | Requirement | Pri. | Phase |
+| --- | --- | --- | --- |
+| FR-ENG-01 | A Re-Rank Engine reorders RRF-fused retrieval results before they reach agents. | S | P2 |
+| FR-ENG-02 | The Re-Rank Engine runs strictly after RRF fusion and never replaces it; the RRF-only and RRF+rerank arms remain independently evaluable. | M | P2 |
+| FR-ENG-03 | A Mastery Engine predicts recall probability / review difficulty per topic. | C | P2 |
+| FR-ENG-04 | The Mastery Engine falls back to SM-2/FSRS scheduling until sufficient per-user review history accumulates. | M | P2 |
+| FR-ENG-05 | A Document Classifier Engine tags subject/topic/difficulty metadata at ingestion time. | C | P2 |
+| FR-ENG-06 | Each Engine is swappable behind a common `Engine` abstraction and can be disabled without breaking its host pipeline. | M | P2 |
+| FR-ENG-07 | Each Engine's training data sources and methodology are documented and reproducible (§12A). | S | P2 |
+
 ---
 
 ## 18. Non-Functional Requirements
@@ -1411,6 +1511,7 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | NFR-PERF-02 | Full multi-agent synthesis for a typical research question. | < 15 s |
 | NFR-PERF-03 | Ingestion time for a 20-page text PDF. | < 60 s |
 | NFR-PERF-04 | Interactive graph render for up to 500 nodes. | < 2 s |
+| NFR-PERF-05 | Re-Rank Engine inference adds to the retrieval path on top of the NFR-PERF-01 budget. | < 200 ms added |
 
 ### 18.2 Scalability
 | ID | Requirement | Target |
@@ -1425,6 +1526,7 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | NFR-REL-01 | Failure of one retrieval method degrades quality but not availability. | Graceful degradation |
 | NFR-REL-02 | Primary LLM failure falls back to the secondary provider. | Automatic fallback |
 | NFR-REL-03 | Demo-environment uptime during evaluation and defence. | Stable for sessions |
+| NFR-REL-04 | Failure or absence of a trained Engine falls back to its underlying heuristic (RRF-only / SM-2 / no tag) without breaking the request. | Graceful degradation |
 
 ### 18.4 Security and Privacy
 | ID | Requirement | Target |
@@ -1433,6 +1535,7 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | NFR-SEC-02 | A user's corpus, graph and data are isolated from other users. | Per-user isolation |
 | NFR-SEC-03 | Secrets are environment-injected, never committed. | Enforced |
 | NFR-SEC-04 | GenUI agents emit data only; no executable code crosses the wire. | Schema-validated |
+| NFR-SEC-05 | Corpus data uploaded to external training compute (e.g. Colab) is limited to the author's own non-sensitive FYP material; no other user's data leaves Arcana's storage for training. | Documented & enforced |
 
 ### 18.5 Usability and Maintainability
 | ID | Requirement | Target |
@@ -1441,6 +1544,7 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | NFR-USE-02 | Every streamed component defines empty/loading/partial/error states. | Required |
 | NFR-MNT-01 | Storage backends are swappable behind abstractions (graph/vector/doc). | Required |
 | NFR-MNT-02 | Adding a catalog component is a single registry entry plus its file. | Required |
+| NFR-MNT-03 | Each ML Engine is swappable/retrainable behind the common `Engine` abstraction, mirroring NFR-MNT-01. | Required |
 | NFR-COST-01 | Third-party API spend stays within a student budget. | Capped, monitored |
 
 ---
@@ -1458,6 +1562,8 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | UserProfile | id, preferences, complexity_level, interaction_history_ref |
 | ReviewState | card_id, user_id, due, interval_days, ease, last_result |
 | UIBlock (turn) | turn_id, type, data, meta, panel, order |
+| EngineModel | id, engine_type, version, trained_at, metrics, storage_uri |
+| RelevanceJudgment | query, chunk_id, features, label, source (llm_judge/manual) |
 
 ### 19.2 Data Storage Mapping
 | Data | Store | Notes |
@@ -1467,6 +1573,8 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | Documents, notebooks, users, profiles | Firestore | Managed NoSQL metadata |
 | Review state, interaction history | Firestore | Drives spaced repetition + adaptation |
 | Turn blocks (replay/analytics) | Firestore | Emitted UIBlocks per turn |
+| Engine model artifacts, training metrics | Firestore (metadata) + file/blob storage (weights) | Versioned; loaded by `engines/` at startup |
+| Relevance judgments (Re-Rank Engine training data) | Firestore or flat file in `eval/corpus/` | Synthetic + hand-checked labels (§12A) |
 | Raw uploaded files | Object storage | Source of truth for re-processing |
 
 ### 19.3 Data Handling Rules
@@ -1493,6 +1601,12 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 
 **Assumptions:** users supply their own corpus; users work primarily in English; users work on a laptop/desktop browser; the VERA AI architecture and retrieval components can be reused as a baseline.
 
+**ASSUMED (ML Engines, §12A — pending supervisor confirmation):**
+- The Re-Rank Engine's domain-specific training labels are LLM-judged synthetic relevance scores, not externally-validated ground truth; treated as directional evidence, mitigated by a hand-checked validation subset (R-11).
+- No specific ML framework is mandated by the FYP brief — TensorFlow/Colab is the author's working choice (§8 tech stack), not a hard requirement; LightGBM or another library may be substituted if it serves the same model class better.
+- Uploading the author's own ingested corpus to Google Colab for training is acceptable for a single-user FYP build (NFR-SEC-05); this would need re-examination before any multi-user/production deployment.
+- All three Engines start from zero in-house training data; each leans on a named public dataset (below) to avoid blocking on data collection the FYP timeline doesn't allow.
+
 **Constraints:** two-semester FYP timeline, single developer; third-party API costs must stay within a student budget; production-only infrastructure is avoided where a free or local tier is sufficient.
 
 **External dependencies:**
@@ -1507,6 +1621,10 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | LangGraph | Multi-agent orchestration framework |
 | Vercel AI SDK | Generative UI component streaming |
 | Semantic Scholar / arXiv APIs | Academic paper discovery |
+| MS MARCO Passage Ranking dataset | Re-Rank Engine pretraining data (§12A) |
+| Duolingo HLR dataset / FSRS open benchmark dataset | Mastery Engine training data (§12A) |
+| arXiv Dataset (Kaggle) | Document Classifier Engine training data (§12A) |
+| Google Colab | Free GPU/CPU compute for Engine training (§8, §12A) |
 
 ---
 
@@ -1524,6 +1642,9 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 | R-08 | Supervisor assigned late, delaying scope sign-off. | Med | Proceed on the documented plan; keep Open Questions current. |
 | R-09 | Agent-to-agent recursion loops or runs away. | Med | Hop budget and terminal-join guard (§11.6); cap invocations per turn. |
 | R-10 | GenUI block schema drifts between backend and frontend. | Low | Single shared schema in `packages/schema`; server validates every block (fail closed). |
+| R-11 | Re-Rank Engine's synthetic training labels are LLM-judged (self-referential) and may encode the judging LLM's own biases rather than true relevance. | Med | Hand-check a 30–50 triple validation subset; report inter-rater agreement; treat results as directional, not ground truth. |
+| R-12 | Mastery Engine trained on public spaced-repetition data (language flashcards) may not transfer well to academic study material. | Med | Frame as a pretrained prior with SM-2 fallback (FR-ENG-04); state the domain gap explicitly in the FYP report; treat per-user fine-tuning as future work. |
+| R-13 | Adding ML Engines could be read as diluting the FYP's primary empirical claim (R-02, FR-RET-04). | High | Engines are strictly additive (§12A design invariant) — evaluated as extra benchmark arms (§23.4), never substituting for the §23.1 graph-ablation comparison. |
 
 ---
 
@@ -1534,6 +1655,11 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 **23.2 Structured user study.** 10–15 student participants complete standard tasks across Research, Study and Writing modes. Measures: task completion rate, time-on-task, error rate, SUS questionnaire, qualitative feedback.
 
 **23.3 Acceptance linkage.** Results feed the §4 success metrics and §24 release criteria. A release is successful only if the primary retrieval metric shows a significant improvement over baseline **and** the usability score meets its target.
+
+**23.4 ML Engines evaluation.** Each Engine (§12A) is benchmarked against its own pre-existing baseline as an **additional, separately-labelled arm** — never substituting for the §23.1 graph-ablation comparison (R-13).
+- **Re-Rank Engine:** NDCG@k / precision@k for "RRF-only" vs "RRF + Re-Rank Engine" on the same fixed §23.1 question set — an extra column on the existing benchmark table.
+- **Mastery Engine:** prediction accuracy on held-out review outcomes vs SM-2's fixed-interval heuristic, computed first on the public HLR/FSRS datasets (primary, statistically meaningful) and exploratorily on the user study's own review logs (§23.2) if volume allows.
+- **Document Classifier Engine:** accuracy/F1 on a held-out arXiv test split, plus an accuracy/latency/cost comparison against a zero-shot LLM-prompt classifier on the author's own ingested documents — mirroring the hybrid-retrieval-vs-flat-RAG baseline pattern in §23.1.
 
 ---
 
@@ -1568,6 +1694,9 @@ Should/Could items not completed are recorded in the post-FYP roadmap rather tha
 | Q-08 | Programme, student ID and supervisor details for document headers. | Author — administrative |
 | Q-09 | Final hop-budget and token-budget values for the agentic pipeline. | Author during pipeline implementation |
 | Q-10 | Should the 24-component catalog be trimmed to a core set for the graded build? | Author + supervisor |
+| Q-11 | All three ML Engines are now scoped **P2** (author decision, 2026-06-22) so Phase 1 ships without trained-model dependencies. Confirm at supervisor sign-off whether any Engine should be pulled forward into the graded build. | Author + supervisor at scope sign-off |
+| Q-12 | Final choice of Mastery Engine pretraining dataset — Duolingo HLR, the FSRS open benchmark, or both compared? | Author during learning-module design |
+| Q-13 | Acceptable scale/quality bar for LLM-judged synthetic Re-Rank Engine training labels before they're trusted as report evidence. | Author + supervisor |
 
 ---
 
@@ -1580,12 +1709,17 @@ Should/Could items not completed are recorded in the post-FYP roadmap rather tha
 | A2UI | Agent-to-User-Interface; a declarative protocol for agents to describe interface components. |
 | BM25 | A keyword-based ranking function for exact-term retrieval. |
 | Composability | The property that agents can be combined and can invoke one another. |
+| Document Classifier Engine | A trained Engine that tags ingested documents with subject/topic/difficulty metadata at ingestion time (§12A). |
+| Engine | A trained, narrow supervised model — distinct from an LLM-driven Agent — performing one prediction task: Re-Rank, Mastery, or Document Classifier (§12A). |
 | Generative UI (GenUI) | An interface assembled at runtime from typed components chosen by an agent. |
 | GraphRAG | Retrieval-augmented generation that retrieves over a knowledge graph, not only flat chunks. |
+| Half-Life Regression (HLR) | A model of memory decay predicting the half-life of recall probability from review history (Settles & Meeder, 2016); underlies the Mastery Engine (§12A). |
 | Hybrid retrieval | Retrieval combining graph traversal, vector search and BM25, merged via RRF. |
 | Intent-scoped tool selection | Injecting only the tools relevant to the current intent into a prompt. |
 | Knowledge graph | A network of typed nodes (concepts, people, documents, topics) and typed edges. |
+| Mastery Engine | An Engine predicting recall probability / review difficulty per topic via Half-Life Regression, falling back to SM-2 until sufficient personal review history exists (§12A). |
 | MoSCoW | A prioritisation scheme: Must, Should, Could, Won't have. |
+| Re-Rank Engine | A gradient-boosted Engine that reorders RRF-fused retrieval results using learned features; runs strictly after RRF, never replacing it (§12A). |
 | RRF | Reciprocal Rank Fusion; a rank-based method for merging results from multiple retrievers. |
 | Spaced repetition | Scheduling reviews at increasing intervals to maximise long-term retention. |
 | UIBlock | The typed unit of GenUI: `{ type, data, meta }` naming a catalog component. |

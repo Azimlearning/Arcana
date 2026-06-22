@@ -13,8 +13,8 @@
 > **Status (2026-05-22):** P0 walking skeleton merged on `ExDev` branch
 > (commit `267b035`). Boxes below reflect what actually shipped vs. what
 > was honestly deferred. Items deferred to slice 1 (agent maturity) are
-> marked `(→ slice 1)`; the slice ADRs in `.claude/memory/decisions.md`
-> name each deferral and its rationale.
+> marked `(→ slice 1)`; the slice history in `.claude/memory/CHANGELOG.md`
+> (and the slice ADRs in `.claude/memory/DECISIONS.md`) name each deferral and its rationale.
 
 ### 0.1 Repository & tooling
 - [x] Initialise the monorepo per `project_file_structure.md` (`api/`, `web/`, `packages/schema/`, `eval/`, `infra/`, `docs/`).
@@ -95,29 +95,29 @@
 
 ### 1.1 Expand ingestion
 - [x] `parsers/web.py` — **FR-ING-02 (M)**. *(Slice 12: httpx + BeautifulSoup HTML extractor; POST /ingest/url; doc-id derived from URL.)*
-- [ ] `parsers/youtube.py` (transcript) — **FR-ING-03 (S)**.
-- [ ] `ocr.py` for scanned PDFs — **FR-ING-04 (S)**.
-- [ ] Per-document progress + status surfaced to UI — **FR-ING-07 (S)**.
+- [x] `parsers/youtube.py` (transcript) — **FR-ING-03 (S)**. *(B1: youtube transcript parser + ingest_youtube + POST /ingest/youtube + YoutubeIngestRequest schema; youtube-transcript-api dep; 10 parser tests.)*
+- *(moved to P2 §2.2 — deferred 2026-06-22; corpus is text PDFs/URLs)* `ocr.py` for scanned PDFs — **FR-ING-04 (S)**.
+- [x] Per-document progress + status surfaced to UI — **FR-ING-07 (S)**. *(B1: SourcesPanel per-doc stage progress bar (queued→parsing→embedding→ready) + pending status + role=progressbar; polls GET /docs/{id}.)*
 - [x] Failed ingest reported with cause + retry — **FR-ING-08 (M)**. *(Slice 12: GET /docs + GET /docs/{docId} returning DocStatusResponse with status/error fields.)*
-- [ ] Entity canonicalisation (same concept → one node) — **FR-ING-09 (S)**.
+- [x] Entity canonicalisation (same concept → one node) — **FR-ING-09 (S)**. *(B1: head-token singularisation in extractor `_slug` — graphs/graph, ontologies/ontology collapse; guarded non-plurals; embedding-similarity merge remains P2 §1.2.)*
 
 ### 1.2 Knowledge graph maturity
 - [x] Graph persists per user across sessions — **FR-KG-02 (M)**. *(Slice 14: UserGraphRegistry; per-user graphs at {storage}/graphs/{uid}.json; ingest + chat routes resolve per-user graph.)*
-- [ ] Incremental update on new document (no full reprocess) — **FR-KG-03 (S)**.
+- [x] Incremental update on new document (no full reprocess) — **FR-KG-03 (S)**. *(B1: verified existing per-doc graph merge is incremental + idempotent; locked in with test_incremental_graph.py.)*
 - [x] Louvain communities — **FR-KG-04 (S)**; PageRank — **FR-KG-05 (S)**. *(ExDev: `community` + `pagerank` fields in schema + codegen; GET /graph computes both; KnowledgeGraphView renders community-coloured pills with PageRank font-weight. Betweenness bridges → P2.)* Betweenness bridges — **FR-KG-06 (C)** — P2.
 - [x] Interactive graph view endpoint — **FR-KG-08 (M)**. *(Slice 14: GET /graph returns GraphViewResponse; GraphViewNode/Edge types in schema + codegen.)*
-- [ ] Migrate to `neo4j_store.py`; flip `graph_backend=neo4j` — **R-06**; verify no regressions vs NetworkX.
+- *(moved to P2 §2.2 — deferred 2026-06-22; NetworkX satisfies the P1 gate, swap is one setting)* Migrate to `neo4j_store.py`; flip `graph_backend=neo4j` — **R-06**.
 
 ### 1.3 Retrieval features
 - [x] Cross-document comparison questions over the whole corpus — **FR-RET-05 (M)**. *(Slice 16: ComparatorAgent upgraded — top_k=20 corpus sweep; ≥2 docs → LiteratureMatrix JSON matrix; single-doc fallback → CitedSummary. UIAgent dispatches on block_type.)*
-- [ ] Contradiction surfacing on a queried concept — **FR-RET-06 (S)**.
-- [ ] Local/global/hybrid mode select or auto — **FR-RET-07 (C)**.
+- [x] Contradiction surfacing on a queried concept — **FR-RET-06 (S)**. *(B2: verified — ContradictionAgent grounds via hybrid_retrieve, intent-routed by _detect_intent_from_query, prod-registered, emits ContradictionAlert; 7 tests.)*
+- [x] Local/global/hybrid mode select or auto — **FR-RET-07 (C)**. *(B2: hybrid_retrieve `mode` param + resolve_retrieval_mode auto-heuristic gates retriever fan-out; threaded via AgentState.retrieval_mode + ChatRequest.retrievalMode; 13 tests.)*
 
 ### 1.4 Agentic pipeline (composability) — **the defining claim**
 - [x] LangGraph `StateGraph` assembly: `AgentState`, nodes, conditional routing — `agents/graph.py`, **FR-AGT-04 (M)**, *Listing 11.1*.
 - [x] Agent-to-agent invocation working end-to-end — **FR-AGT-03 (M)**, *Listing 11.4*.
-- [ ] Intent-scoped tool injection (`max_tools_per_prompt`) — **FR-AGT-05 (S)**, §11.5.
-- [ ] Partial-result streaming for long tasks — **FR-AGT-07 (S)**.
+- [x] Intent-scoped tool injection (`max_tools_per_prompt`) — **FR-AGT-05 (S)**, §11.5. *(B2: registry.select_tools(agents, limit) dedupes + caps at max_tools_per_prompt; orchestrator scopes by intent and records scoped_tools in trace; tests.)*
+- [x] Partial-result streaming for long tasks — **FR-AGT-07 (S)**. *(B2: Orchestrator.astream_run drives the graph via astream, yielding per-node progress; chat route emits `progress` SSE frames before blocks; tests.)*
 - [x] Graceful degradation on tool/agent failure — **FR-AGT-08 (M)**.
 - [x] Hop-budget recursion guard + terminal join — **FR-AGT-10 (M)**, §11.6.
 - [x] Reach **15+ agents across four tiers** (full vision 25) — **FR-AGT-06 (M)**.
@@ -126,9 +126,9 @@
 ### 1.5 Build out the agents (Tier 2/3/4, P1 set)
 - [x] Tier 2: `learning.py` ✓, `writing.py` ✓, `socratic.py` ✓, `discovery.py` ✓ *(Slice 3+4)*; `graph_agent.py` ✓, `literature.py` ✓, `contradiction.py` ✓, `cross_doc.py` ✓, `comparator.py` ✓, `timeline.py` ✓, `annotation.py` ✓ *(Slice 7)* — **11/12 P1 tier-2 done** *(methodology.py → P2)*.
 - [x] Tier 3: `ui_agent.py` ✓, `citation.py` ✓, `visual.py` ✓, `document.py` ✓ *(Slice 19)*.
-- [ ] Tier 4: `fact_checker.py` ✓, `memory.py` ✓, `study_planner.py` ✓ *(Slice 9)*; `annotation.py` → moved to tier-2 in Slice 7; `ingestion_agent.py`, `web_search.py`, `analytics.py` → P2.
+- [ ] Tier 4: `fact_checker.py` ✓, `memory.py` ✓, `study_planner.py` ✓ *(Slice 9)*; `annotation.py` → moved to tier-2 in Slice 7; `web_search.py` ✓ *(B2, now P1 — see §1.5 below)*; `ingestion_agent.py`, `analytics.py` → P2.
 - [x] Fact Checker verifies claims before output is finalised — **FR-AGT-09 (S)**.
-- [ ] Web Search Agent limited to academic discovery (Semantic Scholar / arXiv) — §12, scope non-goal respected.
+- [x] Web Search Agent limited to academic discovery (Semantic Scholar / arXiv) — §12, scope non-goal respected. *(B2: WebSearchAgent tier-4 → Semantic Scholar/arXiv → SourceList; intent `websearch` + UIAgent dispatch + prod-registered; 6 tests. **Conflict resolved 2026-06-22:** built in P1 per author decision; the §1.5 'web_search.py → P2' note below is superseded.)*
 
 ### 1.6 Generative UI (`web/` + `api/genui/`)
 > Build to `uiux_plan.md` (the design authority): exact tokens, full catalog (panel + phase per component), modes, the four states, flows, and the agent trace.
@@ -154,7 +154,7 @@
 - [x] Feynman explanations + gap flags — **FR-LRN-04 (S)** *(Slice 4: LearningAgent._generate_feynman() → FeynmanExplainer)*.
 - [x] Cornell notes — **FR-LRN-05 (C)**; blurting — **FR-LRN-06 (C)**. *(Slice 11: CornellNotes + BlurtingPrompt GenUI components; LearningAgent generates both.)*
 - [x] Socratic tutor never gives direct answers — **FR-LRN-08 (S)** *(Slice 3: SocraticAgent with _is_answer_shaped() guard)*.
-- [ ] Pomodoro + study schedules — **FR-LRN-09 (C)**.
+- [x] Pomodoro + study schedules — **FR-LRN-09 (S)**. *(B3: PomodoroPlan schema + StudyPlannerAgent sizes focus/break cycles to the session; StudyPlanner.tsx renders the strip; 4 tests.)*
 - [x] Per-topic progress tracking — **FR-LRN-10 (S)**. *(ExDev: JsonlReviewStore persists review events per-user; GET /review/progress returns ProgressDashboard-shaped stats — totalCards, masteredCards, streakDays, per-topic breakdown, nextReviewAt.)*
 
 ### 1.8 Accounts & persistence
@@ -162,17 +162,17 @@
 - [x] Persistent profile (preferences, context) — **FR-USR-02 (M)**. *(Slice 15: UserProfileStore at {storage}/profiles/{uid}.json; GET /profile + PUT /profile; UserPreferences with defaultMode, theme, citationStyle, studyContext.)*
 - [x] Notebook workspaces (CRUD) — **FR-USR-03 (M)**; per-user isolation — **FR-USR-06 (M)** / **NFR-SEC-02**. *(JsonlNotebookStore + POST/GET/DELETE /notebooks routes.)*
 - [x] Interaction history persists + informs adaptation — **FR-USR-04 (S)**. *(ExDev: JsonlMemoryStore replaces InMemoryMemoryStore; per-notebook JSONL at {storage}/memory/{notebook_id}.jsonl; survives backend restart.)*
-- [ ] User highlights/notes ingested back into the graph — **FR-USR-05 (S)**.
+- [x] User highlights/notes ingested back into the graph — **FR-USR-05 (S)**. *(B3: ingest_highlight reuses extractor+merge; POST /highlights route + HighlightRequest/Response schema; per-user graph, doc provenance; 2 tests.)*
 
 ### 1.9 Export & interoperability
-- [ ] PDF report export — **FR-EXP-01 (S)**; DOCX — **FR-EXP-02 (S)**.
-- [ ] Obsidian vault import (wikilinks → edges) — **FR-EXP-05 (S)**; export — **FR-EXP-06 (S)**.
-- [ ] BibTeX / RIS citation export — **FR-EXP-08 (S)**.
+- [x] PDF report export — **FR-EXP-01 (S)**; DOCX — **FR-EXP-02 (S)**. *(B4: stdlib writers — hand-built single-page PDF (xref-accurate) + zip/WordprocessingML DOCX in api/export/document.py; GET /export/report?format=pdf|docx; no new deps; 6 tests.)*
+- *(moved to P2 §2.2 — deferred 2026-06-22)* Obsidian vault import (wikilinks → edges) — **FR-EXP-05 (S)**; export — **FR-EXP-06 (S)**.
+- [x] BibTeX / RIS citation export — **FR-EXP-08 (S)**. *(B4: api/export/bibliography.py to_bibtex/to_ris from DocMetadata; GET /export/bibliography?format=bibtex|ris; 4 tests.)*
 
 ### 1.10 Analytics & instrumentation
 - [x] Log retrieval quality metrics — **FR-ANL-01 (S)**.
 - [x] Instrument usage events for the user study — **FR-ANL-03 (S)**.
-- [ ] Capture events listed in §20 (ingestion, retrieval, agents, learning, UI).
+- [x] Capture events listed in §20 (ingestion, retrieval, agents, learning, UI). *(B3: generic ActivityEvent + append_event; ingestion events fired from all 3 ingest routes; TurnEvent already covers agents/retrieval/UI per turn, review_store covers learning.)*
 
 ### 1.11 Non-functional verification
 - [ ] Time-to-first-token < 3 s — **NFR-PERF-01**; full synthesis < 15 s — **NFR-PERF-02**.
@@ -187,6 +187,18 @@
 - [x] `metrics.py`: accuracy, citation correctness, latency; informal NotebookLM comparison.
 - [ ] User study (10–15 participants) across Research/Study/Writing; SUS + task metrics — §23.2.
 
+### 1.13 Phase 1 — Finish Plan (batched)
+
+> **Why this exists.** §§1.1–1.12 track work at FR granularity; testing per-FR is the slow path. This block regroups the *remaining* unchecked P1 items into five batches. A batch is DONE only when its single QA pass (the `qa-runner` subagent: lint + types + tests + schema-drift) is green — run one QA pass per batch, not per item. Almost every Phase-1 **Must (M)** FR already shipped; what remains is Should/Could polish plus the §1.11/§1.12 verification runs.
+>
+> **Deferred to P2 at scope sign-off (2026-06-22):** Neo4j migration (R-06), OCR (FR-ING-04), Obsidian import/export (FR-EXP-05/06), and all ML Engines (§12A / FR-ENG-*). The Phase 1 gate depends on none of them.
+
+- [x] **B1 — Ingestion & Graph.** YouTube transcript ingest (**FR-ING-03**), per-document progress surfaced to UI (**FR-ING-07**), entity canonicalisation — same concept → one node (**FR-ING-09**), incremental graph update on new doc, no full reprocess (**FR-KG-03**). → one QA pass over `api/ingestion/` + graph tests.
+- [x] **B2 — Retrieval & Agents.** Contradiction surfacing on a queried concept (**FR-RET-06**), local/global/hybrid mode select-or-auto (**FR-RET-07**), intent-scoped tool injection (**FR-AGT-05**), partial-result streaming for long tasks (**FR-AGT-07**), academic Web Search agent — Semantic Scholar / arXiv (§12). → one QA pass over `api/retrieval/` + `api/agents/`.
+- [x] **B3 — Learning, Accounts & Analytics.** Pomodoro + study schedules (**FR-LRN-09**), user highlights/notes ingested back into the graph (**FR-USR-05**), capture the §20 event set (**FR-ANL**). → one QA pass over `api/learning/` + analytics.
+- [x] **B4 — Export & Interop.** PDF report export (**FR-EXP-01**), DOCX export (**FR-EXP-02**), BibTeX / RIS citation export (**FR-EXP-08**). → one QA pass over the export module.
+- [ ] **B5 — NFR verification & Benchmark.** §1.11 targets (perf/scale/reliability/cost) measured + recorded; §1.12 benchmark (hybrid vs flat) executed and results captured. → one measurement pass. The author-side user study (§1.12) runs in parallel and is not gated by code.
+
 ### ✅ Phase 1 release gate (§24)
 - [ ] All P0 + P1 **Must (M)** FRs implemented and demonstrable.
 - [ ] Full hybrid retrieval runs end-to-end on a real multi-document corpus.
@@ -199,3 +211,26 @@
 - [ ] FYP 2 report documents architecture, results, limitations.
 
 ---
+
+## Phase 2 — Post-FYP roadmap
+
+> Items deferred out of Phase 1 plus the original P2 vision. Not gated by the FYP 2 release. Pick up via `/resume`.
+
+### 2.1 ML Engines (§12A / FR-ENG)
+- [ ] `api/engines/base.py` — `Engine` ABC (`predict()` + `is_available()`), leaf layer beside `stores/`/`llm/` — **FR-ENG-06**, *Listing 12A.0*.
+- [ ] Re-Rank Engine — gradient-boosted post-RRF re-ranker, trained in Colab; strictly additive, RRF-only arm stays independently evaluable — **FR-ENG-01/02**, **NFR-PERF-05**, **R-11/R-13**, §12A.
+- [ ] Mastery Engine — HLR recall/difficulty predictor; SM-2 fallback below per-user history threshold — **FR-ENG-03/04**, **R-12**, §12A.
+- [ ] Document Classifier Engine — ingestion-time subject/topic/difficulty tagger over existing embeddings — **FR-ENG-05**, §12A.
+- [ ] Each Engine's data sources + methodology documented and reproducible — **FR-ENG-07**, §23.4.
+- [ ] Engine failure/absence falls back to its heuristic (RRF-only / SM-2 / no tag) without breaking the request — **NFR-REL-04**.
+
+### 2.2 Deferred from Phase 1 (scope sign-off 2026-06-22)
+- [ ] Migrate to `neo4j_store.py`; flip `graph_backend=neo4j`; verify no regressions vs NetworkX — **R-06**.
+- [ ] `ocr.py` for scanned PDFs — **FR-ING-04 (S)**.
+- [ ] Obsidian vault import (wikilinks → edges) — **FR-EXP-05 (S)**; export — **FR-EXP-06 (S)**.
+
+### 2.3 Original P2 vision
+- [ ] Complete the full 25-agent suite (methodology, ingestion, analytics agents) — §12.
+- [ ] Betweenness-centrality bridge detection — **FR-KG-06 (C)**.
+- [ ] Remaining GenUI components: PlagiarismReport, AudioSummary — §13.3.
+- [ ] Collaboration / multi-user notebooks; production hardening — PRD §2 (P2 scope).
