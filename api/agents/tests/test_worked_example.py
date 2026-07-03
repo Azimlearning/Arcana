@@ -21,19 +21,23 @@ from api.agents.tier3.ui_agent import UIAgent
 # Intent detection unit tests
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("query,expected", [
-    ("Compare how these three papers treat attention", "compare"),
-    ("A vs B: differences between transformers", "compare"),
-    ("contrast the two methodologies", "compare"),
-    ("What is similar between paper A and paper B?", "compare"),
-    ("Does this paper contradict the literature?", "contradiction"),
-    ("inconsistent findings across sources", "contradiction"),
-    ("Show me the knowledge graph of transformers", "graph"),
-    ("Give me the timeline of deep learning", "timeline"),
-    ("What is the history of attention mechanisms", "timeline"),
-    ("Summarise this paper", ""),
-    ("What did paper X say about BERT?", ""),
-])
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ("Compare how these three papers treat attention", "compare"),
+        ("A vs B: differences between transformers", "compare"),
+        ("contrast the two methodologies", "compare"),
+        ("What is similar between paper A and paper B?", "compare"),
+        ("Does this paper contradict the literature?", "contradiction"),
+        ("inconsistent findings across sources", "contradiction"),
+        ("Show me the knowledge graph of transformers", "graph"),
+        ("Give me the timeline of deep learning", "timeline"),
+        ("What is the history of attention mechanisms", "timeline"),
+        ("Summarise this paper", ""),
+        ("What did paper X say about BERT?", ""),
+    ],
+)
 def test_detect_intent_from_query(query: str, expected: str) -> None:
     assert _detect_intent_from_query(query) == expected
 
@@ -42,14 +46,15 @@ def test_detect_intent_from_query(query: str, expected: str) -> None:
 # route_to_agent writes back to state.agent_results
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_route_to_agent_writes_to_state() -> None:
     registry.reset()
     mock_agent = MagicMock()
     mock_agent.name = "dummy"
-    mock_agent.run = AsyncMock(return_value=AgentResult(
-        agent_name="dummy", payload={"ok": True}, status="ok"
-    ))
+    mock_agent.run = AsyncMock(
+        return_value=AgentResult(agent_name="dummy", payload={"ok": True}, status="ok")
+    )
     registry.register_agent(mock_agent)
 
     state = AgentState(query="test")
@@ -73,6 +78,7 @@ async def test_route_to_agent_missing_writes_failed_to_state() -> None:
 # UIAgent multi-block compare path
 # ---------------------------------------------------------------------------
 
+
 def _make_literature_matrix_result() -> AgentResult:
     return AgentResult(
         agent_name="comparator",
@@ -82,12 +88,22 @@ def _make_literature_matrix_result() -> AgentResult:
                 "query": "compare attention",
                 "dimensions": ["Approach", "Findings"],
                 "rows": [
-                    {"docId": "doc1", "docTitle": "Paper A",
-                     "cells": [{"text": "self-attention", "citationId": None},
-                                {"text": "state-of-the-art", "citationId": None}]},
-                    {"docId": "doc2", "docTitle": "Paper B",
-                     "cells": [{"text": "cross-attention", "citationId": None},
-                                {"text": "competitive", "citationId": None}]},
+                    {
+                        "docId": "doc1",
+                        "docTitle": "Paper A",
+                        "cells": [
+                            {"text": "self-attention", "citationId": None},
+                            {"text": "state-of-the-art", "citationId": None},
+                        ],
+                    },
+                    {
+                        "docId": "doc2",
+                        "docTitle": "Paper B",
+                        "cells": [
+                            {"text": "cross-attention", "citationId": None},
+                            {"text": "competitive", "citationId": None},
+                        ],
+                    },
                 ],
                 "citations": [],
             },
@@ -102,8 +118,9 @@ def _make_graph_view_result() -> AgentResult:
         payload={
             "block_type": "KnowledgeGraphView",
             "data": {
-                "nodes": [{"id": "n1", "label": "attention", "nodeType": "concept",
-                            "properties": {}}],
+                "nodes": [
+                    {"id": "n1", "label": "attention", "nodeType": "concept", "properties": {}}
+                ],
                 "edges": [],
                 "focusNodeId": "n1",
             },
@@ -121,12 +138,18 @@ def _make_contradiction_result() -> AgentResult:
                 "concept": "attention",
                 "summary": "Papers disagree on attention mechanism design.",
                 "claims": [
-                    {"docId": "doc1", "docTitle": "Paper A",
-                     "stance": "self-attention is optimal",
-                     "quote": "self-attention achieves best results"},
-                    {"docId": "doc2", "docTitle": "Paper B",
-                     "stance": "cross-attention scales better",
-                     "quote": "cross-attention outperforms at scale"},
+                    {
+                        "docId": "doc1",
+                        "docTitle": "Paper A",
+                        "stance": "self-attention is optimal",
+                        "quote": "self-attention achieves best results",
+                    },
+                    {
+                        "docId": "doc2",
+                        "docTitle": "Paper B",
+                        "stance": "cross-attention scales better",
+                        "quote": "cross-attention outperforms at scale",
+                    },
                 ],
             },
         },

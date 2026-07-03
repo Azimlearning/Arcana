@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from api.core.auth import CurrentUser, get_current_user
 from api.routes.profile import router as profile_router
-from api.stores.user_profile_store import UserProfileStore
+from api.stores.user_profile_store import JsonUserProfileStore, UserProfileStore
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ def _make_app(store: UserProfileStore, uid: str = "test-uid") -> FastAPI:
 
 
 def test_get_profile_returns_default(tmp_path: Path) -> None:
-    store = UserProfileStore(root=tmp_path / "profiles")
+    store = JsonUserProfileStore(root=tmp_path / "profiles")
     client = TestClient(_make_app(store))
     resp = client.get("/profile")
     assert resp.status_code == 200
@@ -39,7 +39,7 @@ def test_get_profile_returns_default(tmp_path: Path) -> None:
 
 
 def test_get_profile_idempotent(tmp_path: Path) -> None:
-    store = UserProfileStore(root=tmp_path / "profiles")
+    store = JsonUserProfileStore(root=tmp_path / "profiles")
     client = TestClient(_make_app(store))
     r1 = client.get("/profile").json()
     r2 = client.get("/profile").json()
@@ -47,7 +47,7 @@ def test_get_profile_idempotent(tmp_path: Path) -> None:
 
 
 def test_put_profile_updates_display_name(tmp_path: Path) -> None:
-    store = UserProfileStore(root=tmp_path / "profiles")
+    store = JsonUserProfileStore(root=tmp_path / "profiles")
     client = TestClient(_make_app(store))
     resp = client.put("/profile", json={"displayName": "Alice"})
     assert resp.status_code == 200
@@ -55,7 +55,7 @@ def test_put_profile_updates_display_name(tmp_path: Path) -> None:
 
 
 def test_put_profile_updates_preferences(tmp_path: Path) -> None:
-    store = UserProfileStore(root=tmp_path / "profiles")
+    store = JsonUserProfileStore(root=tmp_path / "profiles")
     client = TestClient(_make_app(store))
     resp = client.put("/profile", json={"defaultMode": "study", "citationStyle": "ieee"})
     assert resp.status_code == 200
@@ -66,7 +66,7 @@ def test_put_profile_updates_preferences(tmp_path: Path) -> None:
 
 
 def test_put_profile_updates_study_context(tmp_path: Path) -> None:
-    store = UserProfileStore(root=tmp_path / "profiles")
+    store = JsonUserProfileStore(root=tmp_path / "profiles")
     client = TestClient(_make_app(store))
     resp = client.put("/profile", json={"studyContext": "Distributed systems thesis"})
     assert resp.status_code == 200
@@ -74,7 +74,7 @@ def test_put_profile_updates_study_context(tmp_path: Path) -> None:
 
 
 def test_profile_isolated_per_user(tmp_path: Path) -> None:
-    store = UserProfileStore(root=tmp_path / "profiles")
+    store = JsonUserProfileStore(root=tmp_path / "profiles")
     client_a = TestClient(_make_app(store, uid="alice"))
     client_b = TestClient(_make_app(store, uid="bob"))
     client_a.put("/profile", json={"displayName": "Alice"})

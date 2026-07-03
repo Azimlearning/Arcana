@@ -30,9 +30,7 @@ def clean_registry():
 
 
 def _chunk(cid: str) -> RetrievedChunk:
-    return RetrievedChunk(
-        id=cid, doc_id="d1", text="body", page=1, score=0.5, source="vector"
-    )
+    return RetrievedChunk(id=cid, doc_id="d1", text="body", page=1, score=0.5, source="vector")
 
 
 def _block(bid: str) -> CitedSummary:
@@ -47,8 +45,9 @@ def _block(bid: str) -> CitedSummary:
 class _MutatingAgent(BaseAgent):
     """Agent that mutates state during run() and returns AgentResult."""
 
-    def __init__(self, name: str, *, chunks: list | None = None,
-                 blocks: list | None = None) -> None:
+    def __init__(
+        self, name: str, *, chunks: list | None = None, blocks: list | None = None
+    ) -> None:
         self.name = name
         self.tier = 2
         self._chunks = chunks or []
@@ -161,9 +160,7 @@ async def test_build_graph_compiles_with_required_nodes_registered():
             chunks=[_chunk("ch1")],
         )
     )
-    registry.register_agent(
-        _MutatingAgent("ui_agent", blocks=[_block("blk_terminal")])
-    )
+    registry.register_agent(_MutatingAgent("ui_agent", blocks=[_block("blk_terminal")]))
 
     graph = build_graph()
     state = AgentState(query="end-to-end")

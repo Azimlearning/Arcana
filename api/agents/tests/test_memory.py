@@ -30,10 +30,13 @@ async def test_in_memory_store_isolates_notebooks():
 
 async def test_in_memory_store_appends_in_order():
     store = InMemoryMemoryStore()
-    await store.append_messages("nb1", [
-        Message(role="user", content="a"),
-        Message(role="assistant", content="b"),
-    ])
+    await store.append_messages(
+        "nb1",
+        [
+            Message(role="user", content="a"),
+            Message(role="assistant", content="b"),
+        ],
+    )
     await store.append_messages("nb1", [Message(role="user", content="c")])
     msgs = await store.get_messages("nb1")
     assert [m.content for m in msgs] == ["a", "b", "c"]
@@ -57,10 +60,13 @@ async def test_in_memory_store_empty_append_noop():
 
 async def test_memory_agent_loads_history_into_state():
     store = InMemoryMemoryStore()
-    await store.append_messages("nb1", [
-        Message(role="user", content="prev question"),
-        Message(role="assistant", content="prev answer"),
-    ])
+    await store.append_messages(
+        "nb1",
+        [
+            Message(role="user", content="prev question"),
+            Message(role="assistant", content="prev answer"),
+        ],
+    )
     agent = MemoryAgent(store=store)
     state = AgentState(query="new question", notebook_id="nb1")
     result = await agent.run("new question", state=state)
@@ -82,9 +88,9 @@ async def test_memory_agent_empty_notebook_just_appends_query():
 async def test_memory_agent_caps_history_at_max():
     store = InMemoryMemoryStore()
     # Stash 30 messages; agent should cap to 5.
-    await store.append_messages("nb1", [
-        Message(role="user", content=f"msg-{i}") for i in range(30)
-    ])
+    await store.append_messages(
+        "nb1", [Message(role="user", content=f"msg-{i}") for i in range(30)]
+    )
     agent = MemoryAgent(store=store, max_history=5)
     state = AgentState(query="now", notebook_id="nb1")
     await agent.run("now", state=state)

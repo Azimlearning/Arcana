@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -29,9 +30,13 @@ def _meta(
     extra: dict | None = None,
 ) -> DocMetadata:
     return DocMetadata(
-        id=doc_id, title=title, source_uri=source_uri,
-        content_type="application/pdf", size_bytes=0,
-        ingest_status="ready", created_at=datetime(2017, 1, 1),
+        id=doc_id,
+        title=title,
+        source_uri=source_uri,
+        content_type="application/pdf",
+        size_bytes=0,
+        ingest_status="ready",
+        created_at=datetime(2017, 1, 1),
         extra=extra or {},
     )
 
@@ -55,8 +60,14 @@ class _StubDocStore(DocStore):
         self._docs = docs
 
     async def put(
-        self, doc_id: str, raw: bytes, *, content_type: str,
-        title: str, source_uri: str, ingest_status: IngestStatus = "pending",
+        self,
+        doc_id: str,
+        raw: bytes,
+        *,
+        content_type: str,
+        title: str,
+        source_uri: str,
+        ingest_status: IngestStatus = "pending",
     ) -> DocMetadata:
         return _meta(doc_id, title, source_uri)
 
@@ -188,11 +199,19 @@ async def test_citation_store_failure():
 async def test_visual_concept_map():
     v, b, g = _retrievers([_chunk()])
     llm = MagicMock()
-    llm.complete = AsyncMock(return_value=json.dumps({
-        "rootConcept": "Transformer",
-        "nodes": [{"id": "n0", "label": "Transformer", "description": "model", "level": 0}],
-        "links": [],
-    }))
+    llm.complete = AsyncMock(
+        return_value=SimpleNamespace(
+            text=json.dumps(
+                {
+                    "rootConcept": "Transformer",
+                    "nodes": [
+                        {"id": "n0", "label": "Transformer", "description": "model", "level": 0}
+                    ],
+                    "links": [],
+                }
+            )
+        )
+    )
     agent = VisualAgent(llm_service=llm, vector_retriever=v, bm25_retriever=b, graph_retriever=g)
     r = await agent.run("concept map of transformers", _state())
     assert r.status == "ok"
@@ -205,10 +224,19 @@ async def test_visual_concept_map():
 async def test_visual_comparison_chart():
     v, b, g = _retrievers([_chunk()])
     llm = MagicMock()
-    llm.complete = AsyncMock(return_value=json.dumps({
-        "title": "Model Comparison", "chartType": "bar",
-        "labels": ["accuracy"], "series": [{"name": "A", "values": [4]}], "unit": None,
-    }))
+    llm.complete = AsyncMock(
+        return_value=SimpleNamespace(
+            text=json.dumps(
+                {
+                    "title": "Model Comparison",
+                    "chartType": "bar",
+                    "labels": ["accuracy"],
+                    "series": [{"name": "A", "values": [4]}],
+                    "unit": None,
+                }
+            )
+        )
+    )
     agent = VisualAgent(llm_service=llm, vector_retriever=v, bm25_retriever=b, graph_retriever=g)
     r = await agent.run("comparison chart for models", _state())
     assert r.status == "ok"
@@ -220,9 +248,17 @@ async def test_visual_comparison_chart():
 async def test_visual_fallback_concept_on_generic_visual():
     v, b, g = _retrievers([_chunk()])
     llm = MagicMock()
-    llm.complete = AsyncMock(return_value=json.dumps({
-        "rootConcept": "Attention", "nodes": [], "links": [],
-    }))
+    llm.complete = AsyncMock(
+        return_value=SimpleNamespace(
+            text=json.dumps(
+                {
+                    "rootConcept": "Attention",
+                    "nodes": [],
+                    "links": [],
+                }
+            )
+        )
+    )
     agent = VisualAgent(llm_service=llm, vector_retriever=v, bm25_retriever=b, graph_retriever=g)
     r = await agent.run("visualize the attention mechanism", _state())
     assert r.payload["block_type"] == "ConceptMap"
@@ -244,11 +280,23 @@ async def test_visual_no_chunks():
 async def test_document_agent_happy():
     v, b, g = _retrievers([_chunk(text="This paper proposes a new attention mechanism.")])
     llm = MagicMock()
-    llm.complete = AsyncMock(return_value=json.dumps({
-        "topic": "My Paper",
-        "notes": [{"cue": "Main contribution", "content": "New attention.", "citationIds": ["c1"]}],
-        "summary": "Key summary.",
-    }))
+    llm.complete = AsyncMock(
+        return_value=SimpleNamespace(
+            text=json.dumps(
+                {
+                    "topic": "My Paper",
+                    "notes": [
+                        {
+                            "cue": "Main contribution",
+                            "content": "New attention.",
+                            "citationIds": ["c1"],
+                        }
+                    ],
+                    "summary": "Key summary.",
+                }
+            )
+        )
+    )
     agent = DocumentAgent(llm_service=llm, vector_retriever=v, bm25_retriever=b, graph_retriever=g)
     r = await agent.run("summarize this document", _state())
     assert r.status == "ok"
@@ -276,3 +324,31 @@ async def test_document_agent_llm_failure():
     r = await agent.run("summarize document", _state())
     assert r.status == "failed"
     assert "llm timeout" in (r.error or "")
+
+
+@pytest.mark.asyncio
+async def test_document_agent_audio_overview():
+    v, b, g = _retrievers([_chunk(text="This paper proposes a new attention mechanism.")])
+    llm = MagicMock()
+    llm.complete = AsyncMock(
+        return_value=SimpleNamespace(
+            text=json.dumps(
+                {
+                    "title": "Attention, explained",
+                    "transcript": " ".join(["word"] * 150),
+                    "segments": [{"label": "Intro"}, {"label": "Main idea"}],
+                }
+            )
+        )
+    )
+    agent = DocumentAgent(llm_service=llm, vector_retriever=v, bm25_retriever=b, graph_retriever=g)
+    r = await agent.run("give me an audio overview of this paper", _state())
+    assert r.status == "ok"
+    assert r.payload["block_type"] == "AudioSummary"
+    data = r.payload["data"]
+    assert data["audioUrl"] is None  # TTS is P2 — transcript-first
+    assert data["durationSec"] == 60  # 150 words at 150 wpm
+    assert [s["label"] for s in data["segments"]] == ["Intro", "Main idea"]
+    assert data["segments"][0]["startSec"] == 0.0
+    assert data["segments"][-1]["endSec"] == 60.0
+    assert data["citations"]

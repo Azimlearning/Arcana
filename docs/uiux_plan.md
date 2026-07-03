@@ -131,11 +131,11 @@ The catalog is the vocabulary of the interface. Each entry is one typed React co
 | `StudyPlanner` | Schedule, Pomodoro and review queue | Study Planner | studio | P1 |
 | `DraftEditor` | Editable grounded draft with citations | Writing | chat | P1 |
 | `CitationPreview` | Formatted citation in chosen style | Citation | chat | P1 |
-| `PlagiarismReport` | Originality and AI-content flags | Plagiarism | studio | P2 |
+| `PlagiarismReport` | Originality and AI-content flags | Writing | studio | P1 |
 | `BibliographyExport` | BibTeX / RIS export panel | Citation | studio | P1 |
 | `SourceList` | The notebook's ingested sources | Ingestion | sources | P0 |
 | `ProgressDashboard` | Learning-progress and retention metrics | Analytics | studio | P1 |
-| `AudioSummary` | Player for an audio overview | Audio | studio | P2 |
+| `AudioSummary` | Player for an audio overview (transcript-first until TTS lands) | Document | studio | P1 |
 
 **The three-step rule for adding a component (never skip a step, never reorder):**
 1. Add its `data` interface to `packages/schema/payloads.ts` and a variant to the `UIBlock` union in `blocks.ts`.

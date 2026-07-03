@@ -110,8 +110,7 @@ def make_node(agent_name: str) -> NodeFn:
         # Include any sub-agent results produced via route_to_agent A2A hops
         # (written to state.agent_results by route_to_agent's writeback).
         sub_results = {
-            k: v for k, v in state.agent_results.items()
-            if k not in agent_results_before
+            k: v for k, v in state.agent_results.items() if k not in agent_results_before
         }
         updates: dict[str, Any] = {"agent_results": {agent.name: result, **sub_results}}
 
@@ -196,29 +195,29 @@ async def _orchestrator_node(state: AgentState) -> dict[str, Any]:
 #
 # Slice 7 intents (not mode-triggered; callable via route_to_agent + explicit
 # state.intent from a future intent classifier — FR-AGT-06):
-_WIRED_INTENTS = frozenset({
-    "research",
-    "discovery",
-    "study",
-    "socratic",
-    "writing",
-    # Slice 7
-    "graph",
-    "literature",
-    "contradiction",
-    "cross_doc",
-    "compare",
-    "timeline",
-    "annotate",
-    # Slice 19 tier-3
-    "citation",
-    "visual",
-    "document",
-    # B2 tier-4
-    "websearch",
-})
-
-
+_WIRED_INTENTS = frozenset(
+    {
+        "research",
+        "discovery",
+        "study",
+        "socratic",
+        "writing",
+        # Slice 7
+        "graph",
+        "literature",
+        "contradiction",
+        "cross_doc",
+        "compare",
+        "timeline",
+        "annotate",
+        # Slice 19 tier-3
+        "citation",
+        "visual",
+        "document",
+        # B2 tier-4
+        "websearch",
+    }
+)
 
 
 def _detect_intent_from_query(query: str) -> str:
@@ -226,35 +225,91 @@ def _detect_intent_from_query(query: str) -> str:
     the matching intent so the orchestrator can route them without the frontend
     having to set state.intent explicitly.  Returns '' when no rule matches."""
     q = query.lower()
-    if any(kw in q for kw in ("compare", "comparison", "contrast", " vs ",
-                               "versus", "differences between", "similar")):
+    if any(
+        kw in q
+        for kw in (
+            "compare",
+            "comparison",
+            "contrast",
+            " vs ",
+            "versus",
+            "differences between",
+            "similar",
+        )
+    ):
         return "compare"
-    if any(kw in q for kw in ("contradict", "contradiction", "conflicting",
-                               "disagree", "inconsisten")):
+    if any(
+        kw in q for kw in ("contradict", "contradiction", "conflicting", "disagree", "inconsisten")
+    ):
         return "contradiction"
-    if any(kw in q for kw in ("knowledge graph", "concept map", "related concepts",
-                               "graph of", "conceptually")):
+    if any(
+        kw in q
+        for kw in ("knowledge graph", "concept map", "related concepts", "graph of", "conceptually")
+    ):
         return "graph"
-    if any(kw in q for kw in ("timeline", "chronological", "history of",
-                               "evolution of", "over time")):
+    if any(
+        kw in q for kw in ("timeline", "chronological", "history of", "evolution of", "over time")
+    ):
         return "timeline"
-    if any(kw in q for kw in ("bibliography", "bibtex", "all references",
-                               "format citation", "apa format", "mla format",
-                               "cite all", "references list", "full bibliography")):
+    if any(
+        kw in q
+        for kw in (
+            "bibliography",
+            "bibtex",
+            "all references",
+            "format citation",
+            "apa format",
+            "mla format",
+            "cite all",
+            "references list",
+            "full bibliography",
+        )
+    ):
         return "citation"
-    if any(kw in q for kw in ("concept map", "mind map", "visualize", "concept diagram",
-                               "comparison chart", "compare visually")):
+    if any(
+        kw in q
+        for kw in (
+            "concept map",
+            "mind map",
+            "visualize",
+            "concept diagram",
+            "comparison chart",
+            "compare visually",
+        )
+    ):
         return "visual"
-    if any(kw in q for kw in ("summarize document", "document overview", "document outline",
-                               "summarize this document", "overview of this paper",
-                               "sections of", "breakdown of this")):
+    if any(
+        kw in q
+        for kw in (
+            "summarize document",
+            "document overview",
+            "document outline",
+            "summarize this document",
+            "overview of this paper",
+            "sections of",
+            "breakdown of this",
+        )
+    ):
         return "document"
-    if any(kw in q for kw in ("find papers", "search for papers", "papers about",
-                               "papers on", "literature on", "recent work on",
-                               "related papers", "find sources", "arxiv",
-                               "semantic scholar", "search the literature")):
+    if any(
+        kw in q
+        for kw in (
+            "find papers",
+            "search for papers",
+            "papers about",
+            "papers on",
+            "literature on",
+            "recent work on",
+            "related papers",
+            "find sources",
+            "arxiv",
+            "semantic scholar",
+            "search the literature",
+        )
+    ):
         return "websearch"
     return ""
+
 
 # Maps each non-default intent label to its primary registered agent name.
 # Used by _route_after_orchestrator to fall back gracefully when the agent

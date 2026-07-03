@@ -19,7 +19,7 @@ import json
 import re
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.socratic import (
     SOCRATIC_PROMPT_VERSION,
@@ -33,9 +33,9 @@ from api.retrieval.types import RetrieverProtocol
 
 logger = get_logger(__name__)
 
-_VALID_BLOOM = frozenset({
-    "recall", "comprehension", "application", "analysis", "synthesis", "evaluation"
-})
+_VALID_BLOOM = frozenset(
+    {"recall", "comprehension", "application", "analysis", "synthesis", "evaluation"}
+)
 _DEFAULT_BLOOM = "comprehension"
 
 # Patterns that suggest the LLM slipped an answer into nextQuestion.
@@ -65,7 +65,7 @@ def _strip_fences(text: str) -> str:
     if text.startswith(fence):
         first_newline = text.find("\n")
         if first_newline != -1:
-            text = text[first_newline + 1:]
+            text = text[first_newline + 1 :]
     if text.rstrip().endswith(fence):
         text = text.rstrip()[: -len(fence)].rstrip()
     return text.strip()
@@ -80,7 +80,9 @@ def _extract_json(text: str) -> dict[str, Any]:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        logger.warning("socratic.parse_failed", raw_preview=text[:120], version=SOCRATIC_PROMPT_VERSION)
+        logger.warning(
+            "socratic.parse_failed", raw_preview=text[:120], version=SOCRATIC_PROMPT_VERSION
+        )
         return {}
 
 
@@ -103,6 +105,11 @@ class SocraticAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="socratic", tier=2)
+    async def socratic_question(self, query: str) -> dict:
+        """Pose a guiding Socratic question about the topic without revealing the answer."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         # 1. Ground before generating (invariant #1).
         chunks = await hybrid_retrieve(
@@ -123,9 +130,7 @@ class SocraticAgent(BaseAgent):
                 error="No documents retrieved for Socratic session.",
             )
 
-        ctx_text = "\n\n".join(
-            f"[{c.id}] (doc:{c.doc_id}, p.{c.page}) {c.text}" for c in chunks
-        )
+        ctx_text = "\n\n".join(f"[{c.id}] (doc:{c.doc_id}, p.{c.page}) {c.text}" for c in chunks)
 
         # Extract prior turns from agent state if a previous socratic block exists.
         prior_turns = _extract_prior_turns(state)
@@ -189,8 +194,5 @@ def _extract_prior_turns(state: AgentState) -> list[dict[str, str]]:
         if getattr(block, "type", None) == "SocraticDialog":
             data = getattr(block, "data", None)
             if data is not None:
-                return [
-                    {"role": t.role, "text": t.text}
-                    for t in getattr(data, "turns", [])
-                ]
+                return [{"role": t.role, "text": t.text} for t in getattr(data, "turns", [])]
     return []

@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.literature import (
     LITERATURE_PROMPT_VERSION,
@@ -47,6 +47,11 @@ class LiteratureAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="literature", tier=2)
+    async def literature_matrix(self, query: str) -> dict:
+        """Build a papers-by-dimensions literature comparison matrix from the corpus."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         # 1. Ground before generating (invariant #1).
         chunks = await hybrid_retrieve(
@@ -67,9 +72,7 @@ class LiteratureAgent(BaseAgent):
                 error="No documents retrieved for literature matrix.",
             )
 
-        messages = [
-            Message(role="user", content=build_literature_prompt(query, chunks))
-        ]
+        messages = [Message(role="user", content=build_literature_prompt(query, chunks))]
         try:
             completion = await self._llm.complete(
                 messages,
@@ -102,7 +105,7 @@ def _strip_fences(text: str) -> str:
     if text.startswith(fence):
         first_newline = text.find("\n")
         if first_newline != -1:
-            text = text[first_newline + 1:]
+            text = text[first_newline + 1 :]
     if text.rstrip().endswith(fence):
         text = text.rstrip()[: -len(fence)].rstrip()
     return text.strip()
@@ -174,9 +177,7 @@ def _parse_literature_response(
                     {
                         "docId": chunk.doc_id,
                         "docTitle": chunk.doc_id,
-                        "cells": [
-                            {"text": "Not reported", "citationId": None}
-                        ] * len(dimensions),
+                        "cells": [{"text": "Not reported", "citationId": None}] * len(dimensions),
                     }
                 )
 

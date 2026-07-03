@@ -19,13 +19,13 @@ from api.stores.doc_store import DocMetadata
 
 
 def _chunk(cid: str, doc_id: str, text: str, page: int = 1) -> RetrievedChunk:
-    return RetrievedChunk(
-        id=cid, doc_id=doc_id, text=text, page=page, score=0.9, source="vector"
-    )
+    return RetrievedChunk(id=cid, doc_id=doc_id, text=text, page=page, score=0.9, source="vector")
 
 
 class _StubLLM:
-    def __init__(self, *, response_text: str = "default", raise_exc: Exception | None = None) -> None:
+    def __init__(
+        self, *, response_text: str = "default", raise_exc: Exception | None = None
+    ) -> None:
         self._response = response_text
         self._raise = raise_exc
         self.calls: list[dict] = []
@@ -60,6 +60,7 @@ class _StubDocStore:
         self.get_metadata_calls += 1
         if doc_id not in self._titles:
             from api.stores.errors import DocNotFound
+
             raise DocNotFound(f"no doc {doc_id}")
         return DocMetadata(
             id=doc_id,
@@ -74,8 +75,11 @@ class _StubDocStore:
     async def put(self, *a, **kw): ...
     async def get_bytes(self, *a, **kw): ...
     async def update_status(self, *a, **kw): ...
-    async def list_documents(self): return []
-    async def aclose(self): return None
+    async def list_documents(self):
+        return []
+
+    async def aclose(self):
+        return None
 
 
 def _make_agent(

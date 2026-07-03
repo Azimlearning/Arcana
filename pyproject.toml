@@ -31,6 +31,7 @@ dependencies = [
     "rank-bm25>=0.2.2",  # BM25 keyword retriever (api/retrieval/bm25.py)
     "langgraph>=0.2.50,<0.3",  # StateGraph (slice 1 agent maturity) - PRD Listing 11.1
     "youtube-transcript-api>=0.6",  # YouTube transcript ingest (api/ingestion/parsers/youtube.py) - FR-ING-03
+    "google-auth>=2.55",
 ]
 
 [dependency-groups]

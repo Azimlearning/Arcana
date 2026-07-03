@@ -14,6 +14,7 @@ import type { ComponentType } from 'react';
 
 import type { UIBlock } from '@arcana/schema';
 
+import { AudioSummary } from '@/components/genui/AudioSummary';
 import { BibliographyExport } from '@/components/genui/BibliographyExport';
 import { BlurtingPrompt } from '@/components/genui/BlurtingPrompt';
 import { CitationPreview } from '@/components/genui/CitationPreview';
@@ -30,6 +31,7 @@ import { GapAnalysis } from '@/components/genui/GapAnalysis';
 import { InsightCard } from '@/components/genui/InsightCard';
 import { KnowledgeGraphView } from '@/components/genui/KnowledgeGraphView';
 import { LiteratureMatrix } from '@/components/genui/LiteratureMatrix';
+import { PlagiarismReport } from '@/components/genui/PlagiarismReport';
 import { ProgressDashboard } from '@/components/genui/ProgressDashboard';
 import { QuizCard } from '@/components/genui/QuizCard';
 import { SocraticDialog } from '@/components/genui/SocraticDialog';
@@ -45,6 +47,7 @@ type RendererMap = {
 };
 
 const registry: RendererMap = {
+  AudioSummary,
   BibliographyExport,
   BlurtingPrompt,
   CitationPreview,
@@ -61,6 +64,7 @@ const registry: RendererMap = {
   InsightCard,
   KnowledgeGraphView,
   LiteratureMatrix,
+  PlagiarismReport,
   ProgressDashboard,
   QuizCard,
   SocraticDialog,

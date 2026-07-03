@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.timeline import (
     TIMELINE_SYSTEM,
@@ -46,6 +46,11 @@ class TimelineAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="timeline", tier=2)
+    async def build_timeline(self, query: str) -> dict:
+        """Synthesise a chronological account of the queried topic."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         chunks = await hybrid_retrieve(
             query,
@@ -64,9 +69,7 @@ class TimelineAgent(BaseAgent):
                 error="hybrid_retrieve returned 0 chunks",
             )
 
-        messages = [
-            Message(role="user", content=build_timeline_prompt(query, chunks))
-        ]
+        messages = [Message(role="user", content=build_timeline_prompt(query, chunks))]
         try:
             completion = await self._llm.complete(
                 messages,

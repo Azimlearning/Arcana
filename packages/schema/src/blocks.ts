@@ -8,6 +8,7 @@
 // The codegen mirrors steps 1-2 into api/genui/_generated.py automatically.
 
 import type {
+  AudioSummaryData,
   BibliographyExportData,
   BlurtingPromptData,
   CitationPreviewData,
@@ -24,6 +25,7 @@ import type {
   InsightCardData,
   KnowledgeGraphViewData,
   LiteratureMatrixData,
+  PlagiarismReportData,
   ProgressDashboardData,
   QuizCardData,
   SocraticDialogData,
@@ -196,6 +198,20 @@ export interface ProgressDashboard {
   data: ProgressDashboardData;
 }
 
+export interface PlagiarismReport {
+  type: 'PlagiarismReport';
+  id: string;
+  meta: BlockMeta;
+  data: PlagiarismReportData;
+}
+
+export interface AudioSummary {
+  type: 'AudioSummary';
+  id: string;
+  meta: BlockMeta;
+  data: AudioSummaryData;
+}
+
 // Discriminated union: the `type` field is the discriminator.
 // Codegen emits Annotated[X | Y | Z, Field(discriminator='type')] in Python.
 export type UIBlock =
@@ -220,4 +236,6 @@ export type UIBlock =
   | ComparisonChart
   | Timeline
   | DataTable
-  | ProgressDashboard;
+  | ProgressDashboard
+  | PlagiarismReport
+  | AudioSummary;

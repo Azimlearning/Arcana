@@ -428,3 +428,42 @@ export interface ProgressDashboardData {
   topics: TopicProgress[];
   nextReviewAt: string | null;  // ISO 8601, null if queue empty
 }
+
+// ── PlagiarismReport ───────────────────────────────────────────────────────
+// Originality and AI-content flags over a draft (Writing, studio). 24/24 close.
+
+export interface PlagiarismFlag {
+  excerpt: string;                        // flagged passage from the draft
+  matchSource: string;                    // matched doc title / source label
+  docId: string | null;                   // set when the match is a corpus doc
+  similarity: number;                     // 0–1 overlap with the matched source
+  flagKind: 'similarity' | 'ai_generated';
+}
+
+export interface PlagiarismReportData {
+  draftTitle: string;
+  originalityScore: number;               // 0–1, higher = more original
+  aiLikelihood: number;                   // 0–1 heuristic AI-content estimate
+  flags: PlagiarismFlag[];
+  checkedAt: string;                      // ISO 8601
+  citations: Citation[];
+}
+
+// ── AudioSummary ───────────────────────────────────────────────────────────
+// Player for a generated audio overview (Audio, studio). 24/24 close.
+
+export interface AudioSegment {
+  label: string;                          // chapter / topic label
+  startSec: number;
+  endSec: number;
+}
+
+export interface AudioSummaryData {
+  title: string;
+  audioUrl: string | null;                // null while generation is pending
+  durationSec: number;
+  transcript: string;                     // full transcript (fallback + a11y)
+  segments: AudioSegment[];
+  voice: string | null;
+  citations: Citation[];
+}

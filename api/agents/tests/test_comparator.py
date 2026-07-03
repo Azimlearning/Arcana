@@ -55,29 +55,31 @@ def _make_agent(llm_text: str, chunks: list[RetrievedChunk]) -> ComparatorAgent:
     )
 
 
-_MATRIX_JSON = json.dumps({
-    "dimensions": ["Methodology", "Key findings", "Limitations"],
-    "rows": [
-        {
-            "docId": "doc1",
-            "docTitle": "RAG paper",
-            "cells": [
-                {"text": "Dense retrieval", "citationId": "c1"},
-                {"text": "Improves factuality", "citationId": None},
-                {"text": "Latency cost", "citationId": None},
-            ],
-        },
-        {
-            "docId": "doc2",
-            "docTitle": "RLHF paper",
-            "cells": [
-                {"text": "Human feedback loop", "citationId": "c2"},
-                {"text": "Better alignment", "citationId": None},
-                {"text": "Expensive annotation", "citationId": None},
-            ],
-        },
-    ],
-})
+_MATRIX_JSON = json.dumps(
+    {
+        "dimensions": ["Methodology", "Key findings", "Limitations"],
+        "rows": [
+            {
+                "docId": "doc1",
+                "docTitle": "RAG paper",
+                "cells": [
+                    {"text": "Dense retrieval", "citationId": "c1"},
+                    {"text": "Improves factuality", "citationId": None},
+                    {"text": "Latency cost", "citationId": None},
+                ],
+            },
+            {
+                "docId": "doc2",
+                "docTitle": "RLHF paper",
+                "cells": [
+                    {"text": "Human feedback loop", "citationId": "c2"},
+                    {"text": "Better alignment", "citationId": None},
+                    {"text": "Expensive annotation", "citationId": None},
+                ],
+            },
+        ],
+    }
+)
 
 _PROSE_RESPONSE = (
     "RAG and RLHF differ fundamentally. [c1] "
@@ -211,10 +213,14 @@ def test_parse_matrix_strips_fences():
 
 
 def test_parse_matrix_pads_short_cells():
-    short = json.dumps({
-        "dimensions": ["A", "B", "C"],
-        "rows": [{"docId": "d1", "docTitle": "D1", "cells": [{"text": "x", "citationId": None}]}],
-    })
+    short = json.dumps(
+        {
+            "dimensions": ["A", "B", "C"],
+            "rows": [
+                {"docId": "d1", "docTitle": "D1", "cells": [{"text": "x", "citationId": None}]}
+            ],
+        }
+    )
     chunks = [_chunk("c1", "d1", "t"), _chunk("c2", "d2", "u")]
     result = _parse_matrix_response(short, chunks=chunks, query="q")
     row = result["data"]["rows"][0]
@@ -223,13 +229,19 @@ def test_parse_matrix_pads_short_cells():
 
 
 def test_parse_matrix_deduplicates_rows():
-    dup = json.dumps({
-        "dimensions": ["A"],
-        "rows": [
-            {"docId": "same", "docTitle": "T", "cells": [{"text": "first", "citationId": None}]},
-            {"docId": "same", "docTitle": "T", "cells": [{"text": "dup", "citationId": None}]},
-        ],
-    })
+    dup = json.dumps(
+        {
+            "dimensions": ["A"],
+            "rows": [
+                {
+                    "docId": "same",
+                    "docTitle": "T",
+                    "cells": [{"text": "first", "citationId": None}],
+                },
+                {"docId": "same", "docTitle": "T", "cells": [{"text": "dup", "citationId": None}]},
+            ],
+        }
+    )
     chunks = [_chunk("c1", "same", "t"), _chunk("c2", "other", "u")]
     result = _parse_matrix_response(dup, chunks=chunks, query="q")
     assert len(result["data"]["rows"]) == 1

@@ -11,6 +11,7 @@ from api.agents.tier2.socratic import SocraticAgent, _is_answer_shaped, _strip_f
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
+
 def _make_agent(llm_text: str = "") -> tuple[SocraticAgent, AsyncMock]:
     llm = MagicMock()
     completion = MagicMock()
@@ -41,6 +42,7 @@ def _make_agent(llm_text: str = "") -> tuple[SocraticAgent, AsyncMock]:
 
 # ── Unit: _is_answer_shaped ───────────────────────────────────────────────
 
+
 def test_is_answer_shaped_rejects_statement():
     assert _is_answer_shaped("The answer is backpropagation.") is True
 
@@ -58,10 +60,14 @@ def test_is_answer_shaped_rejects_therefore():
 
 
 def test_is_answer_shaped_accepts_probing_question():
-    assert _is_answer_shaped("How might you describe the role of each layer in a neural network?") is False
+    assert (
+        _is_answer_shaped("How might you describe the role of each layer in a neural network?")
+        is False
+    )
 
 
 # ── Unit: _strip_fences ───────────────────────────────────────────────────
+
 
 def test_strip_fences_removes_markdown():
     raw = "```json\n{}\n```"
@@ -69,6 +75,7 @@ def test_strip_fences_removes_markdown():
 
 
 # ── Integration: agent.run ────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_run_returns_socratic_dialog_payload():
@@ -87,7 +94,9 @@ async def test_run_returns_socratic_dialog_payload():
 @pytest.mark.asyncio
 async def test_run_rejects_answer_shaped_question_and_uses_fallback():
     """When LLM returns an answer-shaped response twice, use safe fallback."""
-    llm_json = '{"nextQuestion": "The answer is the chain rule.", "bloomLevel": "recall", "reasoning": ""}'
+    llm_json = (
+        '{"nextQuestion": "The answer is the chain rule.", "bloomLevel": "recall", "reasoning": ""}'
+    )
     agent, llm = _make_agent(llm_json)
     # Both attempts return the same answer-shaped output.
     llm.complete = AsyncMock(return_value=MagicMock(text=llm_json))

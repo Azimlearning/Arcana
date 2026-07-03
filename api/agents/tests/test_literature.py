@@ -75,7 +75,7 @@ _GOOD_RESPONSE = """\
 
 
 def test_strip_fences():
-    raw = "```json\n{\"a\": 1}\n```"
+    raw = '```json\n{"a": 1}\n```'
     assert _strip_fences(raw) == '{"a": 1}'
 
 

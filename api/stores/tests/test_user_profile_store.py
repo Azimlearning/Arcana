@@ -1,4 +1,4 @@
-"""Tests for UserProfileStore (FR-USR-02)."""
+"""Tests for JsonUserProfileStore (FR-USR-02)."""
 
 from __future__ import annotations
 
@@ -8,16 +8,16 @@ from pathlib import Path
 import pytest
 
 from api.genui._generated import UpdateProfileRequest, UserProfile
-from api.stores.user_profile_store import UserProfileStore
+from api.stores.user_profile_store import JsonUserProfileStore
 
 
 @pytest.fixture
-def store(tmp_path: Path) -> UserProfileStore:
-    return UserProfileStore(root=tmp_path / "profiles")
+def store(tmp_path: Path) -> JsonUserProfileStore:
+    return JsonUserProfileStore(root=tmp_path / "profiles")
 
 
 @pytest.mark.asyncio
-async def test_get_creates_default_profile(store: UserProfileStore) -> None:
+async def test_get_creates_default_profile(store: JsonUserProfileStore) -> None:
     profile = await store.get("user-a")
     assert isinstance(profile, UserProfile)
     assert profile.uid == "user-a"
@@ -28,13 +28,13 @@ async def test_get_creates_default_profile(store: UserProfileStore) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_stores_email_on_creation(store: UserProfileStore) -> None:
+async def test_get_stores_email_on_creation(store: JsonUserProfileStore) -> None:
     profile = await store.get("user-b", email="b@example.com")
     assert profile.email == "b@example.com"
 
 
 @pytest.mark.asyncio
-async def test_get_returns_same_profile_on_second_call(store: UserProfileStore) -> None:
+async def test_get_returns_same_profile_on_second_call(store: JsonUserProfileStore) -> None:
     p1 = await store.get("user-c")
     p2 = await store.get("user-c")
     assert p1.createdAt == p2.createdAt
@@ -42,14 +42,14 @@ async def test_get_returns_same_profile_on_second_call(store: UserProfileStore) 
 
 
 @pytest.mark.asyncio
-async def test_upsert_updates_display_name(store: UserProfileStore) -> None:
+async def test_upsert_updates_display_name(store: JsonUserProfileStore) -> None:
     await store.get("user-d")
     updated = await store.upsert("user-d", UpdateProfileRequest(displayName="Alice"))
     assert updated.displayName == "Alice"
 
 
 @pytest.mark.asyncio
-async def test_upsert_updates_preferences(store: UserProfileStore) -> None:
+async def test_upsert_updates_preferences(store: JsonUserProfileStore) -> None:
     await store.get("user-e")
     updated = await store.upsert(
         "user-e",
@@ -61,32 +61,32 @@ async def test_upsert_updates_preferences(store: UserProfileStore) -> None:
 
 
 @pytest.mark.asyncio
-async def test_upsert_updates_study_context(store: UserProfileStore) -> None:
+async def test_upsert_updates_study_context(store: JsonUserProfileStore) -> None:
     await store.get("user-f")
     updated = await store.upsert("user-f", UpdateProfileRequest(studyContext="Big Data course"))
     assert updated.preferences.studyContext == "Big Data course"
 
 
 @pytest.mark.asyncio
-async def test_upsert_persists_to_disk(store: UserProfileStore, tmp_path: Path) -> None:
-    store2 = UserProfileStore(root=tmp_path / "profiles")
+async def test_upsert_persists_to_disk(store: JsonUserProfileStore, tmp_path: Path) -> None:
+    store2 = JsonUserProfileStore(root=tmp_path / "profiles")
     await store2.get("user-g")
     await store2.upsert("user-g", UpdateProfileRequest(theme="dark"))
 
-    store3 = UserProfileStore(root=tmp_path / "profiles")
+    store3 = JsonUserProfileStore(root=tmp_path / "profiles")
     profile = await store3.get("user-g")
     assert profile.preferences.theme == "dark"
 
 
 @pytest.mark.asyncio
-async def test_upsert_creates_profile_if_absent(store: UserProfileStore) -> None:
+async def test_upsert_creates_profile_if_absent(store: JsonUserProfileStore) -> None:
     profile = await store.upsert("new-user", UpdateProfileRequest(theme="light"))
     assert profile.uid == "new-user"
     assert profile.preferences.theme == "light"
 
 
 @pytest.mark.asyncio
-async def test_profile_json_has_correct_keys(store: UserProfileStore, tmp_path: Path) -> None:
+async def test_profile_json_has_correct_keys(store: JsonUserProfileStore, tmp_path: Path) -> None:
     await store.get("user-h")
     path = tmp_path / "profiles" / "user-h.json"
     assert path.exists()

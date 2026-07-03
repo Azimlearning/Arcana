@@ -81,20 +81,20 @@ class AgentState(BaseModel):
 
     query: str
     notebook_id: str = ""
-    user_id: str = "anon"   # populated by chat route from CurrentUser.uid (FR-KG-02)
+    user_id: str = "anon"  # populated by chat route from CurrentUser.uid (FR-KG-02)
     # `Mode` is the schema-owned wire type (packages/schema/src/api.ts →
     # codegen). Imported, never re-declared, so a new mode added to the
     # schema can't drift from the agent state (R-10).
     active_mode: Mode = "research"
-    intent: str = ""   # set by Orchestrator; consumed by conditional routing
+    intent: str = ""  # set by Orchestrator; consumed by conditional routing
     # FR-RET-07: local/global/hybrid/auto retrieval scope; set by chat route
     # from ChatRequest.retrievalMode (defaults to auto). Read by grounded agents.
     retrieval_mode: str = "auto"
     messages: Annotated[list[Message], add] = Field(default_factory=list)
     retrieved_ctx: Annotated[list[RetrievedChunk], add] = Field(default_factory=list)
-    agent_results: Annotated[
-        dict[str, AgentResult], _merge_agent_results
-    ] = Field(default_factory=dict)
+    agent_results: Annotated[dict[str, AgentResult], _merge_agent_results] = Field(
+        default_factory=dict
+    )
     ui_blocks: Annotated[list[UIBlock], add] = Field(default_factory=list)
     budget: TokenBudget = Field(default_factory=TokenBudget)
 
@@ -249,6 +249,15 @@ class BaseAgent(ABC):
         """Execute the agent's reasoning. Writes its result to
         `state.agent_results[self.name]` and optionally to other state
         fields (`retrieved_ctx`, `ui_blocks`, ...)."""
+
+    async def run_as_tool(self, query: str, state: AgentState | None = None) -> dict[str, Any]:
+        """Execute this agent as a callable tool (PRD §11A.5 template step 2).
+
+        Each agent's `@tool`-decorated entry point delegates here. Within a
+        turn the caller passes the live `AgentState` so the shared-ledger
+        invariant (#4) holds; standalone callers get a fresh state."""
+        result = await self.run(query, state if state is not None else AgentState(query=query))
+        return result.payload
 
 
 # ─── Composability primitive ─────────────────────────────────────

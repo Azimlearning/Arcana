@@ -47,6 +47,8 @@ from pydantic import ValidationError
 from api.agents.base import AgentResult, AgentState, BaseAgent
 from api.core.logging import get_logger
 from api.genui._generated import (
+    AudioSummary,
+    AudioSummaryData,
     BibliographyExport,
     BibliographyExportData,
     BlockMeta,
@@ -78,6 +80,8 @@ from api.genui._generated import (
     KnowledgeGraphViewData,
     LiteratureMatrix,
     LiteratureMatrixData,
+    PlagiarismReport,
+    PlagiarismReportData,
     QuizCard,
     QuizCardData,
     SocraticDialog,
@@ -103,15 +107,17 @@ class UIAgent(BaseAgent):
         # Multi-block path: comparator with A2A hops emits up to 3 blocks
         # (LiteratureMatrix + KnowledgeGraphView + ContradictionAlert — PRD Listing 12.1).
         comparator = state.agent_results.get("comparator")
-        if (comparator is not None and comparator.status == "ok"
-                and comparator.payload.get("block_type") == "LiteratureMatrix"):
+        if (
+            comparator is not None
+            and comparator.status == "ok"
+            and comparator.payload.get("block_type") == "LiteratureMatrix"
+        ):
             blocks = self._route_compare_multi_block(state)
             for b in blocks:
                 state.ui_blocks.append(b)
             return AgentResult(
                 agent_name=self.name,
-                payload={"block_ids": [b.id for b in blocks],
-                          "types": [b.type for b in blocks]},
+                payload={"block_ids": [b.id for b in blocks], "types": [b.type for b in blocks]},
                 status="ok",
             )
 
@@ -437,6 +443,19 @@ class UIAgent(BaseAgent):
                 logger.warning("ui_agent.writing_draft_invalid", error=str(e))
                 return None
 
+        if block_type == "PlagiarismReport":
+            try:
+                data = PlagiarismReportData.model_validate(data_dict)
+                return PlagiarismReport(
+                    type="PlagiarismReport",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.writing_plagiarism_invalid", error=str(e))
+                return None
+
         return None
 
     def _build_from_discovery(self, result: AgentResult, *, order: int = 0) -> UIBlock | None:
@@ -647,6 +666,21 @@ class UIAgent(BaseAgent):
                 logger.warning("ui_agent.document_cornell_invalid", error=str(e))
                 return None
 
+        if block_type == "AudioSummary":
+            try:
+                data = AudioSummaryData.model_validate(data_dict)
+                # audioUrl is null until TTS lands (P2) — the transcript is the
+                # content; renderer shows a pending player. Ready, not partial.
+                return AudioSummary(
+                    type="AudioSummary",
+                    id=_new_block_id(),
+                    meta=BlockMeta(panel="studio", order=order, status="ready"),  # type: ignore[arg-type]
+                    data=data,
+                )
+            except ValidationError as e:
+                logger.warning("ui_agent.document_audio_invalid", error=str(e))
+                return None
+
         return None
 
     def _build_cited_summary_from_result(
@@ -687,9 +721,7 @@ class UIAgent(BaseAgent):
         filtered["segments"] = [
             {
                 "text": s.get("text", ""),
-                "citationIds": [
-                    cid for cid in s.get("citationIds", []) if cid not in dropped
-                ],
+                "citationIds": [cid for cid in s.get("citationIds", []) if cid not in dropped],
             }
             for s in payload.get("segments", [])
         ]

@@ -117,6 +117,7 @@ async def test_invalid_payload_falls_through_to_error_block():
 
 # ── Discovery routing ───────────────────────────────────────────────────────
 
+
 def _gap_analysis_payload() -> dict:
     return {
         "block_type": "GapAnalysis",
@@ -183,6 +184,7 @@ async def test_discovery_invalid_payload_falls_through_to_cited_summary():
 
 
 # ── Learning routing (Slice 3) ──────────────────────────────────────────────
+
 
 def _flashcard_payload() -> dict:
     return {
@@ -304,6 +306,7 @@ async def test_learning_invalid_payload_falls_through_to_research():
 
 # ── Socratic routing (Slice 3) ──────────────────────────────────────────────
 
+
 def _socratic_payload() -> dict:
     return {
         "block_type": "SocraticDialog",
@@ -351,6 +354,7 @@ async def test_socratic_invalid_payload_falls_through_to_research():
 
 
 # ── Writing routing (Slice 4) ───────────────────────────────────────────────
+
 
 def _draft_payload() -> dict:
     return {
@@ -430,6 +434,7 @@ async def test_writing_invalid_payload_falls_through_to_research():
 
 # ── Slice 7 routing ────────────────────────────────────────────────────────────────────────
 
+
 def _graph_view_payload() -> dict:
     return {
         "block_type": "KnowledgeGraphView",
@@ -473,7 +478,12 @@ def _contradiction_payload() -> dict:
             "summary": "Sources disagree.",
             "claims": [
                 {"docId": "d1", "docTitle": "Paper A", "stance": "helps", "quote": "quote1"},
-                {"docId": "d2", "docTitle": "Paper B", "stance": "does not help", "quote": "quote2"},
+                {
+                    "docId": "d2",
+                    "docTitle": "Paper B",
+                    "stance": "does not help",
+                    "quote": "quote2",
+                },
             ],
         },
     }
@@ -619,3 +629,70 @@ async def test_annotation_produces_gap_analysis():
     block = state.ui_blocks[0]
     assert isinstance(block, GapAnalysis)
     assert block.type == "GapAnalysis"
+
+
+async def test_routes_plagiarism_report_from_writing_agent():
+    from api.genui._generated import PlagiarismReport
+
+    state = AgentState(query="check plagiarism of my draft")
+    state.agent_results["writing"] = AgentResult(
+        agent_name="writing",
+        payload={
+            "block_type": "PlagiarismReport",
+            "data": {
+                "draftTitle": "My draft",
+                "originalityScore": 0.8,
+                "aiLikelihood": 0.1,
+                "flags": [
+                    {
+                        "excerpt": "the quick brown fox",
+                        "matchSource": "Paper A",
+                        "docId": "d1",
+                        "similarity": 0.4,
+                        "flagKind": "similarity",
+                    }
+                ],
+                "checkedAt": "2026-07-03T00:00:00+00:00",
+                "citations": [],
+            },
+        },
+        status="ok",
+    )
+
+    agent = UIAgent()
+    await agent.run("check plagiarism of my draft", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, PlagiarismReport)
+    assert block.meta.panel == "studio"
+    assert block.data.originalityScore == 0.8
+
+
+async def test_routes_audio_summary_from_document_agent():
+    from api.genui._generated import AudioSummary
+
+    state = AgentState(query="audio overview of the paper")
+    state.agent_results["document"] = AgentResult(
+        agent_name="document",
+        payload={
+            "block_type": "AudioSummary",
+            "data": {
+                "title": "Overview",
+                "audioUrl": None,
+                "durationSec": 60,
+                "transcript": "hello listener",
+                "segments": [{"label": "Intro", "startSec": 0.0, "endSec": 60.0}],
+                "voice": None,
+                "citations": [],
+            },
+        },
+        status="ok",
+    )
+
+    agent = UIAgent()
+    await agent.run("audio overview of the paper", state=state)
+
+    block = state.ui_blocks[0]
+    assert isinstance(block, AudioSummary)
+    assert block.meta.panel == "studio"
+    assert block.data.audioUrl is None

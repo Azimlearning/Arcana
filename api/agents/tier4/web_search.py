@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 
 import httpx
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -37,6 +37,11 @@ class WebSearchAgent(BaseAgent):
 
     def __init__(self, *, limit: int = _DEFAULT_LIMIT) -> None:
         self._limit = limit
+
+    @tool(agent="web_search", tier=4)
+    async def search_academic_papers(self, query: str) -> dict:
+        """Search Semantic Scholar and arXiv for academic papers related to the query."""
+        return await self.run_as_tool(query)
 
     async def run(self, query: str, state: AgentState) -> AgentResult:
         try:

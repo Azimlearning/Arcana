@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.stores.doc_store import DocMetadata, DocStore
 
@@ -20,10 +20,17 @@ logger = get_logger(__name__)
 
 _DEFAULT_STYLE = "apa"
 
-_BIBLIOGRAPHY_KEYWORDS = frozenset({
-    "bibliography", "all citations", "all references",
-    "bibtex", "references list", "cite all", "full bibliography",
-})
+_BIBLIOGRAPHY_KEYWORDS = frozenset(
+    {
+        "bibliography",
+        "all citations",
+        "all references",
+        "bibtex",
+        "references list",
+        "cite all",
+        "full bibliography",
+    }
+)
 
 
 def _infer_year(meta: DocMetadata) -> int | None:
@@ -106,6 +113,11 @@ class CitationAgent(BaseAgent):
     def __init__(self, *, doc_store: DocStore) -> None:
         self._doc_store = doc_store
 
+    @tool(agent="citation", tier=3)
+    async def format_citations(self, query: str) -> dict:
+        """Format citations or export a bibliography for corpus documents."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         q = query.lower()
         style = _infer_style(q)
@@ -129,12 +141,18 @@ class CitationAgent(BaseAgent):
         if not docs:
             return AgentResult(
                 agent_name=self.name,
-                payload={"block_type": "CitationPreview", "data": {
-                    "docId": "", "docTitle": "No documents",
-                    "authors": [], "year": None, "sourceUri": "",
-                    "formatted": "No documents found in this notebook.",
-                    "style": style,
-                }},
+                payload={
+                    "block_type": "CitationPreview",
+                    "data": {
+                        "docId": "",
+                        "docTitle": "No documents",
+                        "authors": [],
+                        "year": None,
+                        "sourceUri": "",
+                        "formatted": "No documents found in this notebook.",
+                        "style": style,
+                    },
+                },
                 status="partial",
             )
 
@@ -144,15 +162,18 @@ class CitationAgent(BaseAgent):
         formatted, _ = _format_citation(meta, style)
         return AgentResult(
             agent_name=self.name,
-            payload={"block_type": "CitationPreview", "data": {
-                "docId": meta.id,
-                "docTitle": meta.title,
-                "authors": authors,
-                "year": year,
-                "sourceUri": meta.source_uri,
-                "formatted": formatted,
-                "style": style,
-            }},
+            payload={
+                "block_type": "CitationPreview",
+                "data": {
+                    "docId": meta.id,
+                    "docTitle": meta.title,
+                    "authors": authors,
+                    "year": year,
+                    "sourceUri": meta.source_uri,
+                    "formatted": formatted,
+                    "style": style,
+                },
+            },
             status="ok",
         )
 
@@ -173,22 +194,27 @@ class CitationAgent(BaseAgent):
             authors = _infer_authors(meta)
             year = _infer_year(meta)
             _, bibtex = _format_citation(meta, style)
-            entries.append({
-                "key": _bibtex_key(meta, authors, year),
-                "docId": meta.id,
-                "docTitle": meta.title,
-                "authors": authors,
-                "year": year,
-                "sourceType": "misc",
-                "bibtex": bibtex,
-            })
+            entries.append(
+                {
+                    "key": _bibtex_key(meta, authors, year),
+                    "docId": meta.id,
+                    "docTitle": meta.title,
+                    "authors": authors,
+                    "year": year,
+                    "sourceType": "misc",
+                    "bibtex": bibtex,
+                }
+            )
             bibtex_parts.append(bibtex)
 
         return AgentResult(
             agent_name=self.name,
-            payload={"block_type": "BibliographyExport", "data": {
-                "entries": entries,
-                "bibtexAll": "\n\n".join(bibtex_parts),
-            }},
+            payload={
+                "block_type": "BibliographyExport",
+                "data": {
+                    "entries": entries,
+                    "bibtexAll": "\n\n".join(bibtex_parts),
+                },
+            },
             status="ok" if entries else "partial",
         )

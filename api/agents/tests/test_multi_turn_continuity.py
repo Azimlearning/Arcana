@@ -44,7 +44,8 @@ class _StubLLM:
             text=self._text,
             stop_reason="end_turn",
             usage=Usage(input_tokens=10, output_tokens=20),
-            model="stub", provider="stub",
+            model="stub",
+            provider="stub",
         )
 
 
@@ -59,14 +60,22 @@ class _StubRetriever:
 class _StubDocStore:
     async def get_metadata(self, doc_id):
         return DocMetadata(
-            id=doc_id, title=f"Title {doc_id}", source_uri="/x.pdf",
-            content_type="application/pdf", size_bytes=1, created_at=datetime.now(UTC),
+            id=doc_id,
+            title=f"Title {doc_id}",
+            source_uri="/x.pdf",
+            content_type="application/pdf",
+            size_bytes=1,
+            created_at=datetime.now(UTC),
         )
+
     async def put(self, *a, **kw): ...
     async def get_bytes(self, *a, **kw): ...
     async def update_status(self, *a, **kw): ...
-    async def list_documents(self): return []
-    async def aclose(self): return None
+    async def list_documents(self):
+        return []
+
+    async def aclose(self):
+        return None
 
 
 class _StubEmbedder:
@@ -122,8 +131,8 @@ async def test_turn_two_sees_turn_one_history():
     # state2.messages should contain turn-1's user + assistant + turn-2's user.
     msgs = [m.content for m in state2.messages]
     assert "what is GraphRAG?" in msgs
-    assert any("GraphRAG outperforms" in m for m in msgs)   # assistant from turn 1
-    assert "how does it compare?" in msgs   # current turn's query
+    assert any("GraphRAG outperforms" in m for m in msgs)  # assistant from turn 1
+    assert "how does it compare?" in msgs  # current turn's query
 
 
 async def test_notebook_isolation_across_turns():

@@ -64,6 +64,7 @@ async def test_tool_schema_handles_list_and_optional():
 
 async def test_tool_returns_function_unchanged():
     """The decorator must return the function as-is so it stays directly callable."""
+
     @tool(agent="research", tier=2)
     async def echo(query: str) -> str:
         """Echo the query back."""

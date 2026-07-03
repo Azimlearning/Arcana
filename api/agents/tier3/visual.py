@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import re
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.service import LLMService
 from api.llm.types import Message
@@ -52,13 +52,27 @@ _CHART_SYSTEM = (
     "Rules: max 4 labels, max 5 series, numeric values 1-5 scale, chartType 'bar' or 'radar'."
 )
 
-_CHART_KEYWORDS = frozenset({
-    "chart", "bar chart", "radar chart", "scatter",
-    "compare visually", "comparison chart", "visual comparison",
-})
-_CONCEPT_KEYWORDS = frozenset({
-    "concept map", "concept", "diagram", "visualize", "mind map", "visual",
-})
+_CHART_KEYWORDS = frozenset(
+    {
+        "chart",
+        "bar chart",
+        "radar chart",
+        "scatter",
+        "compare visually",
+        "comparison chart",
+        "visual comparison",
+    }
+)
+_CONCEPT_KEYWORDS = frozenset(
+    {
+        "concept map",
+        "concept",
+        "diagram",
+        "visualize",
+        "mind map",
+        "visual",
+    }
+)
 
 
 def _parse_json(raw: str, default: dict) -> dict:
@@ -79,13 +93,15 @@ def _citations(chunks) -> list[dict]:
     for i, c in enumerate(chunks[:6]):
         if c.doc_id not in seen:
             seen.add(c.doc_id)
-            out.append({
-                "id": f"c{i + 1}",
-                "docId": c.doc_id,
-                "docTitle": getattr(c, "doc_title", None) or c.doc_id,
-                "page": None,
-                "quote": c.text[:120],
-            })
+            out.append(
+                {
+                    "id": f"c{i + 1}",
+                    "docId": c.doc_id,
+                    "docTitle": getattr(c, "doc_title", None) or c.doc_id,
+                    "page": None,
+                    "quote": c.text[:120],
+                }
+            )
     return out
 
 
@@ -108,6 +124,11 @@ class VisualAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="visual_agent", tier=3)
+    async def visualise_concepts(self, query: str) -> dict:
+        """Produce a concept map or comparison chart for the queried concepts."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         q = query.lower()
         if any(kw in q for kw in _CHART_KEYWORDS):
@@ -118,7 +139,8 @@ class VisualAgent(BaseAgent):
 
     async def _concept_map(self, query: str, state: AgentState) -> AgentResult:
         chunks = await hybrid_retrieve(
-            query, top_k=8,
+            query,
+            top_k=8,
             vector_retriever=self._vector,
             bm25_retriever=self._bm25,
             graph_retriever=self._graph,
@@ -127,16 +149,19 @@ class VisualAgent(BaseAgent):
 
         if not chunks:
             return AgentResult(
-                agent_name=self.name, payload={}, status="failed",
+                agent_name=self.name,
+                payload={},
+                status="failed",
                 error="No context retrieved for concept map",
             )
 
         ctx = "\n\n".join(c.text[:400] for c in chunks[:6])
         try:
-            raw = await self._llm.complete(
+            completion = await self._llm.complete(
                 [Message(role="user", content=f"Concept map for: {query}\n\n{ctx}")],
                 system=_CONCEPT_MAP_SYSTEM,
             )
+            raw = completion.text
         except Exception as exc:
             return AgentResult(agent_name=self.name, payload={}, status="failed", error=str(exc))
 
@@ -146,18 +171,22 @@ class VisualAgent(BaseAgent):
 
         return AgentResult(
             agent_name=self.name,
-            payload={"block_type": "ConceptMap", "data": {
-                "rootConcept": data.get("rootConcept", query),
-                "nodes": data.get("nodes", []),
-                "links": data.get("links", []),
-                "citations": _citations(chunks),
-            }},
+            payload={
+                "block_type": "ConceptMap",
+                "data": {
+                    "rootConcept": data.get("rootConcept", query),
+                    "nodes": data.get("nodes", []),
+                    "links": data.get("links", []),
+                    "citations": _citations(chunks),
+                },
+            },
             status="ok",
         )
 
     async def _comparison_chart(self, query: str, state: AgentState) -> AgentResult:
         chunks = await hybrid_retrieve(
-            query, top_k=12,
+            query,
+            top_k=12,
             vector_retriever=self._vector,
             bm25_retriever=self._bm25,
             graph_retriever=self._graph,
@@ -166,16 +195,19 @@ class VisualAgent(BaseAgent):
 
         if not chunks:
             return AgentResult(
-                agent_name=self.name, payload={}, status="failed",
+                agent_name=self.name,
+                payload={},
+                status="failed",
                 error="No context retrieved for chart",
             )
 
         ctx = "\n\n".join(c.text[:400] for c in chunks[:8])
         try:
-            raw = await self._llm.complete(
+            completion = await self._llm.complete(
                 [Message(role="user", content=f"Comparison chart for: {query}\n\n{ctx}")],
                 system=_CHART_SYSTEM,
             )
+            raw = completion.text
         except Exception as exc:
             return AgentResult(agent_name=self.name, payload={}, status="failed", error=str(exc))
 
@@ -183,13 +215,16 @@ class VisualAgent(BaseAgent):
 
         return AgentResult(
             agent_name=self.name,
-            payload={"block_type": "ComparisonChart", "data": {
-                "title": data.get("title", query),
-                "chartType": data.get("chartType", "bar"),
-                "labels": data.get("labels", []),
-                "series": data.get("series", []),
-                "unit": data.get("unit"),
-                "citations": _citations(chunks),
-            }},
+            payload={
+                "block_type": "ComparisonChart",
+                "data": {
+                    "title": data.get("title", query),
+                    "chartType": data.get("chartType", "bar"),
+                    "labels": data.get("labels", []),
+                    "series": data.get("series", []),
+                    "unit": data.get("unit"),
+                    "citations": _citations(chunks),
+                },
+            },
             status="ok",
         )

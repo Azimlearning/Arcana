@@ -14,6 +14,7 @@ from api.agents.tier2.writing import (
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 
+
 def _mock_agent(llm_text: str) -> WritingAgent:
     llm = MagicMock()
     completion = MagicMock()
@@ -24,12 +25,16 @@ def _mock_agent(llm_text: str) -> WritingAgent:
     retriever.retrieve = AsyncMock(return_value=[])
 
     from api.retrieval.types import RetrievedChunk
-    chunk = RetrievedChunk(id="c1", doc_id="d1", text="Transformers use attention.", page=1, score=0.9, source="vector")
+
+    chunk = RetrievedChunk(
+        id="c1", doc_id="d1", text="Transformers use attention.", page=1, score=0.9, source="vector"
+    )
 
     async def fake_hybrid(query, *, top_k, vector_retriever, bm25_retriever, graph_retriever):
         return [chunk]
 
     import api.agents.tier2.writing as mod
+
     mod.hybrid_retrieve = fake_hybrid  # type: ignore[attr-defined]
 
     return WritingAgent(
@@ -64,8 +69,9 @@ def _draft_json() -> str:
 
 # ── Unit tests: parsing ───────────────────────────────────────────────────
 
+
 def test_strip_fences_removes_json_fence():
-    fenced = "```json\n{\"a\": 1}\n```"
+    fenced = '```json\n{"a": 1}\n```'
     assert _strip_fences(fenced) == '{"a": 1}'
 
 
@@ -108,6 +114,7 @@ def test_parse_draft_response_computes_word_count_when_missing():
 
 # ── Integration-style: agent.run ─────────────────────────────────────────
 
+
 async def test_writing_agent_returns_ok_with_draft():
     agent = _mock_agent(_draft_json())
     state = AgentState(query="explain attention mechanism")
@@ -145,6 +152,7 @@ async def test_writing_agent_returns_failed_when_no_chunks():
 async def test_writing_agent_llm_raise_returns_ok_with_error_payload():
     """LLM crash → ok status + error DraftEditor (empty sections)."""
     from api.retrieval.types import RetrievedChunk
+
     chunk = RetrievedChunk(id="c1", doc_id="d1", text="context", page=1, score=0.9, source="vector")
 
     import api.agents.tier2.writing as mod
@@ -170,3 +178,84 @@ async def test_writing_agent_llm_raise_returns_ok_with_error_payload():
     assert result.status == "ok"
     assert result.payload["block_type"] == "DraftEditor"
     assert result.payload["data"]["sections"] == []
+
+
+async def test_plagiarism_query_produces_report_without_llm():
+    """Originality queries route to the deterministic trigram checker (24/24 close)."""
+    from api.retrieval.types import RetrievedChunk
+
+    passage = "the quick brown fox jumps over the lazy dog near the river bank"
+    chunk = RetrievedChunk(
+        id="c1",
+        doc_id="d1",
+        text=passage + " and further body text",
+        page=2,
+        score=0.9,
+        source="vector",
+    )
+
+    import api.agents.tier2.writing as mod
+
+    async def one_chunk(query, *, top_k, vector_retriever, bm25_retriever, graph_retriever):
+        return [chunk]
+
+    mod.hybrid_retrieve = one_chunk  # type: ignore[attr-defined]
+
+    llm = MagicMock()
+    llm.complete = AsyncMock(side_effect=AssertionError("LLM must not be called"))
+    retriever = MagicMock()
+    agent = WritingAgent(
+        llm_service=llm,
+        vector_retriever=retriever,
+        bm25_retriever=retriever,
+        graph_retriever=retriever,
+    )
+
+    state = AgentState(query="x")
+    result = await agent.run(f"check plagiarism: {passage}", state=state)
+
+    assert result.status == "ok"
+    assert result.payload["block_type"] == "PlagiarismReport"
+    data = result.payload["data"]
+    assert data["flags"], "overlapping passage should be flagged"
+    assert data["flags"][0]["docId"] == "d1"
+    assert 0.0 <= data["originalityScore"] < 1.0
+    assert data["citations"]
+    llm.complete.assert_not_called()
+
+
+async def test_plagiarism_no_overlap_scores_original():
+    from api.retrieval.types import RetrievedChunk
+
+    chunk = RetrievedChunk(
+        id="c1",
+        doc_id="d1",
+        text="completely unrelated corpus material",
+        page=1,
+        score=0.5,
+        source="vector",
+    )
+
+    import api.agents.tier2.writing as mod
+
+    async def one_chunk(query, *, top_k, vector_retriever, bm25_retriever, graph_retriever):
+        return [chunk]
+
+    mod.hybrid_retrieve = one_chunk  # type: ignore[attr-defined]
+
+    retriever = MagicMock()
+    agent = WritingAgent(
+        llm_service=MagicMock(),
+        vector_retriever=retriever,
+        bm25_retriever=retriever,
+        graph_retriever=retriever,
+    )
+    state = AgentState(query="x")
+    result = await agent.run(
+        "originality check: novel sentences never seen before anywhere", state=state
+    )
+
+    data = result.payload["data"]
+    assert result.payload["block_type"] == "PlagiarismReport"
+    assert data["flags"] == []
+    assert data["originalityScore"] == 1.0

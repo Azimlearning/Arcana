@@ -17,7 +17,7 @@ from typing import Literal
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-REPO_ROOT = Path(__file__).resolve().parents[2]   # arcana/
+REPO_ROOT = Path(__file__).resolve().parents[2]  # arcana/
 API_DIR = REPO_ROOT / "api"
 
 
@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     env: Literal["local", "study", "prod-design"] = "local"
     graph_backend: Literal["networkx", "neo4j"] = "networkx"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    # ── Persistence backends (JSONL for local dev; Firestore when deployed) ──
+    # Firestore requires the three firebase_* fields below to be set.
+    notebook_backend: Literal["jsonl", "firestore"] = "jsonl"
+    event_backend: Literal["jsonl", "firestore"] = "jsonl"
+    profile_backend: Literal["json", "firestore"] = "json"
 
     # ── LLM primary (Anthropic) — OPTIONAL (skip provider if absent) ──
     anthropic_api_key: SecretStr | None = None
@@ -86,7 +92,16 @@ class Settings(BaseSettings):
     # ── Object storage ────────────────────────────────────────────
     storage_bucket: str = ""
 
+    # ── HTTP / deployment ─────────────────────────────────────────
+    # Comma-separated list of allowed browser origins (CORS). Add the
+    # deployed web origin (e.g. https://arcana.vercel.app) in prod.
+    cors_origins: str = "http://localhost:3000"
+
     # ── Derived helpers ───────────────────────────────────────────
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     @property
     def local_storage_path(self) -> Path:
         """Filesystem root for the DocStore slice-time stub.

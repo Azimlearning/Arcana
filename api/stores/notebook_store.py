@@ -7,8 +7,11 @@ ABC:
   NotebookStore  — interface; implementations swap without changing callers.
 
 Concrete impls:
-  JsonlNotebookStore — JSONL file per user under ``data/notebooks/``.
-                       Suitable for local dev and demo. Firestore impl in P2.
+  JsonlNotebookStore     — JSONL file per user under ``data/notebooks/``.
+                           Suitable for local dev and demo.
+  FirestoreNotebookStore — Firestore documents at ``users/{uid}/notebooks/{id}``
+                           via the REST client in ``firestore_client.py``.
+                           Selected with ``Settings.notebook_backend=firestore``.
 
 Per-user isolation is enforced by keying every operation on ``user_id``.
 An implementation MUST NOT let one user read or mutate another user's data.
@@ -21,6 +24,8 @@ import uuid
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from pathlib import Path
+
+from api.stores.firestore_client import FirestoreClient
 
 
 def _now_iso() -> str:
@@ -208,3 +213,83 @@ class JsonlNotebookStore(NotebookStore):
 
     async def aclose(self) -> None:
         pass  # no persistent connection to close
+
+
+# ── Firestore implementation ──────────────────────────────────────────────────
+
+
+class FirestoreNotebookStore(NotebookStore):
+    """Firestore-backed store: one document per notebook at
+    ``users/{uid}/notebooks/{notebook_id}``.
+
+    Per-user isolation is structural — every operation addresses paths
+    under the caller's ``users/{uid}`` subtree, so one user can never
+    read or mutate another's notebooks (FR-USR-06).
+
+    ``doc_count`` uses read-modify-write rather than a Firestore field
+    transform: single-writer per user at FYP scale, and it keeps the
+    client surface minimal.
+    """
+
+    def __init__(self, client: FirestoreClient) -> None:
+        self._client = client
+
+    @staticmethod
+    def _safe(user_id: str) -> str:
+        # Same sanitisation as JsonlNotebookStore — Firestore path segments
+        # must not contain '/' and we keep ids conservative.
+        return "".join(c if c.isalnum() or c in "-_." else "_" for c in user_id)
+
+    def _doc_path(self, user_id: str, notebook_id: str) -> str:
+        return f"users/{self._safe(user_id)}/notebooks/{notebook_id}"
+
+    def _collection_path(self, user_id: str) -> str:
+        return f"users/{self._safe(user_id)}/notebooks"
+
+    async def create(self, *, user_id: str, title: str) -> Notebook:
+        now = _now_iso()
+        nb = Notebook(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            title=title[:200].strip() or "Untitled",
+            created_at=now,
+            updated_at=now,
+            doc_count=0,
+        )
+        await self._client.set(self._doc_path(user_id, nb.id), nb.to_dict())
+        return nb
+
+    async def list(self, user_id: str) -> list[Notebook]:
+        docs = await self._client.list(self._collection_path(user_id))
+        notebooks = [Notebook.from_dict(fields) for _, fields in docs]
+        return sorted(notebooks, key=lambda nb: nb.updated_at, reverse=True)
+
+    async def get(self, *, user_id: str, notebook_id: str) -> Notebook | None:
+        fields = await self._client.get(self._doc_path(user_id, notebook_id))
+        return Notebook.from_dict(fields) if fields is not None else None
+
+    async def delete(self, *, user_id: str, notebook_id: str) -> bool:
+        path = self._doc_path(user_id, notebook_id)
+        if await self._client.get(path) is None:
+            return False
+        await self._client.delete(path)
+        return True
+
+    async def increment_doc_count(self, *, user_id: str, notebook_id: str) -> None:
+        path = self._doc_path(user_id, notebook_id)
+        fields = await self._client.get(path)
+        if fields is None:
+            return
+        nb = Notebook.from_dict(fields)
+        updated = Notebook(
+            id=nb.id,
+            user_id=nb.user_id,
+            title=nb.title,
+            created_at=nb.created_at,
+            updated_at=_now_iso(),
+            doc_count=nb.doc_count + 1,
+        )
+        await self._client.set(path, updated.to_dict())
+
+    async def aclose(self) -> None:
+        await self._client.aclose()

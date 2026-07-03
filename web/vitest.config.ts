@@ -7,11 +7,14 @@ export default defineConfig({
       '@': resolve(__dirname, '.'),
     },
   },
+  esbuild: {
+    // tsconfig.json sets jsx:"preserve" (Next.js/SWC compiles JSX at build
+    // time); Vitest's esbuild transform needs an explicit runtime instead.
+    jsx: 'automatic',
+  },
   test: {
-    // TODO(P1): flip `environment` to 'jsdom' and widen `include` to
-    // `*.test.{ts,tsx}` when React-component DOM tests land. The slice
-    // ships logic-only tests (stream parser, registry presence).
-    environment: 'node',
-    include: ['**/*.test.ts'],
+    environment: 'jsdom',
+    include: ['**/*.test.{ts,tsx}'],
+    setupFiles: ['./vitest.setup.ts'],
   },
 });

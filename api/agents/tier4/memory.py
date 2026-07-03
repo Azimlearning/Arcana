@@ -17,7 +17,7 @@ the LangGraph node deltas predictable.
 
 from __future__ import annotations
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.types import Message
 from api.stores.memory_store import MemoryStore
@@ -34,6 +34,11 @@ class MemoryAgent(BaseAgent):
             raise ValueError(f"max_history must be >= 1 (got {max_history})")
         self._store = store
         self._max = max_history
+
+    @tool(agent="memory", tier=4)
+    async def summarise_memory(self, query: str) -> dict:
+        """Summarise session context into durable user memory."""
+        return await self.run_as_tool(query)
 
     async def run(self, query: str, state: AgentState) -> AgentResult:
         notebook_id = state.notebook_id or "default"

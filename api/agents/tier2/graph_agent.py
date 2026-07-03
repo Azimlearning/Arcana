@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.errors import IngestFailed
 from api.core.logging import get_logger
 from api.ingestion.extractor import extract_entities
@@ -67,6 +67,11 @@ class GraphAgent(BaseAgent):
             return await self._registry.get_or_create(user_id)
         assert self._graph is not None
         return self._graph
+
+    @tool(agent="graph_agent", tier=2)
+    async def graph_neighborhood(self, query: str) -> dict:
+        """Explore the user's knowledge-graph neighborhood around the queried concept."""
+        return await self.run_as_tool(query)
 
     async def run(self, query: str, state: AgentState) -> AgentResult:
         graph = await self._resolve_graph(state.user_id)

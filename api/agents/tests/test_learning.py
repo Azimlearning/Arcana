@@ -17,6 +17,7 @@ from api.agents.tier2.learning import (
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
+
 def _make_agent(llm_text: str = "") -> tuple[LearningAgent, AsyncMock]:
     llm = MagicMock()
     completion = MagicMock()
@@ -48,6 +49,7 @@ def _make_agent(llm_text: str = "") -> tuple[LearningAgent, AsyncMock]:
 
 # ── Unit: _strip_fences ────────────────────────────────────────────────────
 
+
 def test_strip_fences_removes_json_fence():
     raw = "```json\n{}\n```"
     assert _strip_fences(raw) == "{}"
@@ -59,6 +61,7 @@ def test_strip_fences_leaves_plain_json():
 
 
 # ── Unit: _parse_flashcard_response ───────────────────────────────────────
+
 
 def test_parse_flashcard_happy_path():
     raw = """{
@@ -95,6 +98,7 @@ def test_parse_flashcard_skips_non_dict_cards():
 
 
 # ── Unit: _parse_quiz_response ────────────────────────────────────────────
+
 
 def test_parse_quiz_mcq_happy_path():
     raw = """{
@@ -134,6 +138,7 @@ def test_parse_quiz_broken_json_returns_fallback():
 
 # ── Unit: _parse_feynman_response ─────────────────────────────────────────
 
+
 def test_parse_feynman_happy_path():
     raw = """{
         "concept": "backpropagation",
@@ -158,6 +163,7 @@ def test_parse_feynman_broken_json_returns_empty():
 
 
 # ── Integration: agent.run ────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_run_returns_flashcard_deck_payload():

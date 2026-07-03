@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.contradiction import (
     CONTRADICTION_PROMPT_VERSION,
@@ -48,6 +48,11 @@ class ContradictionAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="contradiction", tier=2)
+    async def detect_contradictions(self, query: str) -> dict:
+        """Detect cross-source disagreements about the queried claim."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         chunks = await hybrid_retrieve(
             query,
@@ -68,9 +73,7 @@ class ContradictionAgent(BaseAgent):
                 error="No documents retrieved for contradiction analysis.",
             )
 
-        messages = [
-            Message(role="user", content=build_contradiction_prompt(query, chunks))
-        ]
+        messages = [Message(role="user", content=build_contradiction_prompt(query, chunks))]
         try:
             completion = await self._llm.complete(
                 messages,
@@ -103,7 +106,7 @@ def _strip_fences(text: str) -> str:
     if text.startswith(fence):
         first_newline = text.find("\n")
         if first_newline != -1:
-            text = text[first_newline + 1:]
+            text = text[first_newline + 1 :]
     if text.rstrip().endswith(fence):
         text = text.rstrip()[: -len(fence)].rstrip()
     return text.strip()
@@ -129,9 +132,7 @@ def _parse_contradiction_response(
         parsed = {}
 
     concept = str(parsed.get("concept") or query[:80])
-    summary = str(
-        parsed.get("summary") or f"Contradiction analysis for: {query[:80]}"
-    )
+    summary = str(parsed.get("summary") or f"Contradiction analysis for: {query[:80]}")
 
     raw_claims = parsed.get("claims") or []
     claims: list[dict[str, str]] = []

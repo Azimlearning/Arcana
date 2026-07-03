@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.discovery import DISCOVERY_PROMPT_VERSION, DISCOVERY_SYSTEM, build_gap_prompt
 from api.llm.service import LLMService
@@ -47,6 +47,11 @@ class DiscoveryAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="discovery", tier=2)
+    async def discover_insights(self, query: str) -> dict:
+        """Surface non-obvious insights related to the query from the corpus."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         # 1. Ground before generating (invariant #1).
         chunks = await hybrid_retrieve(
@@ -67,13 +72,9 @@ class DiscoveryAgent(BaseAgent):
                 error="No documents retrieved for discovery analysis.",
             )
 
-        ctx_text = "\n\n".join(
-            f"[{c.id}] (doc:{c.doc_id}, p.{c.page}) {c.text}" for c in chunks
-        )
+        ctx_text = "\n\n".join(f"[{c.id}] (doc:{c.doc_id}, p.{c.page}) {c.text}" for c in chunks)
 
-        messages = [
-            Message(role="user", content=build_gap_prompt(query, ctx_text))
-        ]
+        messages = [Message(role="user", content=build_gap_prompt(query, ctx_text))]
         try:
             completion = await self._llm.complete(
                 messages,
@@ -108,7 +109,7 @@ def _strip_fences(text: str) -> str:
         # Strip opening fence (may include language tag like ```json)
         first_newline = text.find("\n")
         if first_newline != -1:
-            text = text[first_newline + 1:]
+            text = text[first_newline + 1 :]
     if text.rstrip().endswith(fence):
         text = text.rstrip()[: -len(fence)].rstrip()
     return text.strip()

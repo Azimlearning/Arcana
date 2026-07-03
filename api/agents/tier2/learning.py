@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.learning import (
     BLURTING_SYSTEM,
@@ -60,6 +60,11 @@ class LearningAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="learning", tier=2)
+    async def generate_study_materials(self, query: str) -> dict:
+        """Generate grounded study materials (flashcards, quiz, Cornell notes, blurting or Feynman prompts)."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         # 1. Ground before generating (invariant #1).
         chunks = await hybrid_retrieve(
@@ -80,9 +85,7 @@ class LearningAgent(BaseAgent):
                 error="No documents retrieved for study material generation.",
             )
 
-        ctx_text = "\n\n".join(
-            f"[{c.id}] (doc:{c.doc_id}, p.{c.page}) {c.text}" for c in chunks
-        )
+        ctx_text = "\n\n".join(f"[{c.id}] (doc:{c.doc_id}, p.{c.page}) {c.text}" for c in chunks)
 
         # Infer artifact type from query keywords; default to flashcard deck.
         # Temp heuristic — full intent detection replaces this in §1.3.
@@ -135,9 +138,7 @@ class LearningAgent(BaseAgent):
 
         messages = [Message(role="user", content=build_quiz_prompt(topic, ctx_text, difficulty))]
         try:
-            completion = await self._llm.complete(
-                messages, system=QUIZ_SYSTEM, max_tokens=800
-            )
+            completion = await self._llm.complete(messages, system=QUIZ_SYSTEM, max_tokens=800)
             raw = completion.text
         except Exception as exc:
             logger.exception("learning.llm_failed_quiz")
@@ -148,9 +149,7 @@ class LearningAgent(BaseAgent):
     async def _generate_feynman(self, topic: str, ctx_text: str) -> dict[str, Any]:
         messages = [Message(role="user", content=build_feynman_prompt(topic, ctx_text))]
         try:
-            completion = await self._llm.complete(
-                messages, system=FEYNMAN_SYSTEM, max_tokens=600
-            )
+            completion = await self._llm.complete(messages, system=FEYNMAN_SYSTEM, max_tokens=600)
             raw = completion.text
         except Exception as exc:
             logger.exception("learning.llm_failed_feynman")
@@ -158,13 +157,10 @@ class LearningAgent(BaseAgent):
 
         return _parse_feynman_response(raw, topic=topic)
 
-
     async def _generate_blurting(self, topic: str, ctx_text: str) -> dict[str, Any]:
         messages = [Message(role="user", content=build_blurting_prompt(topic, ctx_text))]
         try:
-            completion = await self._llm.complete(
-                messages, system=BLURTING_SYSTEM, max_tokens=600
-            )
+            completion = await self._llm.complete(messages, system=BLURTING_SYSTEM, max_tokens=600)
             raw = completion.text
         except Exception as exc:
             logger.exception("learning.llm_failed_blurting")
@@ -175,9 +171,7 @@ class LearningAgent(BaseAgent):
     async def _generate_cornell_notes(self, topic: str, ctx_text: str) -> dict[str, Any]:
         messages = [Message(role="user", content=build_cornell_prompt(topic, ctx_text))]
         try:
-            completion = await self._llm.complete(
-                messages, system=CORNELL_SYSTEM, max_tokens=1200
-            )
+            completion = await self._llm.complete(messages, system=CORNELL_SYSTEM, max_tokens=1200)
             raw = completion.text
         except Exception as exc:
             logger.exception("learning.llm_failed_cornell")
@@ -194,7 +188,7 @@ def _strip_fences(text: str) -> str:
     if text.startswith(fence):
         first_newline = text.find("\n")
         if first_newline != -1:
-            text = text[first_newline + 1:]
+            text = text[first_newline + 1 :]
     if text.rstrip().endswith(fence):
         text = text.rstrip()[: -len(fence)].rstrip()
     return text.strip()
@@ -209,7 +203,9 @@ def _extract_json(text: str) -> dict[str, Any]:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        logger.warning("learning.parse_failed", raw_preview=text[:120], version=LEARNING_PROMPT_VERSION)
+        logger.warning(
+            "learning.parse_failed", raw_preview=text[:120], version=LEARNING_PROMPT_VERSION
+        )
         return {}
 
 
@@ -236,12 +232,14 @@ def _parse_flashcard_response(raw: str, *, topic: str) -> dict[str, Any]:
         for card in raw_cards:
             if not isinstance(card, dict):
                 continue
-            cards.append({
-                "front": str(card.get("front") or ""),
-                "back": str(card.get("back") or ""),
-                "source": _safe_source(card.get("source")),
-                "schedule": None,
-            })
+            cards.append(
+                {
+                    "front": str(card.get("front") or ""),
+                    "back": str(card.get("back") or ""),
+                    "source": _safe_source(card.get("source")),
+                    "schedule": None,
+                }
+            )
 
     return {
         "block_type": "FlashcardDeck",
@@ -266,10 +264,12 @@ def _parse_quiz_response(raw: str, *, topic: str, difficulty: str) -> dict[str, 
     if isinstance(raw_options, list):
         for opt in raw_options:
             if isinstance(opt, dict):
-                options.append({
-                    "index": int(opt.get("index", len(options))),
-                    "text": str(opt.get("text") or ""),
-                })
+                options.append(
+                    {
+                        "index": int(opt.get("index", len(options))),
+                        "text": str(opt.get("text") or ""),
+                    }
+                )
 
     correct_raw = parsed.get("correctIndex")
     correct_index = int(correct_raw) if isinstance(correct_raw, (int, float)) else None
@@ -352,7 +352,10 @@ def _parse_blurting_response(raw: str, *, topic: str) -> dict[str, Any]:
         "block_type": "BlurtingPrompt",
         "data": {
             "topic": str(parsed.get("topic") or topic[:100]),
-            "prompt": str(parsed.get("prompt") or f"Without looking at your notes, write down everything you know about {topic[:60]}."),
+            "prompt": str(
+                parsed.get("prompt")
+                or f"Without looking at your notes, write down everything you know about {topic[:60]}."
+            ),
             "sourcePassage": str(parsed.get("sourcePassage") or ""),
             "citations": citations,
         },
@@ -368,11 +371,13 @@ def _parse_cornell_response(raw: str, *, topic: str) -> dict[str, Any]:
             if not isinstance(note, dict):
                 continue
             cit_ids = note.get("citationIds") or []
-            notes.append({
-                "cue": str(note.get("cue") or ""),
-                "content": str(note.get("content") or ""),
-                "citationIds": [str(c) for c in cit_ids] if isinstance(cit_ids, list) else [],
-            })
+            notes.append(
+                {
+                    "cue": str(note.get("cue") or ""),
+                    "content": str(note.get("content") or ""),
+                    "citationIds": [str(c) for c in cit_ids] if isinstance(cit_ids, list) else [],
+                }
+            )
     citations_raw = parsed.get("citations") or []
     citations: list[dict[str, Any]] = []
     if isinstance(citations_raw, list):
@@ -414,4 +419,3 @@ def _error_cornell_payload(topic: str, error: str) -> dict[str, Any]:
         },
         "_error": error,
     }
-

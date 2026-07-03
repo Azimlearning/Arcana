@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.cross_doc import (
     CROSS_DOC_PROMPT_VERSION,
@@ -49,6 +49,11 @@ class CrossDocAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="cross_doc", tier=2)
+    async def cross_document_connections(self, query: str) -> dict:
+        """Find serendipitous cross-document connections for the query."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         chunks = await hybrid_retrieve(
             query,
@@ -78,9 +83,7 @@ class CrossDocAgent(BaseAgent):
                 error="At least two documents needed for cross-document insight.",
             )
 
-        messages = [
-            Message(role="user", content=build_cross_doc_prompt(query, chunks))
-        ]
+        messages = [Message(role="user", content=build_cross_doc_prompt(query, chunks))]
         try:
             completion = await self._llm.complete(
                 messages,
@@ -123,7 +126,7 @@ def _strip_fences(text: str) -> str:
     if text.startswith(fence):
         first_newline = text.find("\n")
         if first_newline != -1:
-            text = text[first_newline + 1:]
+            text = text[first_newline + 1 :]
     if text.rstrip().endswith(fence):
         text = text.rstrip()[: -len(fence)].rstrip()
     return text.strip()
@@ -154,12 +157,8 @@ def _parse_cross_doc_response(
     doc_a_title = str(parsed.get("docATitle") or doc_a_id)
     doc_b_title = str(parsed.get("docBTitle") or doc_b_id)
 
-    insight = str(
-        parsed.get("insight") or f"Cross-document insight for: {query[:80]}"
-    )
-    connection = str(
-        parsed.get("connection") or "These documents share a common theme."
-    )
+    insight = str(parsed.get("insight") or f"Cross-document insight for: {query[:80]}")
+    connection = str(parsed.get("connection") or "These documents share a common theme.")
 
     raw_citations = parsed.get("citations") or []
     citations: list[dict[str, Any]] = []

@@ -22,6 +22,7 @@ class _StubLLM:
         if self._raise:
             raise self._raise
         from api.llm.types import Completion, Usage
+
         return Completion(
             text=self._response,
             stop_reason="end_turn",
@@ -46,9 +47,15 @@ class _StubGraphStore:
 
     async def upsert_node(self, node): ...
     async def upsert_edge(self, edge): ...
-    async def shortest_path(self, src, dst): return None
-    async def communities(self): return {}
-    async def pagerank(self): return {}
+    async def shortest_path(self, src, dst):
+        return None
+
+    async def communities(self):
+        return {}
+
+    async def pagerank(self):
+        return {}
+
     async def aclose(self): ...
 
 

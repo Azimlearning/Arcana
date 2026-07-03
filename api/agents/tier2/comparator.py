@@ -18,7 +18,7 @@ import json
 import re
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.prompts.comparator import (
     COMPARATOR_MATRIX_SYSTEM,
@@ -57,6 +57,11 @@ class ComparatorAgent(BaseAgent):
         self._bm25 = bm25_retriever
         self._graph = graph_retriever
 
+    @tool(agent="comparator", tier=2)
+    async def compare_sources(self, query: str) -> dict:
+        """Compare entities or approaches across sources (matrix + contradictions + cited summary)."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         # FR-RET-05: broad corpus sweep (top_k=20 per PRD §12).
         chunks = await hybrid_retrieve(
@@ -90,6 +95,7 @@ class ComparatorAgent(BaseAgent):
     ) -> AgentResult:
         # A2A hop 1: fetch the concept subgraph for visual context (FR-AGT-03).
         from api.agents.base import registry, route_to_agent  # late import avoids cycle
+
         if registry.get_agent("graph_agent") is not None:
             await route_to_agent("graph_agent", query, state=state)
 
@@ -97,9 +103,7 @@ class ComparatorAgent(BaseAgent):
         if registry.get_agent("contradiction") is not None:
             await route_to_agent("contradiction", query, state=state)
 
-        messages = [
-            Message(role="user", content=build_comparator_matrix_prompt(query, chunks))
-        ]
+        messages = [Message(role="user", content=build_comparator_matrix_prompt(query, chunks))]
         try:
             completion = await self._llm.complete(
                 messages,
@@ -119,12 +123,8 @@ class ComparatorAgent(BaseAgent):
         payload = _parse_matrix_response(raw, chunks=chunks, query=query)
         return AgentResult(agent_name=self.name, payload=payload, status="ok")
 
-    async def _run_prose(
-        self, query: str, chunks: list[RetrievedChunk]
-    ) -> AgentResult:
-        messages = [
-            Message(role="user", content=build_comparator_prompt(query, chunks))
-        ]
+    async def _run_prose(self, query: str, chunks: list[RetrievedChunk]) -> AgentResult:
+        messages = [Message(role="user", content=build_comparator_prompt(query, chunks))]
         try:
             completion = await self._llm.complete(
                 messages,
@@ -158,15 +158,13 @@ def _strip_fences(text: str) -> str:
     if text.startswith(fence):
         first_newline = text.find("\n")
         if first_newline != -1:
-            text = text[first_newline + 1:]
+            text = text[first_newline + 1 :]
     if text.rstrip().endswith(fence):
         text = text.rstrip()[: -len(fence)].rstrip()
     return text.strip()
 
 
-def _parse_matrix_response(
-    raw: str, *, chunks: list[RetrievedChunk], query: str
-) -> dict[str, Any]:
+def _parse_matrix_response(raw: str, *, chunks: list[RetrievedChunk], query: str) -> dict[str, Any]:
     text = _strip_fences(raw)
     start = text.find("{")
     end = text.rfind("}")
@@ -208,10 +206,12 @@ def _parse_matrix_response(
                     if not isinstance(cell, dict):
                         cells.append({"text": "Not reported", "citationId": None})
                         continue
-                    cells.append({
-                        "text": str(cell.get("text") or "Not reported"),
-                        "citationId": cell.get("citationId") or None,
-                    })
+                    cells.append(
+                        {
+                            "text": str(cell.get("text") or "Not reported"),
+                            "citationId": cell.get("citationId") or None,
+                        }
+                    )
             while len(cells) < len(dimensions):
                 cells.append({"text": "Not reported", "citationId": None})
             cells = cells[: len(dimensions)]
@@ -221,11 +221,13 @@ def _parse_matrix_response(
         for chunk in chunks:
             if chunk.doc_id not in seen_doc_ids:
                 seen_doc_ids.add(chunk.doc_id)
-                rows.append({
-                    "docId": chunk.doc_id,
-                    "docTitle": chunk.doc_id,
-                    "cells": [{"text": "Not reported", "citationId": None}] * len(dimensions),
-                })
+                rows.append(
+                    {
+                        "docId": chunk.doc_id,
+                        "docTitle": chunk.doc_id,
+                        "cells": [{"text": "Not reported", "citationId": None}] * len(dimensions),
+                    }
+                )
 
     citations: list[dict[str, Any]] = [
         {

@@ -22,7 +22,7 @@ import json
 import re
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.llm.service import LLMService
 from api.llm.types import Message
@@ -56,6 +56,11 @@ class FactChecker(BaseAgent):
     def __init__(self, *, llm: LLMService) -> None:
         self._llm = llm
 
+    @tool(agent="fact_checker", tier=4)
+    async def verify_claims(self, query: str) -> dict:
+        """Verify generated claims against the retrieved evidence."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         research = state.agent_results.get("research")
         if research is None or research.status == "failed":
@@ -81,9 +86,7 @@ class FactChecker(BaseAgent):
         )
 
         verified = sum(1 for ok in verdicts.values() if ok)
-        dropped_ids = [
-            c["id"] for c in citations if not verdicts.get(c["id"], True)
-        ]
+        dropped_ids = [c["id"] for c in citations if not verdicts.get(c["id"], True)]
 
         logger.info(
             "fact_checker.done",
@@ -136,8 +139,7 @@ class FactChecker(BaseAgent):
 
         verdicts = _parse_verdicts(completion.text)
         # Default unknown ids to supported (don't drop legitimate work).
-        return {str(c.get("id", "")): verdicts.get(str(c.get("id", "")), True)
-                for c in citations}
+        return {str(c.get("id", "")): verdicts.get(str(c.get("id", "")), True) for c in citations}
 
 
 def _parse_verdicts(raw: str) -> dict[str, bool]:

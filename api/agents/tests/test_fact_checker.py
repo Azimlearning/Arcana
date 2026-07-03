@@ -53,7 +53,8 @@ class _StubLLM:
             text=self._text,
             stop_reason="end_turn",
             usage=Usage(input_tokens=10, output_tokens=20),
-            model="stub", provider="stub",
+            model="stub",
+            provider="stub",
         )
 
 
@@ -149,5 +150,5 @@ async def test_unknown_id_in_verdicts_defaults_to_supported():
     llm = _StubLLM(text='[{"id":"c1","supported":true}]')
     checker = FactChecker(llm=llm)  # type: ignore[arg-type]
     result = await checker.run("x", state=state)
-    assert result.payload["verified"] == 2   # both kept
+    assert result.payload["verified"] == 2  # both kept
     assert result.payload["dropped_ids"] == []

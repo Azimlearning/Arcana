@@ -121,15 +121,39 @@ def _build_shared_resources():
     memory_store = JsonlMemoryStore(root=settings.local_storage_path / "memory")
     review_store = JsonlReviewStore(root=settings.local_storage_path / "reviews")
 
-    from api.stores.notebook_store import JsonlNotebookStore
-    notebook_store = JsonlNotebookStore(root=settings.local_storage_path / "notebooks")
+    # Persistence backends — JSONL/JSON locally; Firestore when the matching
+    # `*_backend=firestore` Settings flag is set (requires the firebase_* fields).
+    # All three share one FirestoreClient (one token cache, one HTTP pool).
+    from api.analytics.event_store import EventStore, FirestoreEventStore, JsonlEventStore
+    from api.stores.notebook_store import FirestoreNotebookStore, JsonlNotebookStore, NotebookStore
+    from api.stores.user_profile_store import FirestoreUserProfileStore, JsonUserProfileStore
 
-    from api.analytics.event_store import JsonlEventStore
-    event_store = JsonlEventStore(root=settings.local_storage_path / "events")
+    firestore_client = None
+    if "firestore" in (settings.notebook_backend, settings.event_backend, settings.profile_backend):
+        from api.stores.firestore_client import firestore_client_from_settings
 
-    # FR-USR-02: per-user profile store. Profiles persist at
-    # {local_storage_path}/profiles/{uid}.json.
-    profile_store = UserProfileStore(root=settings.local_storage_path / "profiles")
+        firestore_client = firestore_client_from_settings(settings)
+
+    # FR-USR-03/06: notebook persistence.
+    notebook_store: NotebookStore
+    if settings.notebook_backend == "firestore" and firestore_client is not None:
+        notebook_store = FirestoreNotebookStore(firestore_client)
+    else:
+        notebook_store = JsonlNotebookStore(root=settings.local_storage_path / "notebooks")
+
+    # FR-ANL: analytics event persistence.
+    event_store: EventStore
+    if settings.event_backend == "firestore" and firestore_client is not None:
+        event_store = FirestoreEventStore(firestore_client)
+    else:
+        event_store = JsonlEventStore(root=settings.local_storage_path / "events")
+
+    # FR-USR-02: per-user profile store.
+    profile_store: UserProfileStore
+    if settings.profile_backend == "firestore" and firestore_client is not None:
+        profile_store = FirestoreUserProfileStore(firestore_client)
+    else:
+        profile_store = JsonUserProfileStore(root=settings.local_storage_path / "profiles")
 
     return {
         "settings": settings,
@@ -178,7 +202,7 @@ def build_orchestrator(shared: dict):
     from api.agents.tier4.study_planner import StudyPlannerAgent
     from api.agents.tier4.web_search import WebSearchAgent
 
-    llm = shared["llm"]              # sonnet-4.6: standard
+    llm = shared["llm"]  # sonnet-4.6: standard
     llm_heavy = shared["llm_heavy"]  # opus-4.8 → sonnet fallback
     llm_light = shared["llm_light"]  # haiku-4.5 → sonnet fallback
     embedder = shared["embedder"]
@@ -284,13 +308,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     """Standard FastAPI app for `uvicorn api.main:app`."""
-    app = FastAPI(title="Arcana", lifespan=lifespan, docs_url="/api/swagger", redoc_url="/api/redoc")
+    app = FastAPI(
+        title="Arcana", lifespan=lifespan, docs_url="/api/swagger", redoc_url="/api/redoc"
+    )
     app.add_exception_handler(ArcanaError, arcana_error_handler)
-    # CORS: allow the Next.js dev server. Tighten `allow_origins` for prod.
+    # CORS: origins come from Settings (`CORS_ORIGINS`, comma-separated).
+    # Local default is the Next.js dev server; deployed envs add the web origin.
+    from api.core.settings import get_settings
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
-        allow_methods=["GET", "POST", "OPTIONS", "PUT"],
+        allow_origins=get_settings().cors_origin_list,
+        allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
         allow_headers=["*"],
     )
     app.include_router(chat_router)

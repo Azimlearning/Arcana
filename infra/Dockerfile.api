@@ -1,0 +1,35 @@
+# Arcana API — container image (FastAPI + uvicorn).
+#
+# Build from the REPO ROOT (the image needs pyproject.toml + api/):
+#   docker build -f infra/Dockerfile.api -t arcana-api .
+# Run:
+#   docker run -p 8000:8000 --env-file api/.env arcana-api
+#
+# See docs/deployment.md for platform-specific deploy steps (Cloud Run /
+# Render / Railway) and the required environment variables.
+
+FROM python:3.11-slim
+
+# uv resolves and installs from the committed lockfile — reproducible.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+WORKDIR /app
+
+# Layer-cache the dependency install: lockfile changes are rarer than code.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+COPY api ./api
+RUN uv sync --frozen --no-dev
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Local JSONL/JSON stores write here when the Firestore backends are off.
+# Mount a volume for persistence, or set *_BACKEND=firestore (recommended).
+ENV STORAGE_BUCKET=/data
+VOLUME ["/data"]
+
+EXPOSE 8000
+
+# $PORT is honoured for Cloud Run / Render style platforms; defaults to 8000.
+CMD ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

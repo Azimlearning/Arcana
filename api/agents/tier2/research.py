@@ -20,7 +20,7 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.embeddings.service import EmbedderProtocol
 from api.llm.prompts.synthesis import SYNTHESIS_SYSTEM, build_user_prompt
@@ -64,6 +64,11 @@ class ResearchAgent(BaseAgent):
         self._graph = graph_retriever
         self._doc = doc_store
 
+    @tool(agent="research", tier=2)
+    async def research_cited_summary(self, query: str) -> dict:
+        """Ground the query in hybrid-retrieved corpus evidence and synthesise a cited summary."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         try:
             chunks = await hybrid_retrieve(
@@ -98,9 +103,7 @@ class ResearchAgent(BaseAgent):
 
         payload: dict[str, Any] = {
             "summary": completion.text,
-            "segments": [
-                {"text": s["text"], "citationIds": s["citationIds"]} for s in segments
-            ],
+            "segments": [{"text": s["text"], "citationIds": s["citationIds"]} for s in segments],
             "citations": citations,
         }
         result = AgentResult(agent_name=self.name, payload=payload, status="ok")
@@ -131,16 +134,12 @@ class ResearchAgent(BaseAgent):
             "segments": [{"text": "Research agent failed.", "citationIds": []}],
             "citations": [],
         }
-        result = AgentResult(
-            agent_name=self.name, payload=payload, status="failed", error=msg
-        )
+        result = AgentResult(agent_name=self.name, payload=payload, status="failed", error=msg)
         state.agent_results[self.name] = result
         return result
 
     # ── Title enrichment ─────────────────────────────────────────
-    async def _enrich_titles(
-        self, citations: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    async def _enrich_titles(self, citations: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Resolve doc titles via DocStore. Caches per doc_id so we don't
         re-fetch the same metadata for citations of the same document."""
         title_cache: dict[str, str] = {}

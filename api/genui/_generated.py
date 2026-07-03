@@ -12,6 +12,29 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, Field
 
 
+class AudioSegment(BaseModel):
+    label: str
+    startSec: float
+    endSec: float
+
+
+class AudioSummary(BaseModel):
+    type: Literal['AudioSummary']
+    id: str
+    meta: BlockMeta
+    data: AudioSummaryData
+
+
+class AudioSummaryData(BaseModel):
+    title: str
+    audioUrl: str | None
+    durationSec: float
+    transcript: str
+    segments: list[AudioSegment]
+    voice: str | None
+    citations: list[Citation]
+
+
 class BibEntry(BaseModel):
     key: str
     docId: str
@@ -475,6 +498,30 @@ class NotebookListResponse(BaseModel):
     notebooks: list[NotebookItem]
 
 
+class PlagiarismFlag(BaseModel):
+    excerpt: str
+    matchSource: str
+    docId: str | None
+    similarity: float
+    flagKind: Literal['similarity', 'ai_generated']
+
+
+class PlagiarismReport(BaseModel):
+    type: Literal['PlagiarismReport']
+    id: str
+    meta: BlockMeta
+    data: PlagiarismReportData
+
+
+class PlagiarismReportData(BaseModel):
+    draftTitle: str
+    originalityScore: float
+    aiLikelihood: float
+    flags: list[PlagiarismFlag]
+    checkedAt: str
+    citations: list[Citation]
+
+
 class PomodoroPlan(BaseModel):
     focusMinutes: float
     breakMinutes: float
@@ -725,4 +772,4 @@ ReviewRating = float
 
 SocraticRole = Literal['tutor', 'learner']
 
-UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer | DraftEditor | StudyPlanner | BlurtingPrompt | CornellNotes | SourceList | CitationPreview | BibliographyExport | ConceptMap | ComparisonChart | Timeline | DataTable | ProgressDashboard, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | LiteratureMatrix | ContradictionAlert | GapAnalysis | InsightCard | KnowledgeGraphView | FlashcardDeck | QuizCard | SocraticDialog | FeynmanExplainer | DraftEditor | StudyPlanner | BlurtingPrompt | CornellNotes | SourceList | CitationPreview | BibliographyExport | ConceptMap | ComparisonChart | Timeline | DataTable | ProgressDashboard | PlagiarismReport | AudioSummary, Field(discriminator='type')]

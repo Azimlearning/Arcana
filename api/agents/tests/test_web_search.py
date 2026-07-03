@@ -58,7 +58,9 @@ async def test_run_degrades_to_partial_on_no_results():
 async def test_run_degrades_when_api_raises():
     agent = WebSearchAgent()
     state = AgentState(query="anything")
-    with patch.object(ws, "_search_semantic_scholar", new=AsyncMock(side_effect=RuntimeError("503"))):
+    with patch.object(
+        ws, "_search_semantic_scholar", new=AsyncMock(side_effect=RuntimeError("503"))
+    ):
         result = await agent.run("anything", state=state)
     assert result.status == "partial"  # never crashes the turn
 

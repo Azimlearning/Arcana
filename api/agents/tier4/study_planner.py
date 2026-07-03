@@ -20,7 +20,7 @@ from datetime import date
 from math import ceil
 from typing import Any
 
-from api.agents.base import AgentResult, AgentState, BaseAgent
+from api.agents.base import AgentResult, AgentState, BaseAgent, tool
 from api.core.logging import get_logger
 from api.learning.sm2 import from_wire, is_due
 from api.llm.service import LLMService
@@ -37,6 +37,11 @@ class StudyPlannerAgent(BaseAgent):
     def __init__(self, *, llm_service: LLMService) -> None:
         self._llm = llm_service
 
+    @tool(agent="study_planner", tier=4)
+    async def plan_study_session(self, query: str) -> dict:
+        """Plan a spaced-repetition study session from the user's due cards."""
+        return await self.run_as_tool(query)
+
     async def run(self, query: str, state: AgentState) -> AgentResult:
         today = date.today()
         topic = _infer_topic(state)
@@ -49,18 +54,24 @@ class StudyPlannerAgent(BaseAgent):
             for i, card in enumerate(payload.get("cards", [])):
                 schedule_raw = card.get("schedule")
                 if schedule_raw is None:
-                    due_cards.append(_build_due_card(card, deck_topic, i, today.isoformat(), overdue=False))
+                    due_cards.append(
+                        _build_due_card(card, deck_topic, i, today.isoformat(), overdue=False)
+                    )
                 else:
                     try:
                         sched = from_wire(schedule_raw)
                         raw_due = schedule_raw.get("dueAt", today.isoformat())
                         if is_due(sched, today):
                             overdue = str(raw_due) < today.isoformat()
-                            due_cards.append(_build_due_card(card, deck_topic, i, str(raw_due), overdue=overdue))
+                            due_cards.append(
+                                _build_due_card(card, deck_topic, i, str(raw_due), overdue=overdue)
+                            )
                         else:
                             not_due_dates.append(str(raw_due))
                     except (KeyError, ValueError, TypeError):
-                        due_cards.append(_build_due_card(card, deck_topic, i, today.isoformat(), overdue=False))
+                        due_cards.append(
+                            _build_due_card(card, deck_topic, i, today.isoformat(), overdue=False)
+                        )
 
         overdue_count = sum(1 for c in due_cards if c.get("overdue"))
         next_session_at: str | None = min(not_due_dates) if not_due_dates else None
