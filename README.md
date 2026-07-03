@@ -98,7 +98,8 @@ corepack pnpm --filter @arcana/web build                 # production build
 - [`docs/checklist.md`](docs/checklist.md) — phased build plan with FR/NFR/R IDs
 - [`docs/env_generation_guide.md`](docs/env_generation_guide.md) — every env var, where to get each credential
 - [`CLAUDE.md`](CLAUDE.md) — operating brief for the coding agent
-- [`.claude/memory/decisions.md`](.claude/memory/decisions.md) — ADR log (slice deferrals etc.)
+- [`.claude/memory/CHANGELOG.md`](.claude/memory/CHANGELOG.md) — session log (what shipped, when)
+- [`.claude/memory/DECISIONS.md`](.claude/memory/DECISIONS.md) — ADR log (slice deferrals etc.)
 
 ## License
 

@@ -25,16 +25,17 @@ Shipped:
 
 ---
 
-## ⚠️ Read this before touching any file — hook/path-spaces bug
+## ⚠️ Hook/path-spaces bug — fixed 2026-06-22
 
 The repo path contains a space (`FYP DOCS`). The PreToolUse hooks in
-`.claude/settings.json` use `$CLAUDE_PROJECT_DIR` **unquoted**, so bash
-word-splits on the space and every `Edit`/`Write` tool call fails.
+`.claude/settings.json` used `$CLAUDE_PROJECT_DIR` **unquoted**, so bash
+word-split on the space and every `Edit`/`Write` tool call failed. The
+three hook commands are now quoted and native `Edit`/`Write` work normally.
 
-**Workaround:**
+**If it ever regresses** (e.g. a future settings.json edit drops the quotes):
 - Repo files → `mcp__filesystem__write_file` or `mcp__filesystem__edit_file`
 - Outside-repo files → Bash heredoc (`cat > path <<'EOF' ... EOF`)
-- Never fight the blocked Edit/Write tools — go straight to the MCP tools.
+- Check: `grep -n CLAUDE_PROJECT_DIR .claude/settings.json` — each occurrence should be wrapped in `\"...\"`.
 
 ---
 
@@ -177,7 +178,7 @@ required P1 deliverable for the FYP report.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `Edit`/`Write` tools fail | Hook path-spaces bug | Use MCP filesystem tools |
+| `Edit`/`Write` tools fail | Hook path-spaces bug regressed | `grep CLAUDE_PROJECT_DIR .claude/settings.json` — re-quote; meanwhile use MCP filesystem tools |
 | `541 passed` → fewer tests | New tests not committed | `git status`; stage and commit |
 | `_generated.py` dirty | Codegen not committed | Re-run `to_python.ts`, commit |
 | `503 Ingest context not configured` | `main.py` missing router mount or context wire | Check `create_app()` in `api/main.py` |

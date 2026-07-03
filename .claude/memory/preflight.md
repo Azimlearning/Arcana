@@ -47,7 +47,7 @@
 
 - [ ] PRD §25 open questions (Q-03 to Q-10) scanned. For each, either:
   - the answer is now known (write it into the PRD), or
-  - the assumption to proceed with is recorded in `.claude/memory/decisions.md` as `ASSUMED:`.
+  - the assumption to proceed with is recorded as a new ADR in `.claude/memory/DECISIONS.md`, status `ASSUMED`.
 
 ## Subagent + hook smoke test
 

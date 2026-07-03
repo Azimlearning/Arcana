@@ -15,7 +15,8 @@ graph-native, multi-agent research and learning platform for academic use.
 ```
 CLAUDE.md                            ← operating brief + eight hard invariants
 .claude/rules/*.md                   ← five architectural rule files
-.claude/memory/decisions.md          ← all ADRs (architectural decision records)
+.claude/memory/CHANGELOG.md          ← session log (what shipped, when)
+.claude/memory/DECISIONS.md          ← all ADRs (architectural decision records)
 docs/handoff/CONTEXT.md              ← narrative state-of-play (newest ledger entry first)
 docs/handoff/SETUP.md                ← how to get gates green
 docs/handoff/PROCESS.md              ← how we build (slice checklist, conventions)
@@ -124,7 +125,7 @@ If any gate is red, **stop**. Fix it before building anything new.
 
 ## 7. How to build the next slice
 
-Load and follow `.claude/memory/decisions.md` + `docs/handoff/PROCESS.md`.
+Load and follow `.claude/memory/CHANGELOG.md` + `DECISIONS.md` + `docs/handoff/PROCESS.md`.
 The canonical pattern is:
 
 ```
@@ -137,7 +138,8 @@ The canonical pattern is:
 7. Tests (pytest + vitest) → qa-runner green
 8. code-reviewer subagent on the diff
 9. Commit with FR/NFR/R ID in the message
-10. Update docs/handoff/ + .claude/memory/decisions.md ADR
+10. Invoke memory-keeper — appends .claude/memory/CHANGELOG.md entry, files
+    a DECISIONS.md ADR if warranted, refreshes docs/handoff/ if stale
 ```
 
 **Never build the second thing until the first is green end-to-end.** One

@@ -24,9 +24,13 @@ The graded build (P1) ships a 21-agent MVP with a 22/24-component GenUI,
 five demonstrated modes, a learning system with SM-2 spaced repetition,
 Firebase auth, a hybrid-vs-flat RAG benchmark (20 questions), and a user
 study infrastructure (SUS modal, block ratings, JSONL event store). All
-three ML Engines (Re-Rank/Mastery/Document Classifier) are now scoped P2 —
-see DECISIONS.md ADR-013 — so the P1 release gate does not depend on any
-trained model.
+three ML Engines (Re-Rank/Mastery/Document Classifier) were pulled **back
+into P1 graded scope on 2026-07-03** — see DECISIONS.md **ADR-017**
+(supersedes ADR-013) — to match graded Objective 03 in the proposal-defence
+deck. The P1 gate now requires **≥ 1 trained Engine** (Re-Rank primary); the
+Engines are still strictly additive so the graph-vs-flat ablation remains
+the standalone primary evidence. **`api/engines/` is not built yet — this is
+the next code phase (checklist §1.14).**
 
 The post-FYP roadmap (P2) completes the 25-agent suite, audio/video,
 real-time collaboration, and mobile.
@@ -402,10 +406,14 @@ graphify-out/GRAPH_REPORT.md   # community analysis of the graph
 ADRs in `.claude/memory/DECISIONS.md` (session narratives in `CHANGELOG.md`).
 Don't rebuild these without reading the ADR — they're deliberate:
 
-- **All three ML Engines (Re-Rank/Mastery/Document Classifier).** Re-phased
-  P1 → P2 on 2026-06-22 — see DECISIONS.md ADR-013. Phase-1 release gate no
-  longer depends on any trained model; the §23.1 hybrid-vs-flat ablation
-  stands alone as the retrieval-quality evidence.
+- **All three ML Engines (Re-Rank/Mastery/Document Classifier).** ~~Re-phased
+  P1 → P2 on 2026-06-22 (ADR-013).~~ **Reversed 2026-07-03 — pulled back into
+  P1 graded scope (ADR-017, supersedes ADR-013).** No longer deferred; this is
+  the **next code phase** (checklist §1.14). Graded core = Re-Rank Engine +
+  the shared `Engine` ABC; Mastery/Doc-Classifier are best-effort Could-items.
+  Nothing under `api/engines/` exists yet — start with `base.py`. The §23.1
+  hybrid-vs-flat ablation stays the standalone primary evidence (Engines are
+  additive §23.4 arms only, R-13).
 - **Neo4j swap, OCR ingestion, Obsidian import/export.** Explicitly deferred
   to P2 as of the 2026-06-22 batch plan — see DECISIONS.md ADR-014.
   `GraphStore` ABC is the seam for Neo4j; flip `graph_backend=neo4j` once the
@@ -459,6 +467,30 @@ Don't rebuild these without reading the ADR — they're deliberate:
 The remaining gates before the FYP 2 submission, now tracked as checklist
 §1.13 batch **B5 — NFR verification & Benchmark** plus the author-side user
 study:
+
+### Development sequencing (author decision, 2026-07-03)
+
+**Graded FYP2 submission = September 2026** (~2.5 months out); full product
+development continues to **end of 2026**. All four objectives are graded and
+committed (ADR-017 holds — §24 gate unchanged). The author is sequencing the
+work, **not** dropping ML:
+
+1. **First — close out Objectives 01 / 02 / 04 + a deployable webapp.** These
+   are already code-complete in the backend; the real remaining work is:
+   (a) **run the hybrid-vs-flat benchmark** with real keys — Obj-01 *evidence*,
+   still missing (B5 / §1.12); (b) close the **`@tool` decorator gap**
+   (ADR-010) so Objective 02's *tool* story is real, not just `run()` calls;
+   (c) the **2 remaining GenUI components** + frontend/DOM test coverage
+   (Obj 04, FR-UI-02); (d) make the **webapp actually deployable + swap JSONL
+   persistence → Firestore** — currently dev-only, 3 routes, no deploy config.
+2. **Then — ML Engines (§1.14), before the September graded submission.**
+   Re-Rank Engine first (the graded-core Engine), Mastery/Doc-Classifier
+   best-effort. Still inside the graded window per the author, so ADR-017's
+   "graded" framing stands.
+
+> If the September date slips or ML can't fit before it, revisit the §24 gate:
+> ML would become continued-development (end-2026) rather than graded, which
+> would re-open the ADR-013 vs ADR-017 question. Flagged, not yet triggered.
 
 ### 1. Conduct the user study (author task)
 

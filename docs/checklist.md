@@ -191,13 +191,27 @@
 
 > **Why this exists.** §§1.1–1.12 track work at FR granularity; testing per-FR is the slow path. This block regroups the *remaining* unchecked P1 items into five batches. A batch is DONE only when its single QA pass (the `qa-runner` subagent: lint + types + tests + schema-drift) is green — run one QA pass per batch, not per item. Almost every Phase-1 **Must (M)** FR already shipped; what remains is Should/Could polish plus the §1.11/§1.12 verification runs.
 >
-> **Deferred to P2 at scope sign-off (2026-06-22):** Neo4j migration (R-06), OCR (FR-ING-04), Obsidian import/export (FR-EXP-05/06), and all ML Engines (§12A / FR-ENG-*). The Phase 1 gate depends on none of them.
+> **Deferred to P2 at scope sign-off (2026-06-22):** Neo4j migration (R-06), OCR (FR-ING-04), Obsidian import/export (FR-EXP-05/06). ~~and all ML Engines (§12A / FR-ENG-*)~~ — **ML Engines pulled back into P1 on 2026-07-03 (ADR-017, supersedes ADR-013); see new §1.14 below.** The Phase 1 gate now includes at least one trained Engine.
 
 - [x] **B1 — Ingestion & Graph.** YouTube transcript ingest (**FR-ING-03**), per-document progress surfaced to UI (**FR-ING-07**), entity canonicalisation — same concept → one node (**FR-ING-09**), incremental graph update on new doc, no full reprocess (**FR-KG-03**). → one QA pass over `api/ingestion/` + graph tests.
 - [x] **B2 — Retrieval & Agents.** Contradiction surfacing on a queried concept (**FR-RET-06**), local/global/hybrid mode select-or-auto (**FR-RET-07**), intent-scoped tool injection (**FR-AGT-05**), partial-result streaming for long tasks (**FR-AGT-07**), academic Web Search agent — Semantic Scholar / arXiv (§12). → one QA pass over `api/retrieval/` + `api/agents/`.
 - [x] **B3 — Learning, Accounts & Analytics.** Pomodoro + study schedules (**FR-LRN-09**), user highlights/notes ingested back into the graph (**FR-USR-05**), capture the §20 event set (**FR-ANL**). → one QA pass over `api/learning/` + analytics.
 - [x] **B4 — Export & Interop.** PDF report export (**FR-EXP-01**), DOCX export (**FR-EXP-02**), BibTeX / RIS citation export (**FR-EXP-08**). → one QA pass over the export module.
 - [~] **B5 — NFR verification & Benchmark.** *(Code/harness complete: REL-01/02 + COST-01 + PERF-04 verified by tests; nfr_check.py harness built for PERF-01/02/03 + SCAL. Remaining is **author-run** — the live perf measurement, the §1.12 hybrid-vs-flat benchmark run, and the user study — all need API keys / participants, not code.)*
+
+### 1.14 ML Engines (§12A / FR-ENG) — **pulled into P1 on 2026-07-03 (ADR-017)**
+
+> **Why this is here now.** The three Engines were deferred to P2 on 2026-06-22 (ADR-013), then pulled back into the graded build on 2026-07-03 (ADR-017, supersedes ADR-013) to match Objective 03 ("Trained ML Models") in the proposal-defence deck. **Graded core = the Re-Rank Engine + the shared `Engine` abstraction** (Must-priority FR-ENG-02/06); Mastery + Document Classifier (Could-priority) land as schedule allows. All three stay **strictly additive** — evaluated as extra benchmark arms (§23.4), never displacing the §23.1 graph-vs-flat ablation (R-13). Follow the ordered build: ABC first, then Re-Rank, then the other two.
+
+- [ ] `api/engines/base.py` — `Engine` ABC (`predict()` + `is_available()`), leaf layer beside `stores/`/`llm/` — **FR-ENG-06 (M)**, *Listing 12A.0*. **Build this first.**
+- [ ] `api/engines/rerank.py` — **Re-Rank Engine (primary deliverable).** GBDT post-RRF re-ranker over (BM25, cosine, graph-hop, RRF-rank, length, term-overlap) features; trained in Colab; strictly additive so the RRF-only arm stays independently evaluable — **FR-ENG-01/02 (M)**, **NFR-PERF-05**, **R-11/R-13**, §12A. Wire via the `settings.rerank_engine_enabled` guard in `hybrid_retrieve` (*Listing 12A.1*).
+- [ ] Re-Rank training data: MS MARCO pretrain + synthetic in-domain triples (LLM-judged) + 30–50 hand-checked validation subset (**R-11 mitigation**) — **FR-ENG-07 (S)**, §12A.
+- [ ] Re-Rank evaluation: NDCG@k / precision@k for "RRF-only" vs "RRF + Re-Rank" on the fixed §23.1 question set — an extra column on the benchmark table — **§23.4**.
+- [ ] `api/engines/mastery.py` — Mastery Engine: HLR recall/difficulty predictor; SM-2 fallback below per-user history threshold — **FR-ENG-03/04 (C/M)**, **R-12**, §12A. (Could-priority; pretrained-prior acceptable for the graded bar.)
+- [ ] `api/engines/classifier.py` — Document Classifier Engine: ingestion-time subject/topic/difficulty tagger over existing embeddings — **FR-ENG-05 (C)**, §12A. (Could-priority.)
+- [ ] Each Engine's data sources + methodology documented and reproducible — **FR-ENG-07 (S)**, §23.4.
+- [ ] Engine failure/absence falls back to its heuristic (RRF-only / SM-2 / no tag) without breaking the request — **NFR-REL-04**, **FR-ENG-06 (M)**.
+- [ ] QA pass over `api/engines/` (lint + types + tests + schema-drift via `qa-runner`) before the gate.
 
 ### ✅ Phase 1 release gate (§24)
 
@@ -208,6 +222,7 @@
 - [x] GenUI runs with ≥ 3 modes and live component streaming. *(5 modes; SSE block streaming + partial progress streaming.)*
 - [x] Learning module generates flashcards + schedules via spaced repetition. *(FlashcardDeck + SM-2 + StudyPlanner + Pomodoro.)*
 - [ ] Benchmark complete: **statistically significant gain over flat-RAG baseline** (primary metric). *(author run — `eval/run_benchmark.py` with keys + ingested corpus.)*
+- [ ] **≥ 1 ML Engine trained + integrated** behind the `Engine` abstraction (Re-Rank primary — FR-ENG-01/02/06), evaluated as an additive §23.4 benchmark arm without displacing the primary ablation. *(Added 2026-07-03, ADR-017 — §1.14.)*
 - [ ] User study complete: ≥ 10 participants, **SUS ≥ 70**. *(author — recruit participants; SUS infra already built.)*
 - [x] No known defect blocks the core Research / Study / Writing journeys. *(603 tests green; no known blockers.)*
 - [ ] FYP 2 report documents architecture, results, limitations. *(author — writing.)*
@@ -218,13 +233,9 @@
 
 > Items deferred out of Phase 1 plus the original P2 vision. Not gated by the FYP 2 release. Pick up via `/resume`.
 
-### 2.1 ML Engines (§12A / FR-ENG)
-- [ ] `api/engines/base.py` — `Engine` ABC (`predict()` + `is_available()`), leaf layer beside `stores/`/`llm/` — **FR-ENG-06**, *Listing 12A.0*.
-- [ ] Re-Rank Engine — gradient-boosted post-RRF re-ranker, trained in Colab; strictly additive, RRF-only arm stays independently evaluable — **FR-ENG-01/02**, **NFR-PERF-05**, **R-11/R-13**, §12A.
-- [ ] Mastery Engine — HLR recall/difficulty predictor; SM-2 fallback below per-user history threshold — **FR-ENG-03/04**, **R-12**, §12A.
-- [ ] Document Classifier Engine — ingestion-time subject/topic/difficulty tagger over existing embeddings — **FR-ENG-05**, §12A.
-- [ ] Each Engine's data sources + methodology documented and reproducible — **FR-ENG-07**, §23.4.
-- [ ] Engine failure/absence falls back to its heuristic (RRF-only / SM-2 / no tag) without breaking the request — **NFR-REL-04**.
+### 2.1 ML Engines (§12A / FR-ENG) — **moved to Phase 1 §1.14 on 2026-07-03 (ADR-017)**
+
+> This section previously held all three ML Engines as P2. They were pulled back into the graded P1 build on 2026-07-03 (ADR-017, supersedes ADR-013). **See §1.14 for the live checklist.** Left here as a pointer so old cross-references don't dead-end.
 
 ### 2.2 Deferred from Phase 1 (scope sign-off 2026-06-22)
 - [ ] Migrate to `neo4j_store.py`; flip `graph_backend=neo4j`; verify no regressions vs NetworkX — **R-06**.

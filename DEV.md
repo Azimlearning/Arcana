@@ -1,6 +1,18 @@
 # Arcana — Local Dev Guide (Windows)
 
-Two terminals. Both must stay running while you test.
+## Quick answers
+
+**Where are my API keys stored?**
+- Backend secrets → **`api/.env`** (OpenRouter, OpenAI, Pinecone keys — see table below). Gitignored, never committed.
+- Frontend config → **`web/.env.local`** (publishable Firebase client IDs only — never a secret key). Gitignored.
+- Templates (no real values) → `infra/env/local.env.example` and `web/.env.local.example`. Copy from there if either real file is missing:
+  ```powershell
+  cp infra/env/local.env.example api/.env
+  cp web/.env.local.example web/.env.local
+  ```
+- Full variable reference + where to obtain each credential → `docs/env_generation_guide.md`.
+
+**How do I start localhost?** Two terminals, both stay running — jump to [Terminal A](#terminal-a--api-fastapi-on-8000) and [Terminal B](#terminal-b--web-nextjs-on-3000) below. (If you have GNU Make on PATH, `make up-api` / `make up-web` run the same commands — see `Makefile`. Plain Git Bash on Windows usually doesn't have `make`, so the explicit commands below are the reliable path.)
 
 ---
 

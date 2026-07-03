@@ -52,7 +52,7 @@ class <New>Retriever:
 - Storage via ABCs only — never `Neo4jGraphStore`, `PineconeStore`, etc. The hook will block concrete imports.
 - Async. Hybrid retrieval runs all retrievers under `asyncio.gather`.
 - Every result must carry source attribution traceable to a document chunk (FR-RET-08). Anything that returns un-attributable text is unusable downstream.
-- The 3072-dim embedding model (`text-embedding-3-large`) is **locked** for the benchmark (R-02). Don't change it inside a retriever. If a different model is genuinely needed, raise it as a new question in `decisions.md` — the benchmark fairness depends on the embedding being identical to the baseline.
+- The 3072-dim embedding model (`text-embedding-3-large`) is **locked** for the benchmark (R-02). Don't change it inside a retriever. If a different model is genuinely needed, raise it as a new ADR in `DECISIONS.md` — the benchmark fairness depends on the embedding being identical to the baseline.
 
 ## Step 3 — Wire into hybrid
 

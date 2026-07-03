@@ -72,13 +72,16 @@ Every chunk follows the same shape:
 6. CLOSE  — mark the chunk's todo complete, move to the next
 ```
 
-### ⚠️ You cannot use the `Edit`/`Write` tools in this repo
+### ⚠️ `Edit`/`Write` path-spaces bug — fixed 2026-06-22
 
-The repo path has a space (`FYP DOCS`) and the `.claude/` hooks pass
-`$CLAUDE_PROJECT_DIR` unquoted, so the `PreToolUse` hook crashes and
-**blocks every `Edit`/`Write` call**. Use the MCP filesystem tools for
-in-repo files (`mcp__filesystem__write_file`, `mcp__filesystem__edit_file`)
-and Bash heredocs for files outside the repo (e.g. memory). Full detail in
+The repo path has a space (`FYP DOCS`) and the `.claude/` hooks used to pass
+`$CLAUDE_PROJECT_DIR` unquoted, so the `PreToolUse` hook crashed and
+**blocked every `Edit`/`Write` call**. The three hook commands in
+`.claude/settings.json` are now quoted (`"$CLAUDE_PROJECT_DIR/..."`) and
+native `Edit`/`Write` work normally. If you ever see this regress (e.g.
+after a `settings.json` edit reintroduces an unquoted variable), fall back
+to the MCP filesystem tools (`mcp__filesystem__write_file`,
+`mcp__filesystem__edit_file`) and Bash heredocs until it's fixed. Full detail in
 SETUP.md §2 and CONTEXT.md. Reach for these from the start — don't burn a
 turn rediscovering the block.
 
@@ -125,8 +128,9 @@ A slice is opened by:
 2. **Preflight.** Always two things:
    - Tick the actually-done boxes in `docs/checklist.md` for the previous
      slice. Be honest about deferrals — annotate each `(→ slice N)`.
-   - Log a slice-scope ADR in `.claude/memory/decisions.md` recording the
-     scope decision, what forced the chunk order, and new constraints.
+   - Log a slice-scope entry in `.claude/memory/CHANGELOG.md` (and a new
+     ADR in `DECISIONS.md` if a real point-decision was made) recording
+     the scope decision, what forced the chunk order, and new constraints.
 
 A slice is closed by:
 
@@ -171,18 +175,26 @@ PRD §11A.3 is authoritative. Paraphrased:
 | #8 | `.claude/hooks/check_secrets.py` regex-scans every write |
 
 Note: the import/secret hooks **also** run on `Edit`/`Write` as
-`PreToolUse` — which is exactly what the path-spaces bug breaks (§3). When
-you write via the MCP filesystem tools you bypass the hook, so **you are
+`PreToolUse` — this is what the (now-fixed) path-spaces bug broke (§3). If
+you ever fall back to the MCP filesystem tools you bypass the hook, so **you are
 responsible for honouring #5/#7/#8 manually** — the code-reviewer is your
 backstop. Don't import an agent into another agent, don't import a concrete
 store into an agent, don't inline a secret.
 
-## 6. ADR-keeping (`.claude/memory/decisions.md`)
+## 6. Memory-keeping (`.claude/memory/CHANGELOG.md` + `DECISIONS.md`)
 
-Every non-obvious decision lands as an ADR. Format:
+As of 2026-06-22 the old single `decisions.md` is split in two — don't
+write to a file with that name, it no longer exists:
+
+- **`CHANGELOG.md`** — one dated entry per session that ships code or
+  closes a slice. Format: `### YYYY-MM-DD — <summary>` then
+  **Changed** / **Decided** / **Deviations** / **Known issues / next steps**
+  bullets. Newest first.
+- **`DECISIONS.md`** — numbered ADRs for point-in-time decisions and
+  assumptions, distinct from session narratives. Format:
 
 ```markdown
-### YYYY-MM-DD — <short title>
+### ADR-NNN — <short title>
 
 - **Status:** ASSUMED | DECIDED | REVISITED
 - **Context:** what was unclear or open. Reference FR/NFR/R/Q IDs.
@@ -191,17 +203,19 @@ Every non-obvious decision lands as an ADR. Format:
 - **Revisit if:** the condition that would force reconsidering.
 ```
 
-Insert newest-first below the `<!-- New entries go below this line -->`
-marker. Don't backfill into older entries; never delete. Two specific
-times to write one: you hit an open question (PRD §25 Q-03..Q-10) — mark
-`ASSUMED:`; or you deviate from a spec doc — quote both sides, justify, log.
+Append, never backfill or delete. Two specific times to write an ADR: you
+hit an open question (PRD §25 Q-03..Q-10) — mark `ASSUMED`; or you deviate
+from a spec doc — quote both sides, justify, log. **Don't let these go
+stale** — the prior practice of batching updates into rare "full refresh"
+commits is exactly what caused drift; invoke the `memory-keeper` subagent
+at the end of a non-trivial session instead of hand-writing the entry.
 
 ## 7. Common gotchas you'll hit
 
-### The hook path-spaces bug (the big one)
+### The hook path-spaces bug — fixed 2026-06-22
 
-Covered in §3 and SETUP.md §2. `Edit`/`Write` are blocked; use MCP
-filesystem tools / Bash heredocs.
+Covered in §3 and SETUP.md §2. `Edit`/`Write` now work normally; the
+MCP filesystem tools / Bash heredocs are only a fallback if it regresses.
 
 ### IDE diagnostics lag behind your edits
 
@@ -268,10 +282,12 @@ second of anything:
 ## 9. When you're stuck
 
 1. **Re-read CLAUDE.md.** Most ambiguity resolves there.
-2. **Search `.claude/memory/decisions.md`** for prior context.
-3. **Check the failure mode.** A hook blocked? Read its stderr — but
-   remember the path-spaces bug makes the *Edit/Write* hooks crash
-   spuriously (that's not your code failing a check; that's the bug).
+2. **Search `.claude/memory/DECISIONS.md`** (and `CHANGELOG.md`) for prior context.
+3. **Check the failure mode.** A hook blocked? Read its stderr — the
+   path-spaces bug (unquoted `$CLAUDE_PROJECT_DIR` in `.claude/settings.json`,
+   fixed 2026-06-22) used to make the *Edit/Write* hooks crash spuriously;
+   confirm the quoting is still in place if Edit/Write start failing again
+   after a settings.json change.
 4. **Surface the conflict to the user.** Quote both sides. Per CLAUDE.md:
    *"If two docs disagree, stop and ask."*
 

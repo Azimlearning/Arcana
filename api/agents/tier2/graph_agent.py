@@ -14,7 +14,7 @@ Store types (api/stores/graph_store.py): GraphNode(id, type, label),
   GraphEdge(src, dst, type).
 
 Edge relations: synthetic "RELATED_TO" for all expand() neighbors (real relation
-types not exposed via GraphStore ABC — see decisions.md Slice 7 ADR).
+types not exposed via GraphStore ABC — see CHANGELOG.md "Slice 7 scope" entry).
 
 FR-KG-02: when a UserGraphRegistry is supplied, the agent resolves the calling
 user's personal graph via state.user_id. Falls back to a shared GraphStore for

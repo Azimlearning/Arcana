@@ -44,12 +44,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/check_secrets.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_secrets.py\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/check_imports.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_imports.py\"",
             "timeout": 10
           }
         ]
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/hooks/format_and_check.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_and_check.py\"",
             "timeout": 60,
             "statusMessage": "Formatting and checking…"
           }

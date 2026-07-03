@@ -17,18 +17,24 @@
 ├── agents/                    # subagents (run in isolated context, invoke explicitly)
 │   ├── schema-guardian.md
 │   ├── code-reviewer.md
-│   └── qa-runner.md
+│   ├── qa-runner.md
+│   ├── agent-graph-auditor.md
+│   ├── retrieval-auditor.md
+│   ├── memory-keeper.md
+│   └── docs-drift-auditor.md
 ├── skills/                    # repeatable recipes (load on demand by description)
 │   ├── genui-component/SKILL.md
 │   ├── new-agent/SKILL.md
 │   ├── new-retriever/SKILL.md
-│   └── schema-first-change/SKILL.md
+│   ├── schema-first-change/SKILL.md
+│   └── resume/SKILL.md
 ├── hooks/                     # deterministic guards (run automatically)
 │   ├── check_secrets.py       # PreToolUse Write|Edit|MultiEdit
 │   ├── check_imports.py       # PreToolUse Write|Edit|MultiEdit (Python only)
 │   └── format_and_check.py    # PostToolUse Write|Edit|MultiEdit
 └── memory/
-    ├── decisions.md           # ADR-lite log — record assumptions as they're made
+    ├── CHANGELOG.md           # session log — one entry per session that ships code (Changed/Decided/Deviations/Known issues)
+    ├── DECISIONS.md           # ADR-lite log — record assumptions and point decisions as they're made
     └── preflight.md           # one-page gate before Claude Code starts the build
 ```
 
@@ -50,6 +56,7 @@ The point of the layout: **the root brief stays short**, project-specific behavi
 - **New subagent** — `agents/<name>.md` with frontmatter `name`, `description`, `tools`, `model`. Read-only by default unless it genuinely needs to write.
 - **New skill** — `skills/<name>/SKILL.md` with frontmatter `name` + `description`. The description is what tells Claude when to load it — be specific about triggers.
 - **New hook** — script under `hooks/`, wired in `settings.json`. Prefer exit-2-with-stderr over silent failure; the model needs to see what went wrong.
+- **End of session** — invoke `memory-keeper` rather than hand-editing `memory/CHANGELOG.md`/`DECISIONS.md`/`docs/handoff/CONTEXT.md` yourself. It keeps the entry format consistent and catches handoff-doc staleness in the same pass.
 
 ## Verifying it works
 

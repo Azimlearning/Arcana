@@ -1018,7 +1018,7 @@ STREAM → 3 typed UIBlocks rendered as they arrive
 
 ## 12A. ML Engines — Trained Model Components
 
-> **Phase note (scope sign-off 2026-06-22).** All three Engines are **post-Phase-1 (P2)** — including the Re-Rank Engine, which was previously P1. Phase 1's release gate (§24) does **not** depend on any trained model; the §23.1 graph-vs-flat ablation stands on its own. Engines remain fully specified here so the P2 work is ready to pick up, and are tracked under Phase 2 in `checklist.md`. See Q-11.
+> **Phase note (scope re-confirmed 2026-07-03).** All three Engines are **Phase-1 (graded FYP2) scope** — pulled back from the 2026-06-22 P2 deferral by author decision (see DECISIONS.md **ADR-017**, which supersedes ADR-013), to match the graded Objective 03 ("Trained ML Models") in the proposal-defence deck. The shared `Engine` interface plus **at least one fully trained and integrated Engine** is the graded deliverable; the remaining two may land as trained-or-pretrained-prior per their priority. The §23.1 graph-vs-flat ablation remains the **primary** retrieval-quality evidence and stands alone (R-13) — Engines are still strictly additive benchmark arms (§23.4), never a substitute for it. Tracked under Phase 1 §1.14 in `checklist.md`. See Q-11 (resolved).
 
 **Why this section exists.** Everything in §12 is an *Agent* — an LLM-driven module reasoned into existence by a prompt. Arcana also includes a small number of **Engines**: narrow, supervised models trained offline on labelled data and loaded for fast inference at runtime. Engines exist because reasoning-only agents can't be benchmarked the way a trained model can (loss curves, held-out accuracy, feature importances), and because a supervisor's request to "add a machine learning component" is best answered with an actual trained model, not another LLM call wrapped in a new prompt.
 
@@ -1035,7 +1035,7 @@ class Engine(ABC):
 ```
 > *Listing 12A.0 — Shared Engine interface; each concrete Engine lives in `api/engines/`.*
 
-### Re-Rank Engine — `P2`
+### Re-Rank Engine — `P1` (primary Engine deliverable)
 
 **Purpose.** Reorders the top-k chunks RRF already fused, using learned signal RRF can't see (e.g. graph centrality combined with lexical overlap). Runs strictly *after* `reciprocal_rank_fusion` (Listing 10.4); never changes what RRF itself does.
 
@@ -1060,7 +1060,7 @@ async def hybrid_retrieve(query: str, top_k: int = 12) -> list[Chunk]:
 
 **Satisfies.** FR-ENG-01, FR-ENG-02, FR-ENG-06.
 
-### Mastery Engine — `P2`
+### Mastery Engine — `P1`
 
 **Purpose.** Predicts recall probability / next-review difficulty per topic, feeding FR-LRN-10 and offering the swappable alternative to SM-2 that the PRD's own build note for the Learning Agent already anticipates: *"Pick FSRS or SM-2 early (Q-04) and keep the scheduler isolated so the choice is swappable"* (§12, Learning Agent build notes).
 
@@ -1077,7 +1077,7 @@ async def hybrid_retrieve(query: str, top_k: int = 12) -> list[Chunk]:
 
 **Satisfies.** FR-ENG-03, FR-ENG-04, FR-ENG-06.
 
-### Document Classifier Engine — `P2`
+### Document Classifier Engine — `P1`
 
 **Purpose.** Tags ingested documents with subject/topic/difficulty metadata during ingestion (`api/ingestion/`), feeding UI filtering/badges and the Mastery Engine's per-topic grouping.
 
@@ -1492,13 +1492,15 @@ Requirements are grouped by subsystem and identified as `FR-<area>-<n>`. **Prior
 
 | ID | Requirement | Pri. | Phase |
 | --- | --- | --- | --- |
-| FR-ENG-01 | A Re-Rank Engine reorders RRF-fused retrieval results before they reach agents. | S | P2 |
-| FR-ENG-02 | The Re-Rank Engine runs strictly after RRF fusion and never replaces it; the RRF-only and RRF+rerank arms remain independently evaluable. | M | P2 |
-| FR-ENG-03 | A Mastery Engine predicts recall probability / review difficulty per topic. | C | P2 |
-| FR-ENG-04 | The Mastery Engine falls back to SM-2/FSRS scheduling until sufficient per-user review history accumulates. | M | P2 |
-| FR-ENG-05 | A Document Classifier Engine tags subject/topic/difficulty metadata at ingestion time. | C | P2 |
-| FR-ENG-06 | Each Engine is swappable behind a common `Engine` abstraction and can be disabled without breaking its host pipeline. | M | P2 |
-| FR-ENG-07 | Each Engine's training data sources and methodology are documented and reproducible (§12A). | S | P2 |
+| FR-ENG-01 | A Re-Rank Engine reorders RRF-fused retrieval results before they reach agents. | S | P1 |
+| FR-ENG-02 | The Re-Rank Engine runs strictly after RRF fusion and never replaces it; the RRF-only and RRF+rerank arms remain independently evaluable. | M | P1 |
+| FR-ENG-03 | A Mastery Engine predicts recall probability / review difficulty per topic. | C | P1 |
+| FR-ENG-04 | The Mastery Engine falls back to SM-2/FSRS scheduling until sufficient per-user review history accumulates. | M | P1 |
+| FR-ENG-05 | A Document Classifier Engine tags subject/topic/difficulty metadata at ingestion time. | C | P1 |
+| FR-ENG-06 | Each Engine is swappable behind a common `Engine` abstraction and can be disabled without breaking its host pipeline. | M | P1 |
+| FR-ENG-07 | Each Engine's training data sources and methodology are documented and reproducible (§12A). | S | P1 |
+
+> **Phase (2026-07-03).** FR-ENG-01..07 moved P2 → **P1** per ADR-017 (supersedes ADR-013), matching graded Objective 03. The Re-Rank Engine + the shared `Engine` abstraction (FR-ENG-01/02/06) are the must-hit graded core; Mastery/Document Classifier (Could-priority) land as trained-or-pretrained-prior as schedule allows. The §24 gate wording is updated accordingly.
 
 ---
 
@@ -1671,7 +1673,8 @@ Considered complete and defensible when all hold:
 - At least 15 agents operate with demonstrated agent-to-agent invocation.
 - The Generative UI runs with at least the three required modes, with live component streaming.
 - The learning module generates flashcards and schedules them via spaced repetition.
-- The retrieval benchmark is complete and shows a statistically significant gain over the flat-RAG baseline.
+- The retrieval benchmark is complete and shows a statistically significant gain over the flat-RAG baseline. *(This graph-vs-flat ablation is the primary retrieval-quality evidence and stands alone — R-13.)*
+- At least one ML Engine is trained and integrated behind the shared `Engine` abstraction (Re-Rank Engine is the primary target — FR-ENG-01/02/06), evaluated as an additional benchmark arm (§23.4) without displacing the primary ablation above. *(Added 2026-07-03, ADR-017.)*
 - The user study is complete with ≥ 10 participants and a SUS score ≥ 70.
 - No known defect prevents completion of the core Research, Study and Writing journeys.
 - The FYP 2 report documents architecture, results and limitations.
@@ -1694,7 +1697,7 @@ Should/Could items not completed are recorded in the post-FYP roadmap rather tha
 | Q-08 | Programme, student ID and supervisor details for document headers. | Author — administrative |
 | Q-09 | Final hop-budget and token-budget values for the agentic pipeline. | Author during pipeline implementation |
 | Q-10 | Should the 24-component catalog be trimmed to a core set for the graded build? | Author + supervisor |
-| Q-11 | All three ML Engines are now scoped **P2** (author decision, 2026-06-22) so Phase 1 ships without trained-model dependencies. Confirm at supervisor sign-off whether any Engine should be pulled forward into the graded build. | Author + supervisor at scope sign-off |
+| Q-11 | **Resolved 2026-07-03 (ADR-017, supersedes ADR-013):** all three ML Engines pulled back into **P1** graded scope to match Objective 03; the Re-Rank Engine + shared `Engine` abstraction are the must-hit core, Mastery/Document Classifier land as schedule allows. Still to confirm at supervisor sign-off: that one trained Engine is a sufficient graded bar (vs all three). | Author + supervisor at scope sign-off |
 | Q-12 | Final choice of Mastery Engine pretraining dataset — Duolingo HLR, the FSRS open benchmark, or both compared? | Author during learning-module design |
 | Q-13 | Acceptable scale/quality bar for LLM-judged synthetic Re-Rank Engine training labels before they're trusted as report evidence. | Author + supervisor |
 

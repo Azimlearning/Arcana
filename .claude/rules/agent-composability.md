@@ -41,7 +41,7 @@ Every agent file follows the per-agent template from PRD §11A.5:
 
 - `max_tools_per_prompt = 12` (NFR-AGT-05). If your agent needs more, split it.
 - Hop budget enforced at runtime — exceeding it terminates at the UI Agent with a partial result, never silently truncates.
-- Every agent invocation logs a span (per `decisions.md` if Langfuse is wired).
+- Every agent invocation logs a span (per `DECISIONS.md` if Langfuse is wired).
 
 ## Checklist before committing an agent
 

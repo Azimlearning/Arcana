@@ -68,15 +68,25 @@ These Skills encode the exact step order from the PRD and file structure. Follow
 
 ## When blocked
 
-- **Open question (Q-03 to Q-10):** check PRD §25. If unresolved, write your assumption to `.claude/memory/decisions.md`, mark it `ASSUMED:`, proceed, surface at next checkpoint.
+- **Open question (Q-03 to Q-10):** check PRD §25. If unresolved, write your assumption to `.claude/memory/DECISIONS.md` as a new ADR, status `ASSUMED`, proceed, surface at next checkpoint.
 - **Doc conflict:** stop. Don't pick. Quote both passages and ask.
-- **Ambiguous spec:** prefer the safer / less-coupled option. Log the choice in `decisions.md`.
+- **Ambiguous spec:** prefer the safer / less-coupled option. Log the choice in `DECISIONS.md`.
+
+## Memory (keep it current — don't let it rot)
+
+- `.claude/memory/CHANGELOG.md` — one dated entry per session that ships code or closes a slice (Changed/Decided/Deviations/Known issues). `.claude/memory/DECISIONS.md` — numbered ADRs for point-in-time decisions and assumptions. Don't batch these into rare "big refresh" commits — append as you go.
+- End a non-trivial session by invoking `memory-keeper` to append the CHANGELOG entry, file any new ADRs, and refresh `docs/handoff/CONTEXT.md` if it's gone stale.
+- Starting a session? Run `/resume` first — it reads CHANGELOG/DECISIONS/handoff and briefs you on where things stand.
 
 ## Subagents (delegate, keep main context clean)
 
 - `schema-guardian` — verifies the wire contract before changes ship. Read-only.
 - `code-reviewer` — checks the eight invariants and the architectural rules before commit.
 - `qa-runner` — runs lint, types, tests, RAGAS gate. Nothing is DONE until this is green.
+- `agent-graph-auditor` — whole-graph composability/hop-budget/tool-count audit (vs code-reviewer's per-diff scope). Read-only.
+- `retrieval-auditor` — hybrid retrieval quality, RAGAS gate wiring, benchmark reproducibility. Read-only.
+- `memory-keeper` — appends the session's `CHANGELOG.md` entry, files new ADRs, refreshes `docs/handoff/CONTEXT.md` if stale. Writes only to `.claude/memory/` and `docs/handoff/`.
+- `docs-drift-auditor` — flags when CHANGELOG/DECISIONS/handoff docs/checklist have drifted from actual repo state. Read-only.
 
 Invoke explicitly: `Use the code-reviewer subagent on this diff.`
 
