@@ -1,0 +1,2232 @@
+{
+  "generated": "2026-09-07T07:26:36.387633+00:00",
+  "config": {
+    "top_k": 10,
+    "rrf_k": 60,
+    "embedding_model": "text-embedding-3-large",
+    "graph_nodes": 796,
+    "graph_edges": 859,
+    "corpus_documents": 4
+  },
+  "questions": [
+    {
+      "id": "q-cross-01",
+      "category": "cross_document",
+      "question": "What do the papers collectively conclude about the advantage of hybrid retrieval (combining dense vector search, BM25, and graph traversal) over pure vector search? Summarise the evidence across sources.",
+      "arms": {
+        "dense": {
+          "distinct_docs": 1,
+          "n_chunks": 10,
+          "latency_ms": 4704.8,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2161ba1c3f0de780",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 83.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_1283ce0a8d267bc7",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_201863db610a7348",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3cf51dec0d7c0c07"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 4148.7,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d7db63479f43f040",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_0c359b25e4ca0bb1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_5505750bbbad7519",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_af40265379be2e2c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c40587e57c49c75d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cc5cfb77bb18645e"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "flat": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 3590.7,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_1283ce0a8d267bc7",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 1164.9,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c40587e57c49c75d"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ],
+          "novel_vs_flat": 3
+        }
+      }
+    },
+    {
+      "id": "q-cross-02",
+      "category": "cross_document",
+      "question": "How is the concept of a \"knowledge graph\" defined and used across the papers in the corpus? Where do definitions converge or diverge?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 657.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3f616dd275742618",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_462636886b6748c7",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_aaf45f5085b704e2",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_fd3cf9da8bd907e8",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2362d0bed3358285",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_509297f434458d1b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_c8ab3fca73d88e42"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 265.3,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_39ddf31b593fa2e8",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_dd2038b17730297b",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_27b2f792adb2920a",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_c8ab3fca73d88e42",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_fac547c47d229fa8"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 3338.6,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 1018.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_fd3cf9da8bd907e8",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_dd2038b17730297b",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2362d0bed3358285",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_509297f434458d1b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_c8ab3fca73d88e42",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_fac547c47d229fa8"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 1096.2,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_fd3cf9da8bd907e8",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_dd2038b17730297b",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2362d0bed3358285",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_509297f434458d1b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_c8ab3fca73d88e42",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_fac547c47d229fa8"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-03",
+      "category": "cross_document",
+      "question": "What methods do multiple papers propose for reducing hallucination in retrieval-augmented generation systems?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 1,
+          "n_chunks": 10,
+          "latency_ms": 779.3,
+          "chunk_ids": [
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_13bd1ff3c915047f",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_1d26993c9cd3ce27",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3f8da8e571f04342",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4853f43ee6016567",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_6bef9ae1424d51dd",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_82b190404b583bcf",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_8561757b5873801a",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_b72e7fa069b64992",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_b8f1ee83b6c529be",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ca4904c1172aa696"
+          ],
+          "doc_ids": [
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 275.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_05f39a495cc98633",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_063605e855570ba5",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_23fbada23bab1234",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9a5fd5dd7a24ab2a",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_09470fec217e8fab",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2d10e8e5e69c820d",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_82b190404b583bcf",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9bd14ffc5bf27d49",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_b72e7fa069b64992"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 2321.8,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 1188.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_05f39a495cc98633",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_23fbada23bab1234",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_1d26993c9cd3ce27",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2d10e8e5e69c820d",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4853f43ee6016567",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_82b190404b583bcf",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_b72e7fa069b64992",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_b8f1ee83b6c529be",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ca4904c1172aa696"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 967.6,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_05f39a495cc98633",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_23fbada23bab1234",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_1d26993c9cd3ce27",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2d10e8e5e69c820d",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4853f43ee6016567",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_82b190404b583bcf",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_b72e7fa069b64992",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_b8f1ee83b6c529be",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ca4904c1172aa696"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-04",
+      "category": "cross_document",
+      "question": "Across the corpus, which evaluation metrics are used to measure retrieval quality? How consistently are they applied, and are the benchmarks comparable across papers?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 675.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_889bfed543353bc6",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_e83dc97eab4b6678",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0e56b2d7368c12d7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0f628d7c11fed9a7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9e43cc335f97c51b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_f7c5ad312299fc98"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 252.1,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0f628d7c11fed9a7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_836df9448c3d8a4e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9e43cc335f97c51b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_bd6977e7fb609a71",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_dc06c0c30b9e392b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_f7c5ad312299fc98",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_fac547c47d229fa8"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 1139.3,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 845.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_889bfed543353bc6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0f628d7c11fed9a7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_836df9448c3d8a4e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9e43cc335f97c51b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_bd6977e7fb609a71",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_f7c5ad312299fc98"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 920.8,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_889bfed543353bc6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0f628d7c11fed9a7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_836df9448c3d8a4e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9e43cc335f97c51b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_bd6977e7fb609a71",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_f7c5ad312299fc98"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-05",
+      "category": "cross_document",
+      "question": "Which papers address multi-hop reasoning or multi-document retrieval? What common findings or techniques appear across those works?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 687.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_1e76703c0db145ac",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_c7e6a86da994491a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cd40ced18c7a1795",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f1c263f7016a8770",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_6d4739ca65faa9b0",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 171.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_a847b12aaf451fc9",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cd40ced18c7a1795",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_64afd73a778f019c",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_81b61f42294a7617",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9bd14ffc5bf27d49",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_c14477983061712c",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_e51645ebaee76998"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 2558.6,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 1027.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_a847b12aaf451fc9",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cd40ced18c7a1795",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f1c263f7016a8770",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_64afd73a778f019c",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_81b61f42294a7617",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9bd14ffc5bf27d49"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 959.7,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_a847b12aaf451fc9",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cd40ced18c7a1795",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f1c263f7016a8770",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_64afd73a778f019c",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_81b61f42294a7617",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9bd14ffc5bf27d49"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-06",
+      "category": "cross_document",
+      "question": "How do the papers compare BM25 with dense vector retrieval in terms of complementarity? What does each method capture that the other misses?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 1,
+          "n_chunks": 10,
+          "latency_ms": 724.1,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_29902c7885d57453",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3145de3ea6da5793",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 189.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_b8015ca2c7872890",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cff2d3982c056bf5",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 2064.9,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d7db63479f43f040",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_0c359b25e4ca0bb1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_5505750bbbad7519",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_af40265379be2e2c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c40587e57c49c75d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cc5cfb77bb18645e"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 1315.3,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_29902c7885d57453",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cff2d3982c056bf5",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 1214.9,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c40587e57c49c75d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ],
+          "novel_vs_flat": 3
+        }
+      }
+    },
+    {
+      "id": "q-cross-07",
+      "category": "cross_document",
+      "question": "What failure modes of vector-only retrieval are identified across the papers? Provide examples and cite the relevant sources.",
+      "arms": {
+        "dense": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 649.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_11f5bad3269889c8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cdbcdb22db4fceeb",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_90e5348e404dfa3b",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_9cc7a76628744797",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2160545688da81fb",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_50b947533ec5448d"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 234.9,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_201863db610a7348",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_1af89c8fcc89116f",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3b50989adec849f7",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_836df9448c3d8a4e"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 1360.8,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 1249.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_11f5bad3269889c8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_9cc7a76628744797",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_50b947533ec5448d",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_836df9448c3d8a4e"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 764.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_11f5bad3269889c8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_9cc7a76628744797",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_50b947533ec5448d",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_836df9448c3d8a4e"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-08",
+      "category": "cross_document",
+      "question": "Across the papers, what techniques are proposed for improving citation accuracy in AI-generated answers? What do the proposed methods have in common?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 593.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0c6ac4717fbf21fa",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_5a78ebda26b73e1e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_258717215e4314c4",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2d10e8e5e69c820d",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2e1e365866bf9f7b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_51284512c654aea6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_655803a64da5a077",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_82f1e401358b9888",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_8cfaacc9847faa54",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a3f7edce3a9eedb2"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 244.8,
+          "chunk_ids": [
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_94c93f8ebfaf9b2c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_04a1944c4c7374d1",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0f628d7c11fed9a7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4dc8effef0ee66a2",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_bd56f932e975c3d0",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_f7c5ad312299fc98"
+          ],
+          "doc_ids": [
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 1210.1,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 844.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_5a78ebda26b73e1e",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_94c93f8ebfaf9b2c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0f628d7c11fed9a7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2e1e365866bf9f7b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4dc8effef0ee66a2",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_655803a64da5a077",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_8cfaacc9847faa54",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a3f7edce3a9eedb2"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 919.2,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_5a78ebda26b73e1e",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_94c93f8ebfaf9b2c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0f628d7c11fed9a7",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_2e1e365866bf9f7b",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4dc8effef0ee66a2",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_655803a64da5a077",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_8cfaacc9847faa54",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a3f7edce3a9eedb2"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-09",
+      "category": "cross_document",
+      "question": "What approaches to constructing knowledge graphs from unstructured text are described in the corpus? Which entity and relation types recur across papers?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 664.6,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0415c4d9e99d54f6",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_050ba04687072b6d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_462636886b6748c7",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d7db63479f43f040",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9a5fd5dd7a24ab2a",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 363.7,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9742211fad443b4c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_07432dab902cf16c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_1d26993c9cd3ce27",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_385298b9cd7ddc38",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3da51608522a4d6e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_96cd5d29e42d74dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 2149.6,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 835.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_462636886b6748c7",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9a5fd5dd7a24ab2a",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_1d26993c9cd3ce27",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3da51608522a4d6e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_96cd5d29e42d74dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 877.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_462636886b6748c7",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9a5fd5dd7a24ab2a",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_1d26993c9cd3ce27",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3da51608522a4d6e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_96cd5d29e42d74dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-10",
+      "category": "cross_document",
+      "question": "What do the papers collectively say about latency constraints and performance trade-offs in production retrieval systems?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 713.9,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d473fea3f83d4ad6",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c5565af9a6eb26ae",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cd40ced18c7a1795",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 197.7,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_398665741b30593c",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_dd204082fb7d1797",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_9f7f52d96089bd40",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_7eb49ba1f4a5e12a",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_93a192bd00f5d08f",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_d876b2404136b136",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_e6a6848cb447a9a3"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 2987.3,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 911.3,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c5565af9a6eb26ae",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_93a192bd00f5d08f",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_d876b2404136b136"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 841.8,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c5565af9a6eb26ae",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_494e1f74fcfc6c2e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_93a192bd00f5d08f",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_d876b2404136b136"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-11",
+      "category": "cross_document",
+      "question": "How do different papers approach the chunking problem in RAG pipelines \u2014 fixed-size, semantic, sentence-level, or other strategies? What are the reported trade-offs?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 1,
+          "n_chunks": 10,
+          "latency_ms": 675.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0145141e9bee2ddd",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_050ba04687072b6d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0bfed2314d302dc0",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0e320a016e7d6937",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3f616dd275742618",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9eab2446d74fe716",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_aaf45f5085b704e2",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf2261847919b701",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 221.2,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0e320a016e7d6937",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_92e4f01382454daa",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9eab2446d74fe716",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f67065e96f0c09b7",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4853f43ee6016567",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_7e6346c665fc3bda",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ebec6f392f570a7b"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 3366.7,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 756.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0145141e9bee2ddd",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_050ba04687072b6d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0e320a016e7d6937",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9eab2446d74fe716",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4853f43ee6016567",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ebec6f392f570a7b"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 816.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0145141e9bee2ddd",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_050ba04687072b6d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0e320a016e7d6937",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9eab2446d74fe716",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_4853f43ee6016567",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ebec6f392f570a7b"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-cross-12",
+      "category": "cross_document",
+      "question": "What open problems or identified gaps in RAG and knowledge-graph retrieval research are mentioned across the papers?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 1,
+          "n_chunks": 10,
+          "latency_ms": 546.9,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_050ba04687072b6d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0bfed2314d302dc0",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_201863db610a7348",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3f616dd275742618",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_aaf45f5085b704e2",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_dd204082fb7d1797",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 177.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_10d169eb4c137d12",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_201863db610a7348",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_863781a2283692c0",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_92e4f01382454daa",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_7d660977e1f9aa54",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a967d9ef7c35c9fc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_bd56f932e975c3d0"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 3193.6,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 819.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_050ba04687072b6d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0bfed2314d302dc0",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_10d169eb4c137d12",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_201863db610a7348",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3f616dd275742618",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_863781a2283692c0",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_aaf45f5085b704e2",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 797.6,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_050ba04687072b6d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_0bfed2314d302dc0",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_10d169eb4c137d12",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_201863db610a7348",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3f616dd275742618",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_863781a2283692c0",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_aaf45f5085b704e2",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-single-01",
+      "category": "single_document",
+      "question": "What is Reciprocal Rank Fusion (RRF) and how does it combine ranked lists from multiple retrieval systems without requiring score calibration?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 719.3,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_92e4f01382454daa",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3f001789c2770afa",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_4ac3e304035525a4",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_6a85999096cfb21d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_836d4fc09ac92da6",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a1859ab4a2495ee5"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 217.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_009bf3204b7818d4",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9a580a007afbabc8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_73c10b2f56aa091c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_836d4fc09ac92da6",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_9f7f52d96089bd40",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 2826.1,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 883.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9a580a007afbabc8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3f001789c2770afa",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_6a85999096cfb21d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_73c10b2f56aa091c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_836d4fc09ac92da6",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a1859ab4a2495ee5",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 963.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9a580a007afbabc8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3f001789c2770afa",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_6a85999096cfb21d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_73c10b2f56aa091c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_836d4fc09ac92da6",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a1859ab4a2495ee5",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-single-02",
+      "category": "single_document",
+      "question": "What is the difference between sparse retrieval (e.g. BM25) and dense retrieval (e.g. embedding-based ANN search) in terms of query representation?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 1,
+          "n_chunks": 10,
+          "latency_ms": 624.0,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_1378cc928329a7e2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_29902c7885d57453",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3145de3ea6da5793",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9742211fad443b4c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 199.0,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_b5ed84ced8f58aa2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_d8a749811f3f2c02",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3b50989adec849f7",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c3fbb0313d4437db",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 2441.0,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_0c359b25e4ca0bb1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_5505750bbbad7519",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_af40265379be2e2c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c40587e57c49c75d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cc5cfb77bb18645e"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 842.2,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_29902c7885d57453",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3145de3ea6da5793",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_d8a749811f3f2c02",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 2,
+          "n_chunks": 10,
+          "latency_ms": 1069.1,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_29902c7885d57453",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3145de3ea6da5793",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_d8a749811f3f2c02",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 1
+        }
+      }
+    },
+    {
+      "id": "q-single-03",
+      "category": "single_document",
+      "question": "What is the role of embedding models in semantic search, and how does the quality of embeddings affect retrieval accuracy?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 690.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_a847b12aaf451fc9",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 267.2,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2161ba1c3f0de780",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ebec6f392f570a7b"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 3623.4,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 1179.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2161ba1c3f0de780",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 880.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_80e74f9aad9bef5d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2161ba1c3f0de780",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ff1c3ade7a7373dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-single-04",
+      "category": "single_document",
+      "question": "How does BM25 score a document for a query, and what are its known limitations when applied to technical or domain-specific terminology?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 827.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_d8a749811f3f2c02",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_42cca52e30697070",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a1859ab4a2495ee5",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a6a992a234f4f4ef",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cc5cfb77bb18645e"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 159.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9a580a007afbabc8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_6e08e428c95d435d",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_28baade9c3b3aa13",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8f094dfb4b9909fc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9e43cc335f97c51b"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 4907.0,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_29902c7885d57453",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5af97ad392f4bb68",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_0c359b25e4ca0bb1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_5505750bbbad7519",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_af40265379be2e2c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c40587e57c49c75d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cc5cfb77bb18645e"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "flat": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 3474.3,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9a580a007afbabc8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_28baade9c3b3aa13",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_42cca52e30697070",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a1859ab4a2495ee5",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cc5cfb77bb18645e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9e43cc335f97c51b"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 1230.7,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_29902c7885d57453",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cb887cf89b3b9977",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_28baade9c3b3aa13",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_a29d1e9f44ba61b4",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_c40587e57c49c75d",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_cc5cfb77bb18645e",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_9e43cc335f97c51b"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 4
+        }
+      }
+    },
+    {
+      "id": "q-contra-01",
+      "category": "contradiction",
+      "question": "Do the papers agree on whether larger chunk sizes improve retrieval accuracy? Where do the sources contradict or qualify each other?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 630.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d473fea3f83d4ad6",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9bd3a9300765ba3c",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c5565af9a6eb26ae",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 156.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_92e4f01382454daa",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f67065e96f0c09b7",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_1378cc928329a7e2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3aeaff51179c6eaa",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_50143fe3826c0162",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_07432dab902cf16c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_39ddf31b593fa2e8",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_b8015ca2c7872890",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_96cd5d29e42d74dc"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 1538.8,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 750.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_92e4f01382454daa",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d473fea3f83d4ad6",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f67065e96f0c09b7",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_50143fe3826c0162",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_b8015ca2c7872890"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 785.2,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_92e4f01382454daa",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_b54c32f39c62b591",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d473fea3f83d4ad6",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f67065e96f0c09b7",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_50143fe3826c0162",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_89b69436d9139f96",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_b8015ca2c7872890"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-contra-02",
+      "category": "contradiction",
+      "question": "Is there consensus in the corpus on whether knowledge-graph augmentation always improves retrieval over pure vector search? Identify any cases where papers reach different conclusions.",
+      "arms": {
+        "dense": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 560.3,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_201863db610a7348",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_525e6195f411fba2",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_3c22ab2c4b612494",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a3f7edce3a9eedb2"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 137.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_4724826745815a17",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_98a76f5ec16fab14",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a3f7edce3a9eedb2"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 1,
+          "n_chunks": 1,
+          "latency_ms": 1952.1,
+          "chunk_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cdbcdb22db4fceeb"
+          ],
+          "doc_ids": [
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels"
+          ]
+        },
+        "flat": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 744.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_4724826745815a17",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_98a76f5ec16fab14",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_807fb09a1361fe7a",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a3f7edce3a9eedb2"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 866.4,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_4724826745815a17",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_6a40edb8209b894d",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_98a76f5ec16fab14",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_2aaba792aa52dd96",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_cdbcdb22db4fceeb",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_a3f7edce3a9eedb2"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 1
+        }
+      }
+    },
+    {
+      "id": "q-contra-03",
+      "category": "contradiction",
+      "question": "How do the papers differ in their recommendations for when graph-based retrieval should be preferred over vector-based retrieval?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 645.1,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d473fea3f83d4ad6",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_3fade43f8b9fe346",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_d8a749811f3f2c02",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_f6e8cef11406f9fd",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8262949bd94764cc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 154.2,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_4065d67fdfa081a4",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5a00b311d4e3bb5a",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_07432dab902cf16c",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3b50989adec849f7",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_6389f077724dd629",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_81b61f42294a7617",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 3356.3,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 921.3,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3b50989adec849f7",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 4,
+          "n_chunks": 10,
+          "latency_ms": 862.7,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_e72d3b5692e0a7a5",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_5988f6e2b1661dd2",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c443b52994f29887",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_c8a99329435c0e0e",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_e179fd03843e13bc",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_3b50989adec849f7",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_8870ff180649d5e1",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra_c_ec40cb85af52e5f6",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_aecf71e4433aaf75"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2304_09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    },
+    {
+      "id": "q-contra-04",
+      "category": "contradiction",
+      "question": "What contradictory claims, if any, do the papers make about the scalability of knowledge graph construction over large corpora?",
+      "arms": {
+        "dense": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 572.3,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_11f5bad3269889c8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_462636886b6748c7",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_aaf45f5085b704e2",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_f37f2cdef0fb14ea",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_518bac9c4a9237ee",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_a869a021a945adad",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_c8ab3fca73d88e42",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_fca97bc10e6229bf"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "sparse": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 229.8,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_041da5472d1f0f60",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_9a580a007afbabc8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_04a1944c4c7374d1",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_0d43b913e7f43733",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_93a192bd00f5d08f",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_96cd5d29e42d74dc",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ca4904c1172aa696",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_d876b2404136b136"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "graph": {
+          "distinct_docs": 0,
+          "n_chunks": 0,
+          "latency_ms": 1513.5,
+          "chunk_ids": [],
+          "doc_ids": []
+        },
+        "flat": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 774.5,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_11f5bad3269889c8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_a869a021a945adad",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_04a1944c4c7374d1",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_93a192bd00f5d08f",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ca4904c1172aa696",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_fca97bc10e6229bf"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ]
+        },
+        "hybrid": {
+          "distinct_docs": 3,
+          "n_chunks": 10,
+          "latency_ms": 857.2,
+          "chunk_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_11f5bad3269889c8",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_3804a5a1476358c1",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_cf1318dd4afd9d51",
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks_c_d4a4a8820fd627ff",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_9c63e5380e9683ca",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels_c_a869a021a945adad",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_04a1944c4c7374d1",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_93a192bd00f5d08f",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_ca4904c1172aa696",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua_c_fca97bc10e6229bf"
+          ],
+          "doc_ids": [
+            "2005_11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+            "2212_10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels",
+            "2309_01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua"
+          ],
+          "novel_vs_flat": 0
+        }
+      }
+    }
+  ],
+  "summary": {
+    "overall": {
+      "dense": {
+        "mean_distinct_docs": 2.5,
+        "mean_chunks": 10.0,
+        "median_latency_ms": 669.9
+      },
+      "sparse": {
+        "mean_distinct_docs": 3.35,
+        "mean_chunks": 10.0,
+        "median_latency_ms": 208.2
+      },
+      "graph": {
+        "mean_distinct_docs": 0.6,
+        "mean_chunks": 2.05,
+        "median_latency_ms": 2499.8
+      },
+      "flat": {
+        "mean_distinct_docs": 3.15,
+        "mean_chunks": 10.0,
+        "median_latency_ms": 897.4
+      },
+      "hybrid": {
+        "mean_distinct_docs": 3.15,
+        "mean_chunks": 10.0,
+        "median_latency_ms": 899.8
+      }
+    },
+    "by_category": {
+      "contradiction": {
+        "n": 4,
+        "dense": 3.25,
+        "sparse": 3.5,
+        "graph": 0.25,
+        "flat": 3.5,
+        "hybrid": 3.5
+      },
+      "cross_document": {
+        "n": 12,
+        "dense": 2.25,
+        "sparse": 3.25,
+        "graph": 0.5,
+        "flat": 3.083,
+        "hybrid": 3.167
+      },
+      "single_document": {
+        "n": 4,
+        "dense": 2.5,
+        "sparse": 3.5,
+        "graph": 1.25,
+        "flat": 3.0,
+        "hybrid": 2.75
+      }
+    },
+    "hybrid_vs_flat": {
+      "overall": {
+        "n": 20,
+        "mean_delta": 0.0,
+        "wins": 1,
+        "losses": 1,
+        "ties": 18,
+        "wilcoxon_statistic": 1.5,
+        "p_value": 1.0
+      },
+      "contradiction": {
+        "n": 4,
+        "mean_delta": 0.0,
+        "wins": 0,
+        "losses": 0,
+        "ties": 4,
+        "wilcoxon_statistic": null,
+        "p_value": null
+      },
+      "cross_document": {
+        "n": 12,
+        "mean_delta": 0.083,
+        "wins": 1,
+        "losses": 0,
+        "ties": 11,
+        "wilcoxon_statistic": 0.0,
+        "p_value": 1.0
+      },
+      "single_document": {
+        "n": 4,
+        "mean_delta": -0.25,
+        "wins": 0,
+        "losses": 1,
+        "ties": 3,
+        "wilcoxon_statistic": 0.0,
+        "p_value": 1.0
+      }
+    }
+  }
+}

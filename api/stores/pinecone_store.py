@@ -49,17 +49,35 @@ class PineconeVectorStore(VectorStore):
         self._owns_client = client is None
 
     # ── Public API ────────────────────────────────────────────────
+    # Pinecone rejects a request body over 4 MiB. A 3072-dimension vector
+    # serialises to roughly 60 kB of JSON, so a long document overruns the
+    # limit in one request and the whole ingest fails at the last step with
+    # the embeddings already paid for. Batch by estimated payload size.
+    _MAX_UPSERT_BYTES = 3_500_000
+    _MAX_UPSERT_ITEMS = 100
+
     async def upsert(self, items: list[VectorItem]) -> None:
         if not items:
             return
         host = await self._ensure_host()
-        body = {
-            "vectors": [
-                {"id": it.id, "values": it.vector, "metadata": it.metadata or {}}
-                for it in items
-            ]
-        }
-        await self._post(f"https://{host}/vectors/upsert", body, op="upsert")
+        url = f"https://{host}/vectors/upsert"
+
+        batch: list[dict[str, Any]] = []
+        batch_bytes = 0
+        for it in items:
+            row = {"id": it.id, "values": it.vector, "metadata": it.metadata or {}}
+            # ~20 bytes per JSON float, plus id and metadata overhead.
+            row_bytes = len(it.vector) * 20 + len(it.id) + 256
+            if batch and (
+                batch_bytes + row_bytes > self._MAX_UPSERT_BYTES
+                or len(batch) >= self._MAX_UPSERT_ITEMS
+            ):
+                await self._post(url, {"vectors": batch}, op="upsert")
+                batch, batch_bytes = [], 0
+            batch.append(row)
+            batch_bytes += row_bytes
+        if batch:
+            await self._post(url, {"vectors": batch}, op="upsert")
 
     async def query(
         self,

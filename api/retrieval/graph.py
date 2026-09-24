@@ -38,8 +38,9 @@ logger = get_logger(__name__)
 # Score weights: direct match dominates; 1-hop neighbors contribute half.
 # v1 weights — bump GRAPH_SCORING_VERSION when tuning so R-02 benchmark
 # results can be partitioned by scoring version.
-GRAPH_SCORING_VERSION = "v1"
+GRAPH_SCORING_VERSION = "v2"
 _DIRECT_MATCH_WEIGHT = 1.0
+_ALIAS_MATCH_WEIGHT = 0.6
 _NEIGHBOR_WEIGHT = 0.5
 
 
@@ -84,18 +85,29 @@ class GraphRetriever:
 
         # 2. Score chunks by direct + neighbor match.
         chunk_scores: dict[str, float] = {}
+        resolved = 0
         for query_node in extraction.nodes:
             graph_node = await self._graph.get_node(query_node.id)
+            weight = _DIRECT_MATCH_WEIGHT
             if graph_node is None:
-                continue   # query mentioned an entity not in the corpus
+                # A query slug rarely equals a corpus slug: "dense vector
+                # retrieval" against a corpus carrying "dense retrieval".
+                # Fall back to approximate resolution at a lower weight, so
+                # an alias hit can never outrank an exact one.
+                aliases = await self._graph.resolve_nodes(query_node.id)
+                if not aliases:
+                    continue  # query mentioned an entity not in the corpus
+                graph_node = aliases[0]
+                weight = _ALIAS_MATCH_WEIGHT
+            resolved += 1
             direct_chunks = cast(
                 list[str],
                 graph_node.properties.get("mentioned_in_chunks", []) or [],
             )
             for cid in direct_chunks:
-                chunk_scores[cid] = chunk_scores.get(cid, 0.0) + _DIRECT_MATCH_WEIGHT
+                chunk_scores[cid] = chunk_scores.get(cid, 0.0) + weight
 
-            neighbors = await self._graph.expand(query_node.id, hops=1)
+            neighbors = await self._graph.expand(graph_node.id, hops=1)
             for nbr in neighbors:
                 nbr_chunks = cast(
                     list[str],

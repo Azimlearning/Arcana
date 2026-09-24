@@ -1,0 +1,72 @@
+{
+  "generated": "2026-09-07T16:59:55.634257+00:00",
+  "corpus_dir": "C:\\Users\\User\\Documents\\FYP DOCS\\Arcana\\eval\\corpus",
+  "documents": [
+    {
+      "doc_id": "2401_15391_MultiHop_RAG_Benchmarking_Retrieval_Augmented_Generation_for_Multi_Hop",
+      "file": "2401.15391_MultiHop_RAG_Benchmarking_Retrieval_Augmented_Generation_for_Multi_Hop.pdf",
+      "seconds": 13.9,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    },
+    {
+      "doc_id": "2401_15884_Corrective_Retrieval_Augmented_Generation",
+      "file": "2401.15884_Corrective_Retrieval_Augmented_Generation.pdf",
+      "seconds": 10.8,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    },
+    {
+      "doc_id": "2404_03868_Extract_Define_Canonicalize_An_LLM_based_Framework_for_Knowledge_Graph",
+      "file": "2404.03868_Extract_Define_Canonicalize_An_LLM_based_Framework_for_Knowledge_Graph.pdf",
+      "seconds": 11.3,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    },
+    {
+      "doc_id": "2404_16130_From_Local_to_Global_A_Graph_RAG_Approach_to_Query_Focused_Summarizati",
+      "file": "2404.16130_From_Local_to_Global_A_Graph_RAG_Approach_to_Query_Focused_Summarizati.pdf",
+      "seconds": 12.3,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    },
+    {
+      "doc_id": "2405_14831_HippoRAG_Neurobiologically_Inspired_Long_Term_Memory_for_Large_Languag",
+      "file": "2405.14831_HippoRAG_Neurobiologically_Inspired_Long_Term_Memory_for_Large_Languag.pdf",
+      "seconds": 13.5,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    },
+    {
+      "doc_id": "2408_04948_HybridRAG_Integrating_Knowledge_Graphs_and_Vector_Retrieval_Augmented",
+      "file": "2408.04948_HybridRAG_Integrating_Knowledge_Graphs_and_Vector_Retrieval_Augmented_.pdf",
+      "seconds": 9.9,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    },
+    {
+      "doc_id": "2410_05779_LightRAG_Simple_and_Fast_Retrieval_Augmented_Generation",
+      "file": "2410.05779_LightRAG_Simple_and_Fast_Retrieval_Augmented_Generation.pdf",
+      "seconds": 11.6,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    },
+    {
+      "doc_id": "2410_13070_Is_Semantic_Chunking_Worth_the_Computational_Cost",
+      "file": "2410.13070_Is_Semantic_Chunking_Worth_the_Computational_Cost.pdf",
+      "seconds": 9.4,
+      "status": "ready",
+      "graph_nodes_cumulative": 2117,
+      "graph_edges_cumulative": 2198
+    }
+  ],
+  "failures": 1,
+  "total_seconds": 104.2
+}

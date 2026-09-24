@@ -48,6 +48,31 @@ class NetworkXGraphStore(GraphStore):
             return None
         return self._to_graphnode(node_id)
 
+    async def resolve_nodes(
+        self, slug: str, *, min_overlap: float = 0.5, limit: int = 3
+    ) -> list[GraphNode]:
+        """Approximate slug match by Jaccard token overlap. See GraphStore."""
+        if slug in self._g:
+            return [self._to_graphnode(slug)]
+        want = {t for t in slug.split("_") if t}
+        # A single bare token ("paper", "technique") overlaps too much of the
+        # graph to be evidence of anything, so it resolves exactly or not at all.
+        if len(want) < 2:
+            return []
+        scored: list[tuple[float, str]] = []
+        for nid in self._g.nodes():
+            have = {t for t in str(nid).split("_") if t}
+            inter = want & have
+            if not inter:
+                continue
+            score = len(inter) / len(want | have)
+            if score >= min_overlap:
+                scored.append((score, str(nid)))
+        # Best overlap first; shorter id breaks ties, preferring the more
+        # general node over a longer incidental one.
+        scored.sort(key=lambda p: (-p[0], len(p[1])))
+        return [self._to_graphnode(nid) for _, nid in scored[:limit]]
+
     # ── Reads / analytics ──────────────────────────────────────────
     async def expand(self, node_id: str, hops: int = 1) -> list[GraphNode]:
         if node_id not in self._g:
